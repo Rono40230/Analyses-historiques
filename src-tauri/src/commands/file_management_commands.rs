@@ -1,0 +1,200 @@
+// file_management_commands.rs
+use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
+use std::fs;
+use chrono::{DateTime, Utc};
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CalendarFileInfo {
+    pub filename: String,
+    pub path: String,
+    pub size_bytes: u64,
+    pub created: String,
+    pub modified: String,
+    pub event_count: Option<i64>,
+    pub date_range: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PairFileInfo {
+    pub filename: String,
+    pub path: String,
+    pub pair: Option<String>,
+    pub timeframe: Option<String>,
+    pub period: Option<String>,
+    pub size_bytes: u64,
+    pub line_count: Option<usize>,
+    pub date_range: Option<String>,
+    pub created: String,
+    pub modified: String,
+}
+
+/// Liste tous les fichiers de calendrier économique
+#[tauri::command]
+pub async fn list_calendar_files() -> Result<Vec<CalendarFileInfo>, String> {
+    tracing::info!("📂 Listing calendar files...");
+    let data_dir = dirs::data_local_dir().ok_or("Failed to get data directory")?.join("volatility-analyzer");
+    let mut files = Vec::new();
+    if data_dir.exists() {
+        for entry in fs::read_dir(&data_dir).map_err(|e| e.to_string())? {
+            let entry = entry.map_err(|e| e.to_string())?;
+            let path = entry.path();
+            if let Some(ext) = path.extension() {
+                let ext_str = ext.to_string_lossy().to_lowercase();
+                if ext_str == "db" || ext_str == "csv" || ext_str == "xlsx" {
+                    if let Some(filename) = path.file_name() {
+                        let filename_str = filename.to_string_lossy();
+                        if filename_str == "volatility.db" { continue; }
+                        let metadata = fs::metadata(&path).map_err(|e| e.to_string())?;
+                        let created = metadata.created().ok().and_then(|t| DateTime::<Utc>::from(t).format("%Y-%m-%d %H:%M").to_string().into()).unwrap_or_else(|| "N/A".to_string());
+                        let modified = metadata.modified().ok().and_then(|t| DateTime::<Utc>::from(t).format("%Y-%m-%d %H:%M").to_string().into()).unwrap_or_else(|| "N/A".to_string());
+                        let date_range = extract_date_range_from_filename(&filename_str);
+                        let event_count = if ext_str == "csv" { count_csv_events(&path) } else { None };
+                        
+                        files.push(CalendarFileInfo {
+                            filename: filename.to_string_lossy().to_string(),
+                            path: path.to_string_lossy().to_string(),
+                            size_bytes: metadata.len(),
+                            created,
+                            modified,
+                            event_count,
+                            date_range,
+                        });
+                    }
+                }
+            }
+        }
+    }
+    
+    tracing::info!("✅ Found {} calendar files", files.len());
+    Ok(files)
+}
+
+/// Compte le nombre d'événements dans un fichier CSV calendrier
+fn count_csv_events(path: &PathBuf) -> Option<i64> {
+    match fs::read_to_string(path) {
+        Ok(content) => {
+            // Compter les lignes (en soustrayant 1 pour l'en-tête si présent)
+            let line_count = content.lines().count();
+            Some((line_count.saturating_sub(1)) as i64)
+        }
+        Err(_) => None,
+    }
+}
+
+/// Extrait la période couverte depuis le nom du fichier
+/// Ex: "calendar_2007-01-01_2025-10-31.csv" → Some("2007-01-01 → 2025-10-31")
+fn extract_date_range_from_filename(filename: &str) -> Option<String> {
+    // Format attendu: calendar_YYYY-MM-DD_YYYY-MM-DD.ext
+    let name_without_ext = filename.split('.').next()?;
+    let parts: Vec<&str> = name_without_ext.split('_').collect();
+    
+    if parts.len() >= 3 {
+        let start_date = parts.get(1)?;
+        let end_date = parts.get(2)?;
+        
+        // Vérifier que ce sont bien des dates (format YYYY-MM-DD)
+        if start_date.len() == 10 && end_date.len() == 10 {
+            return Some(format!("{} → {}", start_date, end_date));
+        }
+    }
+    
+    None
+}
+
+/// Compte le nombre de lignes dans un fichier CSV
+fn count_csv_lines(path: &PathBuf) -> Option<usize> {
+    use std::io::{BufReader, BufRead};
+    let file = fs::File::open(path).ok()?;
+    let reader = BufReader::new(file);
+    Some(reader.lines().count().saturating_sub(1)) // -1 pour enlever l'en-tête
+}
+
+/// Extrait la plage de dates depuis le chemin du fichier
+fn extract_date_range_from_path(path: &PathBuf) -> Option<String> {
+    let filename = path.file_name()?.to_string_lossy();
+    extract_date_range_from_filename(&filename)
+}
+
+#[tauri::command]
+pub async fn list_pair_csv_files() -> Result<Vec<PairFileInfo>, String> {
+    tracing::info!("📂 Listing pair CSV files...");
+    let csv_dir = dirs::data_local_dir().ok_or("Failed to get data directory")?.join("volatility-analyzer").join("data").join("csv");
+    let mut files = Vec::new();
+    if csv_dir.exists() {
+        for entry in fs::read_dir(&csv_dir).map_err(|e| e.to_string())? {
+            let entry = entry.map_err(|e| e.to_string())?;
+            let path = entry.path();
+            
+            if path.extension().and_then(|e| e.to_str()) == Some("csv") {
+                if let Some(filename) = path.file_name() {
+                    let filename_str = filename.to_string_lossy().to_string();
+                    let metadata = fs::metadata(&path).map_err(|e| e.to_string())?;
+                    let name_without_ext = filename_str.trim_end_matches(".csv");
+                    let pair = name_without_ext.split('_').next().map(|s| s.to_string());
+                    let timeframe = if name_without_ext.contains(" Min") {
+                        Some(name_without_ext.split('_').nth(1).and_then(|s| {
+                                if s.contains("Min") || name_without_ext.contains(&format!("{} Min", s)) {
+                                    Some(format!("{} Min", s))
+                                } else {
+                                    Some(s.to_string())
+                                }
+                            }).unwrap_or_else(|| "N/A".to_string()))
+                    } else {
+                        name_without_ext.split('_').nth(1).map(|s| s.to_string())
+                    };
+                    let period = if name_without_ext.contains("Bid") {
+                        Some("Bid".to_string())
+                    } else if name_without_ext.contains("Ask") {
+                        Some("Ask".to_string())
+                    } else {
+                        name_without_ext.split('_').nth(2).map(|s| s.to_string())
+                    };
+                    let line_count = count_csv_lines(&path);
+                    let date_range = extract_date_range_from_path(&path);
+                    let created = metadata.created().ok().and_then(|t| DateTime::<Utc>::from(t).format("%Y-%m-%d %H:%M").to_string().into()).unwrap_or_else(|| "N/A".to_string());
+                    let modified = metadata.modified().ok().and_then(|t| DateTime::<Utc>::from(t).format("%Y-%m-%d %H:%M").to_string().into()).unwrap_or_else(|| "N/A".to_string());
+                    
+                    files.push(PairFileInfo {
+                        filename: filename.to_string_lossy().to_string(),
+                        path: path.to_string_lossy().to_string(),
+                        pair,
+                        timeframe,
+                        period,
+                        size_bytes: metadata.len(),
+                        line_count,
+                        date_range,
+                        created,
+                        modified,
+                    });
+                }
+            }
+        }
+    }
+    Ok(files)
+}
+
+/// Supprime un fichier de calendrier
+#[tauri::command]
+pub async fn delete_calendar_file(file_path: String) -> Result<(), String> {
+    tracing::info!("🗑️  Deleting calendar file: {}", file_path);
+    fs::remove_file(&file_path).map_err(|e| format!("Failed to delete file: {}", e))?;
+    tracing::info!("✅ File deleted successfully");
+    Ok(())
+}
+
+/// Supprime des fichiers de paires CSV
+#[tauri::command]
+pub async fn delete_pair_files(file_paths: Vec<String>) -> Result<usize, String> {
+    tracing::info!("🗑️  Deleting {} pair files", file_paths.len());
+    let mut deleted = 0;
+    for path in file_paths {
+        if let Err(e) = fs::remove_file(&path) {
+            tracing::warn!("Failed to delete {}: {}", path, e);
+        } else {
+            deleted += 1;
+        }
+    }
+    tracing::info!("✅ Deleted {} files", deleted);
+    Ok(deleted)
+}

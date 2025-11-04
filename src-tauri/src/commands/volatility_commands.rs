@@ -1,0 +1,180 @@
+// commands/volatility_commands.rs - Commandes Tauri pour l'analyse de volatilité
+// Niveau 2 : Expose les services au frontend Vue.js
+// Conforme .clinerules : < 300 lignes, thiserror, pas d'unwrap
+
+use crate::commands::calendar_commands::CalendarState;
+use crate::models::{AnalysisResult, HourlyStats};
+use crate::services::{CsvLoader, VolatilityAnalyzer};
+use serde::{Deserialize, Serialize};
+use tauri::State;
+use tracing::{error, info};
+
+/// Structure pour les symboles disponibles
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SymbolInfo {
+    pub symbol: String,
+    pub file_path: String,
+}
+
+/// Résultat d'erreur sérialisable pour le frontend
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CommandError {
+    pub message: String,
+    pub error_type: String,
+}
+
+impl From<String> for CommandError {
+    fn from(message: String) -> Self {
+        CommandError {
+            message,
+            error_type: "Error".to_string(),
+        }
+    }
+}
+
+impl From<crate::models::VolatilityError> for CommandError {
+    fn from(err: crate::models::VolatilityError) -> Self {
+        CommandError {
+            message: err.to_string(),
+            error_type: format!("{:?}", err),
+        }
+    }
+}
+
+/// Liste tous les symboles disponibles dans data/csv/
+#[tauri::command]
+pub async fn load_symbols() -> Result<Vec<SymbolInfo>, CommandError> {
+    info!("Command: load_symbols");
+
+    let loader = CsvLoader::new();
+
+    let symbols = loader
+        .list_available_symbols()
+        .map_err(|e| {
+            error!("Failed to list symbols: {}", e);
+            CommandError::from(e)
+        })?;
+
+    let symbol_infos: Vec<SymbolInfo> = symbols
+        .into_iter()
+        .map(|symbol| SymbolInfo {
+            symbol: symbol.clone(),
+            file_path: format!("data/csv/{}", symbol),
+        })
+        .collect();
+
+    info!("Found {} symbols", symbol_infos.len());
+    Ok(symbol_infos)
+}
+
+/// Analyse complète d'un symbole
+#[tauri::command]
+pub async fn analyze_symbol(
+    symbol: String,
+    calendar_state: State<'_, CalendarState>,
+) -> Result<AnalysisResult, CommandError> {
+    info!("Command: analyze_symbol({})", symbol);
+
+    let loader = CsvLoader::new();
+
+    // 1. Charge les bougies
+    let candles = loader.load_candles(&symbol).map_err(|e| {
+        error!("Failed to load candles for {}: {}", symbol, e);
+        CommandError::from(e)
+    })?;
+
+    info!("Loaded {} candles for {}", candles.len(), symbol);
+
+    // 2. Récupère le pool DB pour corrélation (optionnel)
+    let pool = calendar_state.pool.lock()
+        .map_err(|e| format!("Failed to lock calendar pool: {}", e))?
+        .clone();
+
+    // 3. Analyse avec VolatilityAnalyzer
+    let analyzer = VolatilityAnalyzer::new(candles);
+    let result = analyzer.analyze(&symbol, pool).map_err(|e| {
+        error!("Failed to analyze {}: {}", symbol, e);
+        CommandError::from(e)
+    })?;
+
+    info!(
+        "Analysis complete for {}: confidence={:.1}, correlated_events={}",
+        symbol,
+        result.confidence_score,
+        result.correlated_events.len()
+    );
+
+    Ok(result)
+}
+
+/// Récupère les statistiques pour une heure spécifique
+#[tauri::command]
+pub async fn get_hourly_stats(
+    symbol: String,
+    hour: u8,
+    calendar_state: State<'_, CalendarState>,
+) -> Result<HourlyStats, CommandError> {
+    info!("Command: get_hourly_stats({}, {})", symbol, hour);
+
+    if hour > 23 {
+        return Err(CommandError {
+            message: format!("Invalid hour: {}. Must be 0-23", hour),
+            error_type: "ValidationError".to_string(),
+        });
+    }
+
+    // Charge et analyse le symbole
+    let result = analyze_symbol(symbol, calendar_state).await?;
+
+    // Cherche l'heure demandée
+    let stats = result
+        .hourly_stats
+        .into_iter()
+        .find(|s| s.hour == hour)
+        .ok_or_else(|| CommandError {
+            message: format!("No stats found for hour {}", hour),
+            error_type: "NotFound".to_string(),
+        })?;
+
+    Ok(stats)
+}
+
+/// Récupère uniquement les meilleures heures pour un symbole
+#[tauri::command]
+pub async fn get_best_hours(
+    symbol: String,
+    calendar_state: State<'_, CalendarState>,
+) -> Result<Vec<u8>, CommandError> {
+    info!("Command: get_best_hours({})", symbol);
+
+    let result = analyze_symbol(symbol, calendar_state).await?;
+    Ok(result.best_hours)
+}
+
+/// Ping pour vérifier que le backend est disponible
+#[tauri::command]
+pub async fn ping() -> String {
+    info!("Command: ping");
+    "pong".to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_ping() {
+        let response = ping().await;
+        assert_eq!(response, "pong");
+    }
+
+    #[test]
+    fn test_command_error_from_volatility_error() {
+        use crate::models::VolatilityError;
+
+        let err = VolatilityError::InsufficientData("Test".to_string());
+        let cmd_err = CommandError::from(err);
+
+        assert!(cmd_err.message.contains("Test"));
+    }
+}

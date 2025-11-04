@@ -1,0 +1,36 @@
+# Rust / Cargo
+target/
+Cargo.lock
+*.db
+*.db-shm
+*.db-wal
+
+# Node / npm
+node_modules/
+dist/
+*.log
+package-lock.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+src-tauri/target/
+src-tauri/gen/
+
+# Data files (trop volumineux pour Git)
+data/csv/*.csv
+src-tauri/data/csv/*.csv
+
+# Bases de données
+*.db
+volatility.db
+src-tauri/volatility.db
+src-tauri/data/volatility.db
