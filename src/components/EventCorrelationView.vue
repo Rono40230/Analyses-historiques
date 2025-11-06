@@ -1,47 +1,5 @@
 <template>
   <div class="main-container">
-    <!-- En-tête avec titre et dropdown -->
-    <div class="header-section">
-      <div class="header-left">
-        <h2 class="main-title">
-          <span class="icon">🎯</span>
-          Corrélation Événements × Paires
-        </h2>
-        <p class="main-subtitle">
-          Analyse rétrospective : Quelle paire a le plus bougé lors de chaque événement passé ?
-        </p>
-      </div>
-      <!-- Dropdown pour événement (mode Par Événement) -->
-      <div class="header-right" v-if="viewMode === 'by-event'">
-        <select 
-          id="event-select" 
-          v-model="selectedEventId" 
-          class="inline-event-select"
-          @change="loadEventImpact"
-        >
-          <option value="" style="color: #000000;">Choisir un événement</option>
-          <option v-for="event in pastEvents" :key="event.id" :value="event.id">
-            {{ event.name }} - {{ formatDate(event.datetime) }} ({{ event.impact }})
-          </option>
-        </select>
-      </div>
-      <!-- Dropdown pour paire (mode Par Paire) -->
-      <div class="header-right" v-if="viewMode === 'by-pair'">
-        <label for="pair-select" class="pair-label">💱 Paire :</label>
-        <select 
-          id="pair-select" 
-          v-model="selectedPairSymbol" 
-          class="inline-pair-select"
-          @change="loadPairEventHistory"
-        >
-          <option value="">Choisir une paire</option>
-          <option v-for="pair in availablePairs" :key="pair" :value="pair">
-            {{ pair }}
-          </option>
-        </select>
-      </div>
-    </div>
-
     <!-- Mode de vue -->
     <div class="view-mode-selector">
       <button 
@@ -74,6 +32,29 @@
         <div v-if="loadingEvent" class="loading">
           <div class="spinner"></div>
           <p>Analyse de l'impact de l'événement...</p>
+        </div>
+
+        <!-- Message de bienvenue avec dropdown événement -->
+        <div v-if="!selectedEventId && !loadingEvent" class="welcome">
+          <div class="welcome-icon">🎯</div>
+          <h3>Analyse Rétrospective par Événement</h3>
+          <p class="info-text">
+            Explorez l'impact historique des événements économiques sur les différentes paires.<br>
+            Choisissez un événement pour voir quelle paire a le plus bougé.
+          </p>
+          <div class="welcome-select-container">
+            <select 
+              id="event-select" 
+              v-model="selectedEventId" 
+              class="welcome-symbol-select"
+              @change="loadEventImpact"
+            >
+              <option value="">Choisir un événement</option>
+              <option v-for="event in pastEvents" :key="event.id" :value="event.id">
+                {{ event.name }} - {{ formatDate(event.datetime) }} ({{ event.impact }})
+              </option>
+            </select>
+          </div>
         </div>
 
       <div v-if="eventImpact && !loadingEvent" class="event-impact-results">
@@ -150,13 +131,36 @@
           </ul>
         </div>
       </div>
-    </template>
+      </template>
 
     <!-- Vue 2: Par Paire -->
     <template v-if="viewMode === 'by-pair'">
       <div v-if="loadingPair" class="loading">
         <div class="spinner"></div>
         <p>Chargement de l'historique...</p>
+      </div>
+
+      <!-- Message de bienvenue avec dropdown paire -->
+      <div v-if="!selectedPairSymbol && !loadingPair" class="welcome">
+        <div class="welcome-icon">💱</div>
+        <h3>Analyse Rétrospective par Paire</h3>
+        <p class="info-text">
+          Découvrez comment chaque paire a réagi historiquement aux événements économiques.<br>
+          Choisissez une paire pour voir son historique complet.
+        </p>
+        <div class="welcome-select-container">
+          <select 
+            id="pair-select" 
+            v-model="selectedPairSymbol" 
+            class="welcome-symbol-select"
+            @change="loadPairEventHistory"
+          >
+            <option value="">Choisir une paire</option>
+            <option v-for="pair in availablePairs" :key="pair" :value="pair">
+              {{ pair }}
+            </option>
+          </select>
+        </div>
       </div>
 
       <div v-if="pairHistory && !loadingPair" class="pair-history-results">
@@ -310,16 +314,6 @@
         </div>
       </div>
     </template>
-
-    <!-- Message de bienvenue -->
-    <div v-if="!selectedEventId && !selectedPairSymbol && viewMode !== 'heatmap'" class="welcome">
-      <div class="welcome-icon">🎯</div>
-      <h3>Analyse Rétrospective</h3>
-      <p class="info-text">
-        Explorez l'impact historique des événements économiques sur les différentes paires.<br>
-        Sélectionnez un mode de vue pour commencer l'analyse.
-      </p>
-    </div>
     </div>
   </div>
 </template>
@@ -1367,7 +1361,42 @@ function getHeatmapClass(value: number): string {
   font-size: 1.1em;
   color: #a0aec0;
   max-width: 600px;
-  margin: 0 auto;
+  margin: 0 auto 30px auto;
   line-height: 1.6;
+}
+
+.welcome-select-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.welcome-symbol-select {
+  padding: 12px 24px;
+  font-size: 1.1em;
+  border-radius: 8px;
+  border: 2px solid #4a5568;
+  background: #ffffff;
+  color: #000000;
+  cursor: pointer;
+  transition: all 0.3s;
+  min-width: 350px;
+  max-width: 600px;
+}
+
+.welcome-symbol-select option {
+  background: #ffffff;
+  color: #000000;
+}
+
+.welcome-symbol-select:hover {
+  border-color: #667eea;
+  background: #f7fafc;
+}
+
+.welcome-symbol-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
 </style>

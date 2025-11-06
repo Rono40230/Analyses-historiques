@@ -50,21 +50,21 @@ function switchTab(tab: 'volatility' | 'calendar' | 'correlation' | 'sessions') 
         :class="{ active: activeTab === 'volatility' }"
         @click="switchTab('volatility')"
       >
-        📊 Analyse Volatilité
+        📊 Volatilité brute d'un actif
       </button>
       <button 
         class="tab-button" 
         :class="{ active: activeTab === 'correlation' }"
         @click="switchTab('correlation')"
       >
-        📈 Corrélation Événements
+        📈 Volatilité d'un actif par rapport aux événements économiques
       </button>
       <button 
         class="tab-button" 
         :class="{ active: activeTab === 'sessions' }"
         @click="switchTab('sessions')"
       >
-        📍 Analyse par Sessions
+        📍 Volatilité d'un actif par rapport aux ouvertures boursières
       </button>
       <div class="tab-spacer"></div>
       <button 
@@ -79,36 +79,6 @@ function switchTab(tab: 'volatility' | 'calendar' | 'correlation' | 'sessions') 
     <main class="app-main">
       <template v-if="activeTab === 'volatility'">
         <div class="main-container">
-          <div class="header-section">
-            <div class="header-left">
-              <h2 class="main-title">
-                <span class="icon">📊</span>
-                Analyse de Volatilité
-              </h2>
-              <p class="main-subtitle">
-                Analyse rétrospective de la volatilité historique par heure et période
-              </p>
-            </div>
-            <div class="header-right">
-              <select 
-                id="volatility-symbol-select"
-                v-model="selectedSymbolLocal" 
-                @change="handleSymbolChange"
-                :disabled="loading"
-                class="inline-symbol-select"
-              >
-                <option value="" style="color: #000000;">Choisir un symbole</option>
-                <option 
-                  v-for="symbol in store.symbols" 
-                  :key="symbol.symbol" 
-                  :value="symbol.symbol"
-                >
-                  {{ symbol.symbol }}
-                </option>
-              </select>
-            </div>
-          </div>
-
           <div class="content-area">
             <div v-if="loading" class="loading">
               <div class="spinner"></div>
@@ -124,9 +94,27 @@ function switchTab(tab: 'volatility' | 'calendar' | 'correlation' | 'sessions') 
               <div class="welcome-icon">📊</div>
               <h3>Sélectionnez un symbole pour commencer</h3>
               <p class="info-text">
-                Choisissez un symbole forex ci-dessus pour analyser sa volatilité historique 
+                Choisissez un symbole forex pour analyser sa volatilité historique 
                 par heure, jour et période.
               </p>
+              <div class="welcome-select-container">
+                <select 
+                  id="volatility-symbol-select"
+                  v-model="selectedSymbolLocal" 
+                  @change="handleSymbolChange"
+                  :disabled="loading"
+                  class="welcome-symbol-select"
+                >
+                  <option value="">Choisir un symbole</option>
+                  <option 
+                    v-for="symbol in store.symbols" 
+                    :key="symbol.symbol" 
+                    :value="symbol.symbol"
+                  >
+                    {{ symbol.symbol }}
+                  </option>
+                </select>
+              </div>
             </div>
 
             <template v-if="!loading && analysisResult">
@@ -420,10 +408,58 @@ body {
   margin-bottom: 10px;
 }
 
+.welcome h3 {
+  font-size: 1.8em;
+  color: #e6edf3;
+  margin-bottom: 15px;
+}
+
 .welcome p {
   font-size: 1.2em;
   color: #8b949e;
   margin-bottom: 30px;
+}
+
+.info-text {
+  font-size: 1.1em;
+  color: #a0aec0;
+  max-width: 600px;
+  margin: 0 auto 30px auto;
+  line-height: 1.6;
+}
+
+.welcome-select-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.welcome-symbol-select {
+  padding: 12px 24px;
+  font-size: 1.1em;
+  border-radius: 8px;
+  border: 2px solid #4a5568;
+  background: #ffffff;
+  color: #000000;
+  cursor: pointer;
+  transition: all 0.3s;
+  min-width: 250px;
+}
+
+.welcome-symbol-select option {
+  background: #ffffff;
+  color: #000000;
+}
+
+.welcome-symbol-select:hover {
+  border-color: #667eea;
+  background: #f7fafc;
+}
+
+.welcome-symbol-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
 
 .app-footer {

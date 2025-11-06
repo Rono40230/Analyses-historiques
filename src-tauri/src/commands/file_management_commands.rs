@@ -1,8 +1,12 @@
 // file_management_commands.rs
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 use std::fs;
 use chrono::{DateTime, Utc};
+use crate::services::pair_data_stats::{
+    PairDataSummary, calculate_pair_summary,
+    count_csv_lines, extract_date_range_from_path
+};
+use crate::services::calendar_file_stats::{count_csv_events, extract_calendar_date_range};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CalendarFileInfo {
@@ -48,7 +52,7 @@ pub async fn list_calendar_files() -> Result<Vec<CalendarFileInfo>, String> {
                         let metadata = fs::metadata(&path).map_err(|e| e.to_string())?;
                         let created = metadata.created().ok().and_then(|t| DateTime::<Utc>::from(t).format("%Y-%m-%d %H:%M").to_string().into()).unwrap_or_else(|| "N/A".to_string());
                         let modified = metadata.modified().ok().and_then(|t| DateTime::<Utc>::from(t).format("%Y-%m-%d %H:%M").to_string().into()).unwrap_or_else(|| "N/A".to_string());
-                        let date_range = extract_date_range_from_filename(&filename_str);
+                        let date_range = extract_calendar_date_range(&filename_str);
                         let event_count = if ext_str == "csv" { count_csv_events(&path) } else { None };
                         
                         files.push(CalendarFileInfo {
@@ -70,52 +74,7 @@ pub async fn list_calendar_files() -> Result<Vec<CalendarFileInfo>, String> {
     Ok(files)
 }
 
-/// Compte le nombre d'événements dans un fichier CSV calendrier
-fn count_csv_events(path: &PathBuf) -> Option<i64> {
-    match fs::read_to_string(path) {
-        Ok(content) => {
-            // Compter les lignes (en soustrayant 1 pour l'en-tête si présent)
-            let line_count = content.lines().count();
-            Some((line_count.saturating_sub(1)) as i64)
-        }
-        Err(_) => None,
-    }
-}
-
-/// Extrait la période couverte depuis le nom du fichier
-/// Ex: "calendar_2007-01-01_2025-10-31.csv" → Some("2007-01-01 → 2025-10-31")
-fn extract_date_range_from_filename(filename: &str) -> Option<String> {
-    // Format attendu: calendar_YYYY-MM-DD_YYYY-MM-DD.ext
-    let name_without_ext = filename.split('.').next()?;
-    let parts: Vec<&str> = name_without_ext.split('_').collect();
-    
-    if parts.len() >= 3 {
-        let start_date = parts.get(1)?;
-        let end_date = parts.get(2)?;
-        
-        // Vérifier que ce sont bien des dates (format YYYY-MM-DD)
-        if start_date.len() == 10 && end_date.len() == 10 {
-            return Some(format!("{} → {}", start_date, end_date));
-        }
-    }
-    
-    None
-}
-
-/// Compte le nombre de lignes dans un fichier CSV
-fn count_csv_lines(path: &PathBuf) -> Option<usize> {
-    use std::io::{BufReader, BufRead};
-    let file = fs::File::open(path).ok()?;
-    let reader = BufReader::new(file);
-    Some(reader.lines().count().saturating_sub(1)) // -1 pour enlever l'en-tête
-}
-
-/// Extrait la plage de dates depuis le chemin du fichier
-fn extract_date_range_from_path(path: &PathBuf) -> Option<String> {
-    let filename = path.file_name()?.to_string_lossy();
-    extract_date_range_from_filename(&filename)
-}
-
+/// Liste tous les fichiers CSV de paires
 #[tauri::command]
 pub async fn list_pair_csv_files() -> Result<Vec<PairFileInfo>, String> {
     tracing::info!("📂 Listing pair CSV files...");
@@ -197,4 +156,25 @@ pub async fn delete_pair_files(file_paths: Vec<String>) -> Result<usize, String>
     }
     tracing::info!("✅ Deleted {} files", deleted);
     Ok(deleted)
+}
+
+/// Récupère les statistiques globales des données de paires
+#[tauri::command]
+pub async fn get_pair_data_summary() -> Result<PairDataSummary, String> {
+    tracing::info!("📊 Getting pair data summary...");
+    
+    let files = list_pair_csv_files().await?;
+    
+    // Convertir les PairFileInfo vers le format attendu par le service
+    let stats_files: Vec<crate::services::pair_data_stats::PairFileInfo> = files.iter().map(|f| {
+        crate::services::pair_data_stats::PairFileInfo {
+            pair: f.pair.clone(),
+            line_count: f.line_count,
+            size_bytes: f.size_bytes,
+            date_range: f.date_range.clone(),
+            modified: f.modified.clone(),
+        }
+    }).collect();
+    
+    Ok(calculate_pair_summary(stats_files))
 }

@@ -1,18 +1,5 @@
 <template>
   <div class="main-container">
-    <!-- Header -->
-    <div class="header-section">
-      <div class="header-left">
-        <h2 class="main-title">
-          <span class="icon">💾</span>
-          Gestion des Imports
-        </h2>
-        <p class="main-subtitle">
-          Importez vos données de calendrier économique et de paires forex
-        </p>
-      </div>
-    </div>
-
     <!-- Mode selector -->
     <div class="view-mode-selector">
       <button 
@@ -65,36 +52,6 @@
 
         <!-- Liste des fichiers disponibles -->
         <CalendarFilesList ref="calendarFilesListRef" />
-        
-        <!-- Section Import Automatisé -->
-        <div class="import-section">
-          <h4>📥 Import automatique</h4>
-          <p class="import-hint">
-            Sélectionnez votre fichier (.csv ou .xlsx) pour un import automatique complet
-          </p>
-          <div class="import-controls">
-            <button @click="selectFile" class="btn btn-browse" :disabled="importing">
-              📁 Parcourir
-            </button>
-            <input 
-              v-model="selectedFileName" 
-              placeholder="Aucun fichier sélectionné"
-              class="input input-wide"
-              readonly
-            />
-            <button @click="importCalendar" class="btn btn-primary" :disabled="!selectedFilePath || importing">
-              {{ importing ? '⏳ Import...' : '📥 Importer' }}
-            </button>
-          </div>
-          
-          <div v-if="importSuccess" class="success">
-            ✅ {{ importSuccess }}
-          </div>
-          
-          <div v-if="importError" class="error">
-            ❌ {{ importError }}
-          </div>
-        </div>
       </div>
 
       <!-- Données de Paires Content -->
@@ -108,7 +65,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-import { open } from '@tauri-apps/plugin-dialog'
 import PairDataImport from './PairDataImport.vue'
 import CalendarFilesList from './CalendarFilesList.vue'
 import CalendarFileSelector from './CalendarFileSelector.vue'
@@ -121,12 +77,7 @@ interface CalendarImportInfo {
 }
 
 const activeSubTab = ref<'calendar' | 'pairs'>('calendar')
-const selectedFilePath = ref('')
-const selectedFileName = ref('')
 const selectedCalendarFile = ref<string>('') // Nouveau: fichier calendrier actif
-const importing = ref(false)
-const importSuccess = ref('')
-const importError = ref('')
 const importInfo = ref<CalendarImportInfo | null>(null)
 const loadingInfo = ref(false)
 const fileSelectorRef = ref<InstanceType<typeof CalendarFileSelector> | null>(null)
@@ -182,55 +133,6 @@ async function loadImportInfo() {
     console.error('Erreur récupération info:', e)
   } finally {
     loadingInfo.value = false
-  }
-}
-
-async function selectFile() {
-  try {
-    const selected = await open({
-      multiple: false,
-      filters: [{
-        name: 'Calendrier',
-        extensions: ['csv', 'xlsx', 'xls']
-      }]
-    })
-    
-    if (selected && typeof selected === 'string') {
-      selectedFilePath.value = selected
-      const parts = selected.split('/')
-      selectedFileName.value = parts[parts.length - 1]
-    }
-  } catch (e) {
-    importError.value = `Erreur sélection fichier: ${e}`
-  }
-}
-
-async function importCalendar() {
-  if (!selectedFilePath.value) return
-  
-  importing.value = true
-  importSuccess.value = ''
-  importError.value = ''
-  
-  try {
-    const count = await invoke<number>('import_and_convert_calendar', {
-      sourcePath: selectedFilePath.value
-    })
-    importSuccess.value = `${count} événements importés avec succès !`
-    selectedFilePath.value = ''
-    selectedFileName.value = ''
-    
-    // Rafraîchir automatiquement la liste des fichiers
-    if (calendarFilesListRef.value) {
-      await calendarFilesListRef.value.refreshFiles()
-    }
-    
-    await loadImportInfo()
-    setTimeout(() => { importSuccess.value = '' }, 5000)
-  } catch (e) {
-    importError.value = `Échec import: ${e}`
-  } finally {
-    importing.value = false
   }
 }
 
@@ -370,93 +272,5 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.2);
   padding: 4px 12px;
   border-radius: 6px;
-}
-
-.import-section {
-  background: linear-gradient(135deg, #1f6feb 0%, #388bfd 100%);
-  border-radius: 12px;
-  padding: 20px;
-  color: white;
-}
-
-.import-hint {
-  font-size: 0.9em;
-  opacity: 0.9;
-  margin-bottom: 15px;
-}
-
-.import-controls {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
-.btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.btn-browse {
-  background: #17a2b8;
-  color: white;
-  min-width: 120px;
-}
-
-.btn-browse:hover:not(:disabled) {
-  background: #138496;
-  transform: translateY(-2px);
-}
-
-.btn-browse:disabled {
-  background: #6c757d;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.input-wide {
-  flex: 1;
-  background: #0d1117;
-  color: #e6edf3;
-  border: 2px solid #30363d;
-  padding: 10px;
-  border-radius: 6px;
-}
-
-.btn-primary {
-  background: #238636;
-  color: white;
-  min-width: 120px;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #2ea043;
-  transform: translateY(-2px);
-}
-
-.btn-primary:disabled {
-  background: #6c757d;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.success {
-  padding: 10px;
-  background: rgba(35, 134, 54, 0.2);
-  border: 1px solid rgba(35, 134, 54, 0.5);
-  border-radius: 6px;
-  color: #3fb950;
-  font-weight: 500;
-}
-
-.error {
-  color: #f97583;
-  background: rgba(220, 53, 69, 0.1);
-  border: 1px solid rgba(220, 53, 69, 0.3);
-  border-radius: 6px;
-  padding: 10px;
 }
 </style>

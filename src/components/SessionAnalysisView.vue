@@ -1,30 +1,5 @@
 <template>
   <div class="main-container">
-    <div class="header-section">
-      <div class="header-left">
-        <h2 class="main-title">
-          <span class="icon">📍</span>
-          Analyse Volatilité par Sessions Forex
-        </h2>
-        <p class="main-subtitle">
-          Analyse rétrospective de la volatilité selon les sessions de trading (horaires de Paris)
-        </p>
-      </div>
-      <div class="header-right">
-        <select 
-          id="session-symbol" 
-          v-model="selectedSymbol" 
-          @change="analyzeSymbol"
-          class="inline-symbol-select"
-        >
-          <option value="" style="color: #000000;">Choisir une paire</option>
-          <option v-for="symbolInfo in symbols" :key="symbolInfo.symbol" :value="symbolInfo.symbol">
-            {{ symbolInfo.symbol }}
-          </option>
-        </select>
-      </div>
-    </div>
-
     <!-- Contenu -->
     <div class="content-area">
       <!-- Loading -->
@@ -39,7 +14,7 @@
         <p>{{ error }}</p>
       </div>
 
-      <!-- Message de bienvenue -->
+      <!-- Message de bienvenue avec dropdown -->
       <div v-if="!selectedSymbol && !loading && !error" class="welcome">
         <div class="welcome-icon">🌍</div>
         <h3>Sélectionnez une paire pour analyser sa volatilité par session</h3>
@@ -47,6 +22,19 @@
           Cette analyse montre comment la volatilité historique de chaque paire 
           varie selon les sessions de trading mondiales (Sydney, Tokyo, Londres, New York).
         </p>
+        <div class="welcome-select-container">
+          <select 
+            id="session-symbol" 
+            v-model="selectedSymbol" 
+            @change="analyzeSymbol"
+            class="welcome-symbol-select"
+          >
+            <option value="">Choisir une paire</option>
+            <option v-for="symbolInfo in symbols" :key="symbolInfo.symbol" :value="symbolInfo.symbol">
+              {{ symbolInfo.symbol }}
+            </option>
+          </select>
+        </div>
       </div>
 
       <!-- Résultats -->
@@ -506,8 +494,42 @@ async function analyzeSymbol() {
   font-size: 1.1em;
   color: #a0aec0;
   max-width: 600px;
-  margin: 0 auto;
+  margin: 0 auto 30px auto;
   line-height: 1.6;
+}
+
+.welcome-select-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.welcome-symbol-select {
+  padding: 12px 24px;
+  font-size: 1.1em;
+  border-radius: 8px;
+  border: 2px solid #4a5568;
+  background: #ffffff;
+  color: #000000;
+  cursor: pointer;
+  transition: all 0.3s;
+  min-width: 250px;
+}
+
+.welcome-symbol-select option {
+  background: #ffffff;
+  color: #000000;
+}
+
+.welcome-symbol-select:hover {
+  border-color: #667eea;
+  background: #f7fafc;
+}
+
+.welcome-symbol-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
 
 .results {

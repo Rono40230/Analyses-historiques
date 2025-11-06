@@ -2,6 +2,20 @@
   <div class="files-list-section">
     <div class="section-header">
       <h4>📁 Fichiers CSV disponibles</h4>
+      <button @click="handleImportClick" class="btn-import-header" :disabled="importing">
+        📥 Importer vos données
+      </button>
+    </div>
+
+    <!-- Import en cours : sablier tournant -->
+    <div v-if="importing" class="importing-overlay">
+      <div class="hourglass">⏳</div>
+      <p class="importing-text">Import en cours...</p>
+    </div>
+
+    <!-- Message d'erreur uniquement -->
+    <div v-if="importError" class="error-message">
+      ❌ {{ importError }}
     </div>
 
     <div v-if="loading" class="loading-indicator">
@@ -63,6 +77,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { open } from '@tauri-apps/plugin-dialog'
+import { useVolatilityStore } from '../stores/volatility'
 
 interface PairFileInfo {
   filename: string
@@ -77,9 +93,16 @@ interface PairFileInfo {
   modified: string
 }
 
+const volatilityStore = useVolatilityStore()
 const files = ref<PairFileInfo[]>([])
 const loading = ref(false)
 const error = ref('')
+const importing = ref(false)
+const importError = ref('')
+
+const emit = defineEmits<{
+  filesRefreshed: []
+}>()
 
 async function refreshFiles() {
   loading.value = true
@@ -88,10 +111,59 @@ async function refreshFiles() {
   try {
     const result = await invoke<PairFileInfo[]>('list_pair_csv_files')
     files.value = result
+    emit('filesRefreshed')
   } catch (e) {
     error.value = `Erreur lors du chargement: ${e}`
   } finally {
     loading.value = false
+  }
+}
+
+async function selectFiles() {
+  try {
+    const selected = await open({
+      multiple: true,
+      filters: [{
+        name: 'Fichiers CSV',
+        extensions: ['csv']
+      }]
+    })
+    
+    if (selected) {
+      return Array.isArray(selected) ? selected : [selected]
+    }
+  } catch (e) {
+    importError.value = `Erreur sélection fichier: ${e}`
+  }
+  return null
+}
+
+async function handleImportClick() {
+  const selectedPaths = await selectFiles()
+  if (!selectedPaths || selectedPaths.length === 0) return
+  
+  importing.value = true
+  importError.value = ''
+  
+  try {
+    const report = await invoke<any>('import_and_clean_files', {
+      paths: selectedPaths
+    })
+    
+    console.log(`✅ Import terminé: ${report.successful}/${report.total_files} fichiers`)
+    
+    // Rafraîchir automatiquement la liste des fichiers
+    await refreshFiles()
+    
+    // Émettre l'événement pour rafraîchir le résumé
+    emit('filesRefreshed')
+    
+    // Rafraîchir le store
+    await volatilityStore.loadSymbols()
+  } catch (e) {
+    importError.value = `Échec import: ${e}`
+  } finally {
+    importing.value = false
   }
 }
 
@@ -154,6 +226,58 @@ onMounted(() => {
   color: #e6edf3;
   margin: 0;
   font-size: 1.2em;
+}
+
+.btn-import-header {
+  background: linear-gradient(180deg, #2ea043 0%, #238636 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(46, 160, 67, 0.2);
+}
+
+.btn-import-header:hover:not(:disabled) {
+  background: linear-gradient(180deg, #3fb950 0%, #2ea043 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(46, 160, 67, 0.3);
+}
+
+.btn-import-header:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.importing-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+  background: rgba(56, 139, 253, 0.05);
+  border: 1px solid rgba(56, 139, 253, 0.2);
+  border-radius: 8px;
+}
+
+.hourglass {
+  font-size: 2em;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.importing-text {
+  color: #58a6ff;
+  font-weight: 500;
+  margin: 0;
 }
 
 .btn {

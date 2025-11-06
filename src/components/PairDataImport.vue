@@ -1,61 +1,117 @@
 <template>
   <div class="pair-import">
-    <!-- Liste des fichiers CSV disponibles -->
-    <PairFilesList ref="filesListRef" />
-
-    <!-- CSV Cleaner Section -->
-    <CleanerSection 
-      @import-completed="handleImportCompleted"
-      @error="handleError"
-    />
-
-    <!-- Afficher uniquement les erreurs -->
-    <div v-if="importError" class="import-error-message">
-      ❌ {{ importError }}
+    <!-- Bandeau d'informations -->
+    <div v-if="summary && summary.total_files > 0" class="import-info">
+      <div class="info-item">
+        <span class="info-label">💱 Paires en base :</span>
+        <span class="info-value">{{ summary.total_pairs }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">📊 Fichiers CSV :</span>
+        <span class="info-value">{{ summary.total_files }}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">📈 Lignes de données :</span>
+        <span class="info-value">{{ summary.total_lines.toLocaleString() }}</span>
+      </div>
+      <div class="info-item" v-if="summary.date_range_start && summary.date_range_end">
+        <span class="info-label">📆 Période couverte :</span>
+        <span class="info-value">{{ summary.date_range_start }} → {{ summary.date_range_end }}</span>
+      </div>
+      <div class="info-item" v-if="summary.last_import_date">
+        <span class="info-label">🕒 Dernier import :</span>
+        <span class="info-value">{{ summary.last_import_date }}</span>
+      </div>
     </div>
+    
+    <div v-else-if="!loadingInfo" class="import-info warning">
+      <span>⚠️ Aucune donnée de paire importée. Importez vos fichiers CSV pour commencer.</span>
+    </div>
+
+    <!-- Liste des fichiers CSV disponibles -->
+    <PairFilesList ref="filesListRef" @files-refreshed="loadSummary" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useVolatilityStore } from '../stores/volatility'
-import { useDataRefresh } from '../composables/useDataRefresh'
+import { ref, onMounted } from 'vue'
+import { invoke } from '@tauri-apps/api/core'
 import PairFilesList from './PairFilesList.vue'
-import CleanerSection from './CleanerSection.vue'
 
-const volatilityStore = useVolatilityStore()
-const { triggerPairDataRefresh } = useDataRefresh()
+interface PairDataSummary {
+  total_pairs: number
+  total_files: number
+  total_lines: number
+  total_size_bytes: number
+  date_range_start: string | null
+  date_range_end: string | null
+  last_import_date: string | null
+}
+
 const filesListRef = ref<InstanceType<typeof PairFilesList>>()
-const importError = ref('')
+const summary = ref<PairDataSummary | null>(null)
+const loadingInfo = ref(false)
 
-async function handleImportCompleted(success: boolean) {
-  if (success) {
-    // Rafraîchir automatiquement la liste des fichiers
-    if (filesListRef.value) {
-      await filesListRef.value.refreshFiles()
-    }
-    
-    // Rafraîchir automatiquement le store Pinia (pour le dropdown)
-    await volatilityStore.loadSymbols()
-    
-    // Notifier tous les autres composants abonnés
-    await triggerPairDataRefresh()
-    
-    // Effacer toute erreur précédente
-    importError.value = ''
-  } else {
-    importError.value = 'Une erreur s\'est produite lors de l\'import'
+async function loadSummary() {
+  loadingInfo.value = true
+  try {
+    const data = await invoke<PairDataSummary>('get_pair_data_summary')
+    summary.value = data
+  } catch (e) {
+    console.error('Erreur récupération summary:', e)
+  } finally {
+    loadingInfo.value = false
   }
 }
 
-function handleError(message: string) {
-  importError.value = message
-}
+onMounted(() => {
+  loadSummary()
+})
 </script>
 
 <style scoped>
 .pair-import {
   padding: 20px 0;
+}
+
+.import-info {
+  background: linear-gradient(135deg, #238636 0%, #2ea043 100%);
+  border-radius: 10px;
+  padding: 15px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(46, 160, 67, 0.2);
+}
+
+.import-info.warning {
+  background: linear-gradient(135deg, #d29922 0%, #dcaf3a 100%);
+  justify-content: center;
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.info-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.info-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+.info-value {
+  color: white;
+  font-weight: 700;
+  font-size: 1em;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 6px;
 }
 
 .import-error-message {

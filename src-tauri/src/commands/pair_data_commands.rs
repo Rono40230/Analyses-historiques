@@ -1,7 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::fs;
 use serde::{Deserialize, Serialize};
-use crate::services::PairDataConverter;
+use crate::services::{PairDataConverter, handle_duplicate};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ImportSummary {
@@ -122,27 +122,4 @@ fn process_single_file(
         .map_err(|e| format!("Erreur suppression fichier source: {}", e))?;
     
     Ok((metadata.pair, metadata.timeframe))
-}
-
-/// Gère les doublons en ajoutant un suffixe de version
-fn handle_duplicate(output_dir: &Path, filename: &str) -> Result<PathBuf, String> {
-    // Extraire nom et extension
-    let (base, ext) = if let Some(pos) = filename.rfind('.') {
-        (&filename[..pos], &filename[pos..])
-    } else {
-        (filename, "")
-    };
-    
-    // Chercher une version disponible
-    for version in 2..=100 {
-        let new_filename = format!("{}_v{}{}", base, version, ext);
-        let new_path = output_dir.join(&new_filename);
-        
-        if !new_path.exists() {
-            println!("⚠️  Doublon détecté, sauvegarde comme: {}", new_filename);
-            return Ok(new_path);
-        }
-    }
-    
-    Err("Trop de versions du même fichier".to_string())
 }
