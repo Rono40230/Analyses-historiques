@@ -95,6 +95,7 @@ pub fn run() {
             get_pair_event_history, // Historique des événements pour une paire
             // Pair data import commands (Phase 4)
             import_pair_data,
+            clean_csv_files, // Nouveau: nettoyage CSV européens
             // Session analysis commands (Phase 5)
             analyze_sessions,
             // File management commands (Phase 6)

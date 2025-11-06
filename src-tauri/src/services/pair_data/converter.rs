@@ -36,14 +36,28 @@ impl PairDataConverter {
         CsvFormat::Generic
     }
     
-    /// Lit et normalise un fichier CSV
+    /// Lit et normalise un fichier CSV  
     pub fn read_and_normalize(path: &str) -> Result<Vec<NormalizedCandle>, String> {
+        use std::io::{BufRead, BufReader};
+        use std::fs::File;
+        
+        // Lire et normaliser le fichier si format européen
+        let file = File::open(path).map_err(|e| format!("Erreur ouverture: {}", e))?;
+        let buf_reader = BufReader::new(file);
+        let lines: Vec<String> = buf_reader.lines().collect::<Result<_, _>>().map_err(|e| e.to_string())?;
+        
+        if lines.is_empty() {
+            return Err("Fichier vide".to_string());
+        }
+        
+        // Les fichiers sont déjà nettoyés par csv_cleaner avant l'import
+        let content = lines.join("\n");
+        
         let mut reader = csv::ReaderBuilder::new()
             .has_headers(true)
-            .flexible(true)  // Permet des lignes avec un nombre variable de colonnes
-            .trim(csv::Trim::All)  // Nettoie les espaces
-            .from_path(path)
-            .map_err(|e| format!("Erreur lecture CSV: {}", e))?;
+            .flexible(true)
+            .trim(csv::Trim::All)
+            .from_reader(content.as_bytes());
         
         // Lire les headers
         let headers: Vec<String> = reader.headers()

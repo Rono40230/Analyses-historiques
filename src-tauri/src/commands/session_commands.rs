@@ -3,7 +3,7 @@ use crate::services::session_analyzer::{
     CalendarCorrelation, OverlapStats, SessionAnalysisResult, SessionAnalyzer,
     SessionStats, TradingSession,
 };
-use crate::services::CsvLoader;
+use crate::services::{CsvLoader, CalendarCorrelator};
 use chrono::{NaiveDateTime, Timelike};
 use std::collections::HashMap;
 use tauri::State;
@@ -107,8 +107,12 @@ pub async fn analyze_sessions(
     // Calculer les chevauchements
     let overlaps = calculate_overlaps(&sessions, &candles, is_winter, avg_daily_volatility)?;
 
-    // Corrélation avec calendrier (TODO: implémenter avec vraies données calendrier)
-    let calendar_correlation = calculate_calendar_correlation(&sessions);
+    // Corrélation avec calendrier (vraies données DB)
+    let pool_guard = _state.pool.lock()
+        .map_err(|e| format!("Erreur lock pool: {}", e))?;
+    let pool = pool_guard.as_ref()
+        .ok_or("Pool DB non initialisé")?;
+    let calendar_correlation = CalendarCorrelator::calculate_correlation(&sessions, pool)?;
 
     // Générer les recommandations
     let recommendations =
@@ -184,14 +188,4 @@ fn calculate_overlaps(
     }
 
     Ok(overlaps)
-}
-
-fn calculate_calendar_correlation(_sessions: &[TradingSession]) -> Vec<CalendarCorrelation> {
-    // TODO: Implémenter avec de vraies données du calendrier économique
-    vec![
-        CalendarCorrelation { session: "Londres".to_string(), high_impact_events: 87, event_volatility: 62.5, impact_percentage: 145.0 },
-        CalendarCorrelation { session: "New York".to_string(), high_impact_events: 64, event_volatility: 58.3, impact_percentage: 132.0 },
-        CalendarCorrelation { session: "Tokyo".to_string(), high_impact_events: 32, event_volatility: 28.7, impact_percentage: 85.0 },
-        CalendarCorrelation { session: "Sydney".to_string(), high_impact_events: 12, event_volatility: 15.4, impact_percentage: 62.0 },
-    ]
 }

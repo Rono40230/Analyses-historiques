@@ -16,15 +16,22 @@ impl CalendarScraper {
     }
 
     /// Récupère les événements historiques pour un symbole dans une plage de dates
-    /// TEMPORAIREMENT SIMPLIFIÉ : retourne toujours un vecteur vide pour éviter les erreurs
     pub fn get_historical_events(
         &self,
-        _symbol: &str,
-        _start_time: NaiveDateTime,
-        _end_time: NaiveDateTime,
+        symbol: &str,
+        start_time: NaiveDateTime,
+        end_time: NaiveDateTime,
     ) -> Result<Vec<CalendarEvent>, VolatilityError> {
-        // TODO: Implémenter la vraie logique quand la table sera corrigée
-        Ok(Vec::new())
+        let mut conn = self.db_pool.get()
+            .map_err(|e| VolatilityError::DatabaseError(e.to_string()))?;
+
+        calendar_events::table
+            .filter(calendar_events::symbol.eq(symbol))
+            .filter(calendar_events::event_time.between(start_time, end_time))
+            .order(calendar_events::event_time.asc())
+            .select(CalendarEvent::as_select())
+            .load(&mut conn)
+            .map_err(|e| VolatilityError::DatabaseError(e.to_string()))
     }
 
     /// Récupère les événements à venir pour un symbole
@@ -46,15 +53,5 @@ impl CalendarScraper {
             .select(CalendarEvent::as_select())
             .load(&mut conn)
             .map_err(|e| VolatilityError::DatabaseError(e.to_string()))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_calendar_scraper_creation() {
-        assert!(true);
     }
 }

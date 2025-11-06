@@ -28,6 +28,7 @@ src-tauri/gen/
 # Data files (trop volumineux pour Git)
 data/csv/*.csv
 src-tauri/data/csv/*.csv
+Fichiers originaux/*.csv
 
 # Bases de données
 *.db

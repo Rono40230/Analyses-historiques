@@ -17,25 +17,34 @@ pub struct CsvLoader {
 
 impl CsvLoader {
     /// Crée un nouveau CSV Loader
+    /// Priorité : .local/share (données utilisateur) puis data/csv (exemples)
     pub fn new() -> Self {
-        // Utilise le dossier de données utilisateur pour éviter le hot-reload
-        // ~/.local/share/volatility-analyzer/data/csv/
-        let csv_directory = dirs::data_local_dir()
-            .map(|dir| dir.join("volatility-analyzer").join("data").join("csv"))
-            .unwrap_or_else(|| {
-                // Fallback sur l'ancien chemin si le dossier utilisateur n'est pas accessible
-                if cfg!(debug_assertions) {
-                    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                        .parent()
-                        .unwrap_or(&PathBuf::from("."))
-                        .join("data/csv")
-                } else {
-                    std::env::current_exe()
-                        .ok()
-                        .and_then(|exe| exe.parent().map(|p| p.join("data/csv")))
-                        .unwrap_or_else(|| PathBuf::from("data/csv"))
-                }
-            });
+        let user_csv = dirs::data_local_dir()
+            .map(|dir| dir.join("volatility-analyzer").join("data").join("csv"));
+
+        let project_csv = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap_or(&PathBuf::from("."))
+            .join("data/csv");
+
+        // Utiliser .local/share si il contient des CSV, sinon fallback sur data/csv
+        let csv_directory = if let Some(ref user_dir) = user_csv {
+            let has_user_csv = user_dir.read_dir().ok().and_then(|mut d| d.next()).is_some();
+            let has_project_csv = project_csv.read_dir().ok().and_then(|mut d| d.next()).is_some();
+            
+            if has_user_csv {
+                info!("Using user CSV: {:?}", user_dir);
+                user_dir.clone()
+            } else if has_project_csv {
+                info!("User empty, using project CSV: {:?}", project_csv);
+                project_csv
+            } else {
+                info!("No CSV found, using: {:?}", user_dir);
+                user_dir.clone()
+            }
+        } else {
+            project_csv
+        };
         
         Self { csv_directory }
     }
@@ -56,26 +65,18 @@ impl CsvLoader {
         if !self.csv_directory.exists() {
             info!("Creating CSV directory: {:?}", self.csv_directory);
             fs::create_dir_all(&self.csv_directory).map_err(|e| {
-                VolatilityError::CsvLoadError(format!(
-                    "Cannot create directory {:?}: {}",
-                    self.csv_directory, e
-                ))
+                VolatilityError::CsvLoadError(format!("Cannot create directory {:?}: {}", self.csv_directory, e))
             })?;
-            // Retourner une liste vide si le dossier vient d'être créé
             return Ok(Vec::new());
         }
 
-        let entries = fs::read_dir(&self.csv_directory).map_err(|e| {
-            VolatilityError::CsvLoadError(format!("Cannot read directory: {}", e))
-        })?;
+        let entries = fs::read_dir(&self.csv_directory)
+            .map_err(|e| VolatilityError::CsvLoadError(format!("Cannot read directory: {}", e)))?;
 
         let mut symbols = Vec::new();
 
         for entry in entries {
-            let entry = entry.map_err(|e| {
-                VolatilityError::CsvLoadError(format!("Cannot read entry: {}", e))
-            })?;
-
+            let entry = entry.map_err(|e| VolatilityError::CsvLoadError(format!("Cannot read entry: {}", e)))?;
             let path = entry.path();
 
             if path.extension().and_then(|s| s.to_str()) == Some("csv") {
@@ -154,42 +155,51 @@ impl CsvLoader {
 
         for result in reader.records() {
             line_number += 1;
-
             let record = result.map_err(|e| {
                 VolatilityError::InvalidCsvData(format!("Line {}: {}", line_number, e))
             })?;
 
-            // Parse chaque champ
-            // Format: Time (UTC),Open,High,Low,Close,Volume
-            if record.len() < 6 {
-                warn!("Line {}: Skipping incomplete record", line_number);
-                continue;
-            }
+            // Détection format: 6 champs (normal) ou 11 champs (virgules décimales EU)
+            let (time_str, open_str, high_str, low_str, close_str, volume_str) = 
+                if record.len() == 11 {
+                    // Format EU: reconstruire les nombres (0,583 → 0.583)
+                    (record[0].to_string(), 
+                     format!("{}.{}", &record[1], &record[2]),
+                     format!("{}.{}", &record[3], &record[4]),
+                     format!("{}.{}", &record[5], &record[6]),
+                     format!("{}.{}", &record[7], &record[8]),
+                     format!("{}.{}", &record[9], &record[10]))
+                } else if record.len() == 6 {
+                    (record[0].to_string(), record[1].to_string(), record[2].to_string(),
+                     record[3].to_string(), record[4].to_string(), record[5].to_string())
+                } else {
+                    warn!("Line {}: Unexpected {} fields, skipping", line_number, record.len());
+                    continue;
+                };
 
-            let time_str = &record[0];
-            let open_str = &record[1];
-            let high_str = &record[2];
-            let low_str = &record[3];
-            let close_str = &record[4];
-            let volume_str = &record[5];
-
-            // Parse datetime (format: "2025.01.01 00:00:00")
-            let datetime = parse_datetime(time_str).map_err(|e| {
+            let datetime = parse_datetime(&time_str).map_err(|e| {
                 VolatilityError::InvalidCsvData(format!("Line {}: Invalid datetime '{}': {}", line_number, time_str, e))
             })?;
 
             // Parse prices
-            let open = parse_price(open_str, "open", line_number)?;
-            let high = parse_price(high_str, "high", line_number)?;
-            let low = parse_price(low_str, "low", line_number)?;
-            let close = parse_price(close_str, "close", line_number)?;
-            let volume = parse_price(volume_str, "volume", line_number)?;
+            let open = parse_price(&open_str, "open", line_number)?;
+            let high = parse_price(&high_str, "high", line_number)?;
+            let low = parse_price(&low_str, "low", line_number)?;
+            let close = parse_price(&close_str, "close", line_number)?;
+            let volume = parse_price(&volume_str, "volume", line_number)?;
 
-            // Validation basique
+            // Validation basique des prix
             if high < low {
                 return Err(VolatilityError::InvalidCsvData(format!(
-                    "Line {}: high ({}) < low ({})",
+                    "Line {}: high ({}) < low ({}). CSV corrompu, réimportez les données.",
                     line_number, high, low
+                )));
+            }
+
+            if open < 0.0 || high < 0.0 || low < 0.0 || close < 0.0 || volume < 0.0 {
+                return Err(VolatilityError::InvalidCsvData(format!(
+                    "Line {}: Valeurs négatives: open={}, high={}, low={}, close={}, vol={}",
+                    line_number, open, high, low, close, volume
                 )));
             }
 
@@ -219,9 +229,17 @@ impl Default for CsvLoader {
     }
 }
 
-/// Parse une date au format "YYYY.MM.DD HH:MM:SS"
+/// Parse une date depuis un timestamp Unix ou format "YYYY.MM.DD HH:MM:SS"
 fn parse_datetime(s: &str) -> Result<DateTime<Utc>> {
-    // Format: "2025.01.01 00:00:00"
+    // Essayer d'abord le format timestamp Unix (priorité car c'est le format réel des CSV)
+    if let Ok(timestamp) = s.parse::<i64>() {
+        return DateTime::from_timestamp(timestamp, 0)
+            .ok_or_else(|| VolatilityError::ChronoError(
+                format!("Invalid Unix timestamp: {}", timestamp)
+            ));
+    }
+
+    // Fallback: Format "2025.01.01 00:00:00"
     // On remplace les points par des tirets pour chrono
     let normalized = s.replace('.', "-");
 
@@ -247,9 +265,17 @@ mod tests {
 
     #[test]
     fn test_parse_datetime() {
+        // Test timestamp Unix
+        let result = parse_datetime("1704117600");
+        assert!(result.is_ok());
+        let dt = result.unwrap();
+        assert_eq!(dt.year(), 2024);
+        assert_eq!(dt.month(), 1);
+        assert_eq!(dt.day(), 1);
+
+        // Test format "YYYY.MM.DD HH:MM:SS"
         let result = parse_datetime("2025.01.01 00:00:00");
         assert!(result.is_ok());
-
         let dt = result.unwrap();
         assert_eq!(dt.year(), 2025);
         assert_eq!(dt.month(), 1);

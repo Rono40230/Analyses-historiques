@@ -8,6 +8,11 @@ use super::datetime_parser::DateTimeParser;
 pub(super) struct FormatParsers;
 
 impl FormatParsers {
+    /// Parse un nombre avec virgule (EU) ou point (US) comme séparateur décimal
+    fn parse_decimal(s: &str) -> Result<f64, String> {
+        s.replace(',', ".").parse::<f64>().map_err(|_| format!("Nombre invalide: {}", s))
+    }
+
     /// Parse une ligne selon le format détecté
     pub(super) fn parse_record(
         record: &csv::StringRecord,
@@ -37,11 +42,11 @@ impl FormatParsers {
         
         Ok(NormalizedCandle {
             timestamp,
-            open: record.get(2).ok_or("Open column missing")?.parse().map_err(|_| "Open invalide")?,
-            high: record.get(3).ok_or("High column missing")?.parse().map_err(|_| "High invalide")?,
-            low: record.get(4).ok_or("Low column missing")?.parse().map_err(|_| "Low invalide")?,
-            close: record.get(5).ok_or("Close column missing")?.parse().map_err(|_| "Close invalide")?,
-            volume: record.get(6).ok_or("Volume column missing")?.parse().unwrap_or(0.0),
+            open: Self::parse_decimal(record.get(2).ok_or("Open column missing")?)?,
+            high: Self::parse_decimal(record.get(3).ok_or("High column missing")?)?,
+            low: Self::parse_decimal(record.get(4).ok_or("Low column missing")?)?,
+            close: Self::parse_decimal(record.get(5).ok_or("Close column missing")?)?,
+            volume: Self::parse_decimal(record.get(6).ok_or("Volume column missing")?).unwrap_or(0.0),
         })
     }
     
@@ -62,11 +67,11 @@ impl FormatParsers {
         
         Ok(NormalizedCandle {
             timestamp,
-            open: record.get(1).ok_or("Open column missing")?.parse().map_err(|_| "Open invalide")?,
-            high: record.get(2).ok_or("High column missing")?.parse().map_err(|_| "High invalide")?,
-            low: record.get(3).ok_or("Low column missing")?.parse().map_err(|_| "Low invalide")?,
-            close: record.get(4).ok_or("Close column missing")?.parse().map_err(|_| "Close invalide")?,
-            volume: record.get(5).ok_or("Volume column missing")?.parse().unwrap_or(0.0),
+            open: Self::parse_decimal(record.get(1).ok_or("Open column missing")?)?,
+            high: Self::parse_decimal(record.get(2).ok_or("High column missing")?)?,
+            low: Self::parse_decimal(record.get(3).ok_or("Low column missing")?)?,
+            close: Self::parse_decimal(record.get(4).ok_or("Close column missing")?)?,
+            volume: Self::parse_decimal(record.get(5).ok_or("Volume column missing")?).unwrap_or(0.0),
         })
     }
     
@@ -81,11 +86,11 @@ impl FormatParsers {
         
         Ok(NormalizedCandle {
             timestamp,
-            open: record.get(1).ok_or("Open column missing")?.parse().map_err(|_| "Open invalide")?,
-            high: record.get(2).ok_or("High column missing")?.parse().map_err(|_| "High invalide")?,
-            low: record.get(3).ok_or("Low column missing")?.parse().map_err(|_| "Low invalide")?,
-            close: record.get(4).ok_or("Close column missing")?.parse().map_err(|_| "Close invalide")?,
-            volume: record.get(5).ok_or("Volume column missing")?.parse().unwrap_or(0.0),
+            open: Self::parse_decimal(record.get(1).ok_or("Open column missing")?)?,
+            high: Self::parse_decimal(record.get(2).ok_or("High column missing")?)?,
+            low: Self::parse_decimal(record.get(3).ok_or("Low column missing")?)?,
+            close: Self::parse_decimal(record.get(4).ok_or("Close column missing")?)?,
+            volume: Self::parse_decimal(record.get(5).ok_or("Volume column missing")?).unwrap_or(0.0),
         })
     }
     
@@ -111,11 +116,11 @@ impl FormatParsers {
         
         Ok(NormalizedCandle {
             timestamp,
-            open: record.get(open_idx).ok_or("Open value missing")?.parse().map_err(|_| "Open invalide")?,
-            high: record.get(high_idx).ok_or("High value missing")?.parse().map_err(|_| "High invalide")?,
-            low: record.get(low_idx).ok_or("Low value missing")?.parse().map_err(|_| "Low invalide")?,
-            close: record.get(close_idx).ok_or("Close value missing")?.parse().map_err(|_| "Close invalide")?,
-            volume: volume_idx.and_then(|idx| record.get(idx)?.parse().ok()).unwrap_or(0.0),
+            open: Self::parse_decimal(record.get(open_idx).ok_or("Open value missing")?)?,
+            high: Self::parse_decimal(record.get(high_idx).ok_or("High value missing")?)?,
+            low: Self::parse_decimal(record.get(low_idx).ok_or("Low value missing")?)?,
+            close: Self::parse_decimal(record.get(close_idx).ok_or("Close value missing")?)?,
+            volume: volume_idx.and_then(|idx| record.get(idx).and_then(|v| Self::parse_decimal(v).ok())).unwrap_or(0.0),
         })
     }
 }
