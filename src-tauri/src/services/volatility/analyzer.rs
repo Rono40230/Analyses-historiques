@@ -5,6 +5,7 @@ use crate::db::DbPool;
 use crate::models::{
     AnalysisResult, Candle, Result, RiskLevel, TradingRecommendation, VolatilityError,
 };
+use chrono::Datelike;
 use tracing::info;
 use super::hourly_stats::HourlyStatsCalculator;
 use super::metrics::MetricsAggregator;
@@ -29,6 +30,73 @@ impl VolatilityAnalyzer {
                 "No candles provided for analysis".to_string(),
             ));
         }
+
+        // Calculer période et timeframe avec format français
+        let period_start = self.candles.first()
+            .map(|c| {
+                let day = c.datetime.day();
+                let month = match c.datetime.month() {
+                    1 => "janvier",
+                    2 => "février",
+                    3 => "mars",
+                    4 => "avril",
+                    5 => "mai",
+                    6 => "juin",
+                    7 => "juillet",
+                    8 => "août",
+                    9 => "septembre",
+                    10 => "octobre",
+                    11 => "novembre",
+                    12 => "décembre",
+                    _ => "?",
+                };
+                let year = c.datetime.year();
+                format!("{} {} {}", day, month, year)
+            })
+            .unwrap_or_else(|| "N/A".to_string());
+        
+        let period_end = self.candles.last()
+            .map(|c| {
+                let day = c.datetime.day();
+                let month = match c.datetime.month() {
+                    1 => "janvier",
+                    2 => "février",
+                    3 => "mars",
+                    4 => "avril",
+                    5 => "mai",
+                    6 => "juin",
+                    7 => "juillet",
+                    8 => "août",
+                    9 => "septembre",
+                    10 => "octobre",
+                    11 => "novembre",
+                    12 => "décembre",
+                    _ => "?",
+                };
+                let year = c.datetime.year();
+                format!("{} {} {}", day, month, year)
+            })
+            .unwrap_or_else(|| "N/A".to_string());
+        
+        // Déterminer le timeframe en calculant l'intervalle moyen entre bougies
+        let timeframe = if self.candles.len() > 1 {
+            let first_ts = self.candles[0].datetime.timestamp();
+            let second_ts = self.candles[1].datetime.timestamp();
+            let interval_seconds = (second_ts - first_ts).abs();
+            
+            match interval_seconds {
+                60 => "M1",
+                300 => "M5",
+                900 => "M15",
+                1800 => "M30",
+                3600 => "H1",
+                14400 => "H4",
+                86400 => "D1",
+                _ => "M1", // Par défaut
+            }
+        } else {
+            "M1"
+        }.to_string();
 
         // 1. Calcule les statistiques par heure
         let calculator = HourlyStatsCalculator::new(&self.candles);
@@ -68,6 +136,9 @@ impl VolatilityAnalyzer {
 
         Ok(AnalysisResult {
             symbol: symbol.to_string(),
+            period_start,
+            period_end,
+            timeframe,
             hourly_stats,
             best_hours,
             confidence_score,

@@ -118,7 +118,11 @@ function switchTab(tab: 'volatility' | 'calendar' | 'correlation' | 'sessions') 
             </div>
 
             <template v-if="!loading && analysisResult">
-              <AnalysisPanel :result="analysisResult" />
+              <AnalysisPanel 
+                :result="analysisResult" 
+                :symbols="store.symbols"
+                @symbolSelected="handleSymbolSelected"
+              />
               <HourlyTable 
                 :stats="analysisResult.hourly_stats" 
                 :best-hours="analysisResult.best_hours"

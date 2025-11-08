@@ -1,7 +1,41 @@
 <template>
   <div v-if="result" class="analysis-panel">
     <div class="panel-header">
-      <h2>🎯 Analyse : {{ result.symbol }}</h2>
+      <div class="header-title-section">
+        <div class="title-with-selector">
+          <h2>🎯 Analyse :</h2>
+          <select 
+            v-model="currentSymbol" 
+            @change="onSymbolChange"
+            class="symbol-select-inline"
+          >
+            <option 
+              v-for="symbol in symbols" 
+              :key="symbol.symbol" 
+              :value="symbol.symbol"
+            >
+              {{ symbol.symbol }}
+            </option>
+          </select>
+        </div>
+        <div class="analysis-metadata">
+          <span class="metadata-item">
+            <span class="metadata-icon">📅</span>
+            <span class="metadata-label">Période:</span>
+            <span class="metadata-value">{{ result.period_start }} → {{ result.period_end }}</span>
+          </span>
+          <span class="metadata-item">
+            <span class="metadata-icon">📊</span>
+            <span class="metadata-label">Bougies:</span>
+            <span class="metadata-value">{{ result.global_metrics.total_candles.toLocaleString() }}</span>
+          </span>
+          <span class="metadata-item">
+            <span class="metadata-icon">⏱️</span>
+            <span class="metadata-label">Timeframe:</span>
+            <span class="metadata-value">{{ result.timeframe }}</span>
+          </span>
+        </div>
+      </div>
       <div class="header-badges">
         <span :class="['badge', 'recommendation', recommendationClass]">
           {{ formatRecommendation(result.recommendation) }}
@@ -25,45 +59,54 @@
     </div>
 
     <div class="metrics-grid">
-      <div class="metric-card">
+      <div class="metric-card" :title="tooltips.atr">
         <div class="metric-icon">📈</div>
-        <div class="metric-label">ATR Moyen</div>
+        <div class="metric-label">
+          ATR Moyen
+          <span class="info-icon">ℹ️</span>
+        </div>
         <div class="metric-value">{{ formatNumber(result.global_metrics.mean_atr, 5) }}</div>
       </div>
       
-      <div class="metric-card">
+      <div class="metric-card" :title="tooltips.volatility">
         <div class="metric-icon">📊</div>
-        <div class="metric-label">Volatilité</div>
+        <div class="metric-label">
+          Volatilité
+          <span class="info-icon">ℹ️</span>
+        </div>
         <div class="metric-value">{{ (result.global_metrics.mean_volatility * 100).toFixed(2) }}%</div>
       </div>
       
-      <div class="metric-card">
+      <div class="metric-card" :title="tooltips.bodyRange">
         <div class="metric-icon">🎯</div>
-        <div class="metric-label">Body Range</div>
+        <div class="metric-label">
+          Body Range
+          <span class="info-icon">ℹ️</span>
+        </div>
         <div class="metric-value">{{ result.global_metrics.mean_body_range.toFixed(1) }}%</div>
       </div>
       
-      <div class="metric-card">
+      <div class="metric-card" :title="tooltips.tickQuality">
         <div class="metric-icon">⚡</div>
-        <div class="metric-label">Tick Quality</div>
+        <div class="metric-label">
+          Tick Quality
+          <span class="info-icon">ℹ️</span>
+        </div>
         <div class="metric-value">{{ formatNumber(result.global_metrics.mean_tick_quality, 5) }}</div>
       </div>
       
-      <div class="metric-card">
+      <div class="metric-card" :title="tooltips.noiseRatio">
         <div class="metric-icon">🔊</div>
-        <div class="metric-label">Noise Ratio</div>
+        <div class="metric-label">
+          Noise Ratio
+          <span class="info-icon">ℹ️</span>
+        </div>
         <div class="metric-value">{{ result.global_metrics.mean_noise_ratio.toFixed(2) }}</div>
-      </div>
-      
-      <div class="metric-card">
-        <div class="metric-icon">📦</div>
-        <div class="metric-label">Total Bougies</div>
-        <div class="metric-value">{{ result.global_metrics.total_candles.toLocaleString() }}</div>
       </div>
     </div>
 
     <div class="best-hours-section">
-      <h3>⭐ Top 5 Heures de Trading (UTC)</h3>
+      <h3>⭐ Top 2 Meilleures Heures de Trading (UTC)</h3>
       <div class="hours-badges">
         <span 
           v-for="hour in result.best_hours" 
@@ -128,12 +171,106 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { AnalysisResult } from '../stores/volatility'
+import { computed, ref, watch } from 'vue'
+import type { AnalysisResult, SymbolInfo } from '../stores/volatility'
 
 const props = defineProps<{
   result: AnalysisResult | null
+  symbols: SymbolInfo[]
 }>()
+
+const emit = defineEmits<{
+  symbolSelected: [symbol: string]
+}>()
+
+const currentSymbol = ref(props.result?.symbol || '')
+
+// Mettre à jour currentSymbol quand result change
+watch(() => props.result?.symbol, (newSymbol) => {
+  if (newSymbol) {
+    currentSymbol.value = newSymbol
+  }
+})
+
+function onSymbolChange() {
+  if (currentSymbol.value) {
+    emit('symbolSelected', currentSymbol.value)
+  }
+}
+
+// Tooltips explicatifs pour chaque métrique
+const tooltips = {
+  atr: `ATR (Average True Range) - Moyenne de l'amplitude des mouvements
+  
+📊 UTILITÉ STRADDLE:
+• Base de calcul pour votre Stop Loss
+• Exemple: Si ATR = 0.00121, SL = 2.0 × ATR = 0.00242
+• Plus l'ATR est élevé, plus les stops doivent être larges
+
+✅ BON: > 0.001 (mouvements significatifs)
+⚠️ MOYEN: 0.0005 - 0.001
+❌ FAIBLE: < 0.0005 (peu de mouvement)`,
+
+  volatility: `Volatilité % - Amplitude moyenne des variations de prix
+
+📊 UTILITÉ STRADDLE:
+• Mesure la "nervosité" de la paire
+• Plus c'est élevé, plus le Straddle est profitable
+• Indique l'amplitude des mouvements attendus
+
+✅ EXCELLENT: > 30% (très volatil, idéal Straddle)
+🟢 BON: 15-30% (volatilité correcte)
+⚠️ MOYEN: 5-15% (peu de mouvement)
+❌ FAIBLE: < 5% (éviter le Straddle)`,
+
+  bodyRange: `Body Range % - Taille du corps des bougies vs mèches
+
+📊 UTILITÉ STRADDLE:
+• Mesure la force directionnelle des mouvements
+• Corps large = mouvement franc (bon pour Straddle)
+• Corps petit = indécision/whipsaw (danger!)
+
+✅ EXCELLENT: > 50% (mouvements directionnels clairs)
+🟢 BON: 30-50% (acceptable)
+⚠️ ATTENTION: 10-30% (beaucoup de fausses cassures)
+❌ DANGER: < 10% (ne PAS trader, trop de whipsaw)`,
+
+  tickQuality: `Tick Quality - Qualité et complétude des données
+
+📊 UTILITÉ STRADDLE:
+• Vérifie la fiabilité des données historiques
+• Détecte les gaps ou données manquantes
+• Impact sur la fiabilité de l'analyse
+
+✅ EXCELLENT: > 0.001 (données complètes)
+🟢 BON: 0.0005 - 0.001
+⚠️ MOYEN: 0.0001 - 0.0005 (vérifier source)
+❌ FAIBLE: < 0.0001 (données peu fiables)`,
+
+  noiseRatio: `Noise Ratio - Rapport Bruit/Signal
+
+📊 UTILITÉ STRADDLE:
+• Mesure les fausses cassures vs vrais mouvements
+• Ratio faible = signal propre (bon!)
+• Ratio élevé = beaucoup de bruit (danger!)
+
+✅ EXCELLENT: < 2.0 (signal clair, peu de whipsaw)
+🟢 BON: 2.0 - 3.0 (acceptable)
+⚠️ ATTENTION: 3.0 - 5.0 (beaucoup de faux signaux)
+❌ DANGER: > 5.0 (trop de bruit, éviter)`,
+
+  totalCandles: `Total Bougies - Nombre de données analysées
+
+📊 UTILITÉ STRADDLE:
+• Plus il y a de données, plus l'analyse est fiable
+• Minimum recommandé: 100,000 bougies
+• Idéal: > 500,000 pour statistiques robustes
+
+✅ EXCELLENT: > 500,000 (très fiable)
+🟢 BON: 100,000 - 500,000
+⚠️ MOYEN: 10,000 - 100,000
+❌ INSUFFISANT: < 10,000 (peu fiable)`
+}
 
 const recommendationClass = computed(() => {
   if (!props.result) return ''
@@ -222,10 +359,21 @@ function hasEconomicData(event: any): boolean {
 .panel-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 2rem;
   border-bottom: 2px solid #30363d;
   padding-bottom: 1rem;
+}
+
+.header-title-section {
+  flex: 1;
+}
+
+.title-with-selector {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .panel-header h2 {
@@ -233,9 +381,67 @@ function hasEconomicData(event: any): boolean {
   color: #e6edf3;
 }
 
+.symbol-select-inline {
+  padding: 0.5rem 1rem;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border: 2px solid #4a5568;
+  border-radius: 8px;
+  background: #2d3748;
+  color: #3b82f6;
+  cursor: pointer;
+  transition: all 0.3s;
+  min-width: 150px;
+}
+
+.symbol-select-inline:hover {
+  border-color: #3b82f6;
+  background: #374151;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.symbol-select-inline:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+.analysis-metadata {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.metadata-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #0d1117;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #30363d;
+  font-size: 0.9rem;
+}
+
+.metadata-icon {
+  font-size: 1.1rem;
+}
+
+.metadata-label {
+  color: #8b949e;
+  font-weight: 500;
+}
+
+.metadata-value {
+  color: #e6edf3;
+  font-weight: bold;
+}
+
 .header-badges {
   display: flex;
   gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 .badge {
@@ -347,6 +553,15 @@ function hasEconomicData(event: any): boolean {
   border-radius: 12px;
   text-align: center;
   border: 1px solid #30363d;
+  cursor: help;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.metric-card:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px);
 }
 
 .metric-icon {
@@ -358,6 +573,26 @@ function hasEconomicData(event: any): boolean {
   font-size: 0.9rem;
   color: #8b949e;
   margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+}
+
+.info-icon {
+  font-size: 0.75rem;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.metric-card:hover .info-icon {
+  opacity: 1;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
 }
 
 .metric-value {

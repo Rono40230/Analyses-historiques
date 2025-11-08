@@ -6,6 +6,9 @@ use super::calendar_event::CalendarEvent;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnalysisResult {
     pub symbol: String,
+    pub period_start: String,        // Date début analyse
+    pub period_end: String,          // Date fin analyse
+    pub timeframe: String,           // Ex: "M1", "M5", etc.
     pub hourly_stats: Vec<HourlyStats>,
     pub best_hours: Vec<u8>,
     pub confidence_score: f64,

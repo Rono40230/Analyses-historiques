@@ -54,6 +54,9 @@ export interface CorrelatedEvent {
 
 export interface AnalysisResult {
   symbol: string
+  period_start: string
+  period_end: string
+  timeframe: string
   hourly_stats: HourlyStats[]
   best_hours: number[]
   confidence_score: number
