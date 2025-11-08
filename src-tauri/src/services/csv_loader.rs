@@ -107,7 +107,7 @@ impl CsvLoader {
         let csv_file = self.find_csv_file(symbol)?;
 
         // Parse le fichier CSV
-        self.parse_csv_file(&csv_file)
+        self.parse_csv_file(&csv_file, symbol)
     }
 
     /// Trouve le fichier CSV correspondant à un symbole
@@ -138,7 +138,7 @@ impl CsvLoader {
     }
 
     /// Parse un fichier CSV et retourne les bougies
-    fn parse_csv_file(&self, path: &Path) -> Result<Vec<Candle>> {
+    fn parse_csv_file(&self, path: &Path, symbol: &str) -> Result<Vec<Candle>> {
         info!("Parsing CSV file: {:?}", path);
 
         let file = fs::File::open(path).map_err(|e| {
@@ -204,7 +204,7 @@ impl CsvLoader {
             }
 
             // Crée la bougie avec validation
-            let candle = Candle::new(datetime, open, high, low, close, volume)
+            let candle = Candle::new(symbol.to_string(), datetime, open, high, low, close, volume)
                 .map_err(|e| {
                     VolatilityError::ValidationError(format!("Line {}: {}", line_number, e))
                 })?;

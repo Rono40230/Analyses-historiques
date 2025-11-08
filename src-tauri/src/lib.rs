@@ -70,10 +70,18 @@ pub fn run() {
 
     println!("✅ CalendarState créé avec pool actif");
 
+    // Initialise le state pour les métriques d'événements
+    let candles_state = event_metrics_commands::CandlesState {
+        candles: Mutex::new(Vec::new()),
+    };
+
+    println!("✅ CandlesState créé pour event metrics");
+
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(calendar_state)
+        .manage(candles_state)
         .invoke_handler(tauri::generate_handler![
             // Volatility commands (Phase 1)
             ping,
@@ -108,6 +116,11 @@ pub fn run() {
             // Config commands (Phase 7)
             get_selected_calendar_file,
             set_selected_calendar_file,
+            // Event metrics commands (Phase 1 Roadmap)
+            calculate_event_metrics,
+            load_candles_for_metrics,
+            get_available_symbols,
+            clear_candles,
         ]);
 
     println!("✅ Tauri Builder configuré");

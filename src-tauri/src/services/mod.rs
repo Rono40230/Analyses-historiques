@@ -16,6 +16,9 @@ pub mod pair_data;
 pub mod pair_data_stats;
 pub mod event_duration_analyzer;
 pub mod win_rate_calculator;
+pub mod entry_timing_optimizer;
+pub mod contextual_atr_analyzer;
+pub mod event_metrics_aggregator;
 
 pub use csv_loader::*;
 pub use calendar_converter::*;

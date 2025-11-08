@@ -5,6 +5,9 @@ use validator::Validate;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct Candle {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<i32>,
+    pub symbol: String,
     pub datetime: DateTime<Utc>,
     #[validate(range(min = 0.0))]
     pub open: f64,
@@ -19,9 +22,9 @@ pub struct Candle {
 }
 
 impl Candle {
-    pub fn new(datetime: DateTime<Utc>, open: f64, high: f64, low: f64, close: f64, volume: f64) 
+    pub fn new(symbol: String, datetime: DateTime<Utc>, open: f64, high: f64, low: f64, close: f64, volume: f64) 
         -> Result<Self, validator::ValidationErrors> {
-        let candle = Self { datetime, open, high, low, close, volume };
+        let candle = Self { id: None, symbol, datetime, open, high, low, close, volume };
         candle.validate()?;
         Ok(candle)
     }

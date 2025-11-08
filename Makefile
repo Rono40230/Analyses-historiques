@@ -1,7 +1,7 @@
-# Makefile pour vérifier le respect des .clinerules
+# Makefile pour vérifier le respect des .clinerules et compiler
 # Usage: make <commande>
 
-.PHONY: help dev check-rules validate all
+.PHONY: help dev check-rules validate all build-flatpak build-native
 
 # Affiche l'aide
 help:
@@ -9,12 +9,30 @@ help:
 	@echo "   COMMANDES DISPONIBLES"
 	@echo "════════════════════════════════════════════════"
 	@echo ""
-	@echo "  make dev          - Lance le mode développement avec hot-reload"
-	@echo "  make check-rules  - Vérifie le respect des règles .clinerules"
-	@echo "  make validate     - Valide tout le code (clippy + tests)"
-	@echo "  make all          - Fait tout : check + validate + dev"
+	@echo "  make dev           - Lance le mode développement avec hot-reload"
+	@echo "  make check-rules   - Vérifie le respect des règles .clinerules"
+	@echo "  make validate      - Valide tout le code (clippy + tests)"
+	@echo "  make build-flatpak - Compile dans VSCode Flatpak (cargo check seulement)"
+	@echo "  make build-native  - Compile en natif Fedora (build complet)"
+	@echo "  make all           - Fait tout : check + validate + dev"
 	@echo ""
 	@echo "════════════════════════════════════════════════"
+
+# Compile dans VSCode Flatpak (cargo check seulement - linker échoue)
+build-flatpak:
+	@echo "🔧 Configuration environnement Flatpak..."
+	@source ./fix_vscode_flatpak_env.sh && cd src-tauri && cargo check
+
+# Compile en mode natif Fedora (build complet) - utilise flatpak-spawn si dans Flatpak
+build-native:
+	@echo "🚀 Compilation native Fedora..."
+	@if command -v flatpak-spawn > /dev/null 2>&1; then \
+		echo "   Détecté: VSCode Flatpak - utilisation de flatpak-spawn..."; \
+		cd src-tauri && flatpak-spawn --host bash -c "cd '$$(pwd)' && cargo build"; \
+	else \
+		echo "   Détecté: Environnement natif"; \
+		cd src-tauri && cargo build; \
+	fi
 
 # Lance le développement avec hot-reload
 dev:

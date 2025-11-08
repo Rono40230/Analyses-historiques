@@ -93,11 +93,11 @@ impl<'a> EventDurationAnalyzer<'a> {
     }
 
     /// Mesure la durée du pic de volatilité (ATR > baseline * 1.5)
-    fn measure_peak_duration(&self, start_index: usize, baseline_atr: f64) -> Result<f64> {
+    fn measure_peak_duration(&self, start_index: usize, baseline_atr: f64) -> Result<i32> {
         let threshold = baseline_atr * 1.5; // 150% de l'ATR normal
         let max_window = 180; // 3h max
 
-        let mut duration_minutes = 0.0;
+        let mut duration_minutes = 0;
         let mut consecutive_normal = 0;
 
         for i in start_index..self.candles.len().min(start_index + max_window) {
@@ -117,7 +117,7 @@ impl<'a> EventDurationAnalyzer<'a> {
             let current_atr = atrs.last().copied().unwrap_or(0.0);
 
             if current_atr > threshold {
-                duration_minutes += 1.0;
+                duration_minutes += 1;
                 consecutive_normal = 0;
             } else {
                 consecutive_normal += 1;
@@ -132,7 +132,7 @@ impl<'a> EventDurationAnalyzer<'a> {
     }
 
     /// Mesure le temps de retour à ATR normal (< baseline * 1.1)
-    fn measure_return_to_normal(&self, start_index: usize, baseline_atr: f64) -> Result<f64> {
+    fn measure_return_to_normal(&self, start_index: usize, baseline_atr: f64) -> Result<i32> {
         let threshold = baseline_atr * 1.1; // 110% de l'ATR normal
         let max_window = 240; // 4h max
 
@@ -147,16 +147,16 @@ impl<'a> EventDurationAnalyzer<'a> {
 
             if let Some(&current_atr) = atrs.last() {
                 if current_atr < threshold {
-                    return Ok((i - start_index) as f64);
+                    return Ok((i - start_index) as i32);
                 }
             }
         }
 
-        Ok(max_window as f64) // Retourne max si pas de retour observé
+        Ok(max_window as i32) // Retourne max si pas de retour observé
     }
 
     /// Trouve le moment du pic maximum ATR après l'événement
-    fn find_peak_time(&self, start_index: usize, max_minutes: usize) -> Result<f64> {
+    fn find_peak_time(&self, start_index: usize, max_minutes: usize) -> Result<i64> {
         let mut max_atr = 0.0;
         let mut peak_minute = 0;
 
@@ -177,16 +177,16 @@ impl<'a> EventDurationAnalyzer<'a> {
             }
         }
 
-        Ok(peak_minute as f64)
+        Ok(peak_minute as i64)
     }
 }
 
 /// Métriques de durée d'un événement
 #[derive(Debug, Clone)]
 pub struct EventDurationMetrics {
-    pub peak_duration_minutes: f64,
-    pub return_to_normal_minutes: f64,
-    pub peak_time_minutes: f64,
+    pub peak_duration_minutes: i32,
+    pub return_to_normal_minutes: i32,
+    pub peak_time_minutes: i64,
     pub baseline_atr: f64,
 }
 

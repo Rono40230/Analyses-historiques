@@ -9,6 +9,7 @@ pub mod config_commands;
 pub mod correlation;
 pub mod csv_cleaner_commands;
 pub mod import_clean_commands;
+pub mod event_metrics_commands;
 
 pub use volatility_commands::*;
 pub use calendar_commands::get_upcoming_events;
@@ -22,3 +23,4 @@ pub use config_commands::*;
 pub use correlation::*;
 pub use csv_cleaner_commands::*;
 pub use import_clean_commands::*;
+pub use event_metrics_commands::*;
