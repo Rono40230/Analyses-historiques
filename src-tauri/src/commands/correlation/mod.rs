@@ -8,6 +8,7 @@ mod past_events;
 mod event_impact;
 mod pair_history;
 mod heatmap;
+mod optimized_helpers;
 
 // Ré-exporter les commandes Tauri
 pub use past_events::get_past_events;

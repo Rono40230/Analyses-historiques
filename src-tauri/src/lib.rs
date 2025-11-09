@@ -77,11 +77,19 @@ pub fn run() {
 
     println!("✅ CandlesState créé pour event metrics");
 
+    // Initialise l'index des candles (vide au démarrage, rempli par init_candle_index)
+    let candle_index_state = candle_index_commands::CandleIndexState {
+        index: Mutex::new(None),
+    };
+
+    println!("✅ CandleIndexState créé (vide, en attente d'initialisation)");
+
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(calendar_state)
         .manage(candles_state)
+        .manage(candle_index_state)
         .invoke_handler(tauri::generate_handler![
             // Volatility commands (Phase 1)
             ping,
@@ -121,6 +129,10 @@ pub fn run() {
             load_candles_for_metrics,
             get_available_symbols,
             clear_candles,
+            // Candle index commands (Performance optimization)
+            init_candle_index,
+            load_pair_candles,
+            get_candle_index_stats,
         ]);
 
     println!("✅ Tauri Builder configuré");

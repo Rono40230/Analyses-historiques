@@ -1,7 +1,12 @@
 use rusqlite::{Connection, Result as SqliteResult};
 use serde::{Deserialize, Serialize};
+use chrono::{DateTime, Utc};
+use tauri::State;
 
-use super::helpers::{parse_sqlite_datetime, calculate_volatility_from_csv, calculate_baseline_volatility_from_csv};
+use super::helpers::{parse_sqlite_datetime, calculate_volatilities_from_preloaded_candles};
+use super::optimized_helpers::calculate_volatilities_optimized;
+use crate::services::CsvLoader;
+use crate::commands::candle_index_commands::CandleIndexState;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PairEventHistoryItem {
@@ -10,6 +15,8 @@ pub struct PairEventHistoryItem {
     pub event_name: String,
     pub impact: String,
     pub volatility: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub volatility_formatted: Option<String>,  // ✅ Nouvelle: formatée à 1 décimale
     pub change_percent: f64,
     pub direction: String,
 }
@@ -37,6 +44,7 @@ pub struct PairEventHistory {
 pub async fn get_pair_event_history(
     pair_symbol: String,
     months_back: Option<i32>,
+    state: State<'_, CandleIndexState>,
 ) -> Result<PairEventHistory, String> {
     let months = months_back.unwrap_or(6);
     
@@ -77,6 +85,27 @@ pub async fn get_pair_event_history(
         .collect::<SqliteResult<Vec<_>>>()
         .map_err(|e| format!("Failed to collect events: {}", e))?;
     
+    // Charge la paire à la demande (lazy loading)
+    {
+        let mut index_state = state.index.lock()
+            .map_err(|e| format!("Failed to lock candle index state: {}", e))?;
+        
+        let candle_index = index_state
+            .as_mut()
+            .ok_or("CandleIndex not initialized. Call init_candle_index first.")?;
+        
+        // Charger la paire si pas déjà en cache
+        let _ = candle_index.load_pair_candles(&pair_symbol);
+    }
+    
+    // ⚡ OPTIMISATION: Utiliser le CandleIndex au lieu de charger CSV
+    let index_state = state.index.lock()
+        .map_err(|e| format!("Failed to lock candle index state: {}", e))?;
+    
+    let candle_index = index_state
+        .as_ref()
+        .ok_or("CandleIndex not initialized. Call init_candle_index first.")?;
+    
     let mut event_history = Vec::new();
     let mut total_volatility = 0.0;
     let mut total_multiplier = 0.0;
@@ -93,8 +122,22 @@ pub async fn get_pair_event_history(
             }
         };
         
-        let event_volatility = calculate_volatility_from_csv(&pair_symbol, event_datetime, 30)?;
-        let baseline_volatility = calculate_baseline_volatility_from_csv(&pair_symbol, event_datetime, 30)?;
+        // 💡 Utiliser le CandleIndex optimisé
+        let metrics = calculate_volatilities_optimized(
+            candle_index,
+            &pair_symbol,
+            event_datetime,
+            30,  // event_window_minutes
+            7,   // baseline_days_back (7 jours)
+            super::optimized_helpers::get_pip_value(&pair_symbol),  // ✅ CORRECTION: passer pip_value
+        )
+        .unwrap_or_else(|_| super::optimized_helpers::VolatilityMetrics {
+            event_volatility: 0.0,
+            baseline_volatility: 0.0,
+        });
+        
+        let event_volatility = metrics.event_volatility;
+        let baseline_volatility = metrics.baseline_volatility;
         
         if event_volatility > 0.0 && baseline_volatility > 0.0 {
             let multiplier = event_volatility / baseline_volatility;
@@ -114,6 +157,7 @@ pub async fn get_pair_event_history(
                 event_name: event_name.clone(),
                 impact: impact.clone(),
                 volatility: event_volatility,
+                volatility_formatted: Some(format!("{:.1}", event_volatility)),  // ✅ Formaté à 1 décimale
                 change_percent,
                 direction,
             });

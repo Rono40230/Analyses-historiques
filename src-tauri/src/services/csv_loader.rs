@@ -110,11 +110,13 @@ impl CsvLoader {
         self.parse_csv_file(&csv_file, symbol)
     }
 
-    /// Trouve le fichier CSV correspondant à un symbole
+    /// Trouve le fichier CSV correspondant à un symbole (peut être une devise ou une paire)
     fn find_csv_file(&self, symbol: &str) -> Result<PathBuf> {
         let entries = fs::read_dir(&self.csv_directory).map_err(|e| {
             VolatilityError::CsvLoadError(format!("Cannot read directory: {}", e))
         })?;
+
+        let mut matching_files = Vec::new();
 
         for entry in entries {
             let entry = entry.map_err(|e| {
@@ -124,11 +126,24 @@ impl CsvLoader {
             let path = entry.path();
 
             if let Some(filename) = path.file_name().and_then(|s| s.to_str()) {
+                // Chercher des correspondances exactes d'abord (paire complète: EURUSD)
                 if filename.starts_with(symbol) && filename.ends_with(".csv") {
                     debug!("Found CSV file for {}: {:?}", symbol, path);
                     return Ok(path);
                 }
+                
+                // Sinon, chercher si le symbole est une devise (AUD, EUR, GBP, etc.)
+                // et trouver une paire qui la contient (AUDUSD, AUDJPY, etc.)
+                if symbol.len() <= 3 && filename.contains(symbol) && filename.ends_with(".csv") {
+                    matching_files.push(path);
+                }
             }
+        }
+
+        // Si on a trouvé des correspondances de devise, retourner la première
+        if !matching_files.is_empty() {
+            debug!("Found CSV file for currency {}: {:?}", symbol, matching_files[0]);
+            return Ok(matching_files[0].clone());
         }
 
         Err(VolatilityError::SymbolNotFound(format!(

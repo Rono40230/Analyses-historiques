@@ -18,10 +18,6 @@
       <div v-if="!selectedSymbol && !loading && !error" class="welcome">
         <div class="welcome-icon">🌍</div>
         <h3>Sélectionnez une paire pour analyser sa volatilité par session</h3>
-        <p class="info-text">
-          Cette analyse montre comment la volatilité historique de chaque paire 
-          varie selon les sessions de trading mondiales (Sydney, Tokyo, Londres, New York).
-        </p>
         <div class="welcome-select-container">
           <select 
             id="session-symbol" 

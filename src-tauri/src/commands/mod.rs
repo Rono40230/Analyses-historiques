@@ -10,6 +10,7 @@ pub mod correlation;
 pub mod csv_cleaner_commands;
 pub mod import_clean_commands;
 pub mod event_metrics_commands;
+pub mod candle_index_commands;
 
 pub use volatility_commands::*;
 pub use calendar_commands::get_upcoming_events;
@@ -24,3 +25,5 @@ pub use correlation::*;
 pub use csv_cleaner_commands::*;
 pub use import_clean_commands::*;
 pub use event_metrics_commands::*;
+pub use candle_index_commands::{init_candle_index, load_pair_candles, get_candle_index_stats};
+

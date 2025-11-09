@@ -1,7 +1,7 @@
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PastEvent {
     pub id: i32,
     pub name: String,
@@ -11,8 +11,21 @@ pub struct PastEvent {
     pub impact: String,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct EventType {
+    pub name: String,
+    pub count: i32,
+    pub impact: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct EventTypesByImpact {
+    pub high: Vec<EventType>,
+    pub medium: Vec<EventType>,
+}
+
 #[tauri::command]
-pub async fn get_past_events(months_back: Option<i32>) -> Result<Vec<PastEvent>, String> {
+pub async fn get_past_events(months_back: Option<i32>) -> Result<EventTypesByImpact, String> {
     let months = months_back.unwrap_or(6);
     
     let data_dir = dirs::data_local_dir()
@@ -35,33 +48,36 @@ pub async fn get_past_events(months_back: Option<i32>) -> Result<Vec<PastEvent>,
         .format("%Y-%m-%d")
         .to_string();
     
+    // Grouper par description (type d'événement) et compter les occurrences
     let mut stmt = conn
         .prepare(
-            "SELECT id, description, datetime(event_time), symbol, impact 
+            "SELECT description, COUNT(*) as count, impact 
              FROM calendar_events 
              WHERE date(event_time) >= ?1 
-             ORDER BY event_time DESC"
+             GROUP BY description, impact
+             ORDER BY count DESC, description"
         )
         .map_err(|e| format!("Failed to prepare statement: {}", e))?;
     
     let events_iter = stmt
         .query_map([&cutoff_date], |row| {
-            Ok(PastEvent {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                datetime: row.get(2)?,
-                country: "Unknown".to_string(), // Pas de colonne country
-                currency: row.get(3)?,
-                impact: row.get(4)?,
+            Ok(EventType {
+                name: row.get(0)?,         // description
+                count: row.get(1)?,        // count
+                impact: row.get(2)?,       // impact
             })
         })
         .map_err(|e| format!("Failed to query events: {}", e))?;
     
-    let events: Vec<PastEvent> = events_iter
-        .collect::<rusqlite::Result<Vec<_>>>()
+    let all_events: Vec<EventType> = events_iter
+        .collect::<Result<Vec<_>, _>>()
         .map_err(|e| format!("Failed to collect events: {}", e))?;
     
-    Ok(events)
+    // Séparer par impact
+    let high = all_events.iter().filter(|e| e.impact == "HIGH").cloned().collect();
+    let medium = all_events.iter().filter(|e| e.impact == "MEDIUM").cloned().collect();
+    
+    Ok(EventTypesByImpact { high, medium })
 }
 
 #[derive(Debug, Serialize, Deserialize)]

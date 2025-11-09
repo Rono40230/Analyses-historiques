@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
+import { invoke } from '@tauri-apps/api/core'
 import { useVolatilityStore } from './stores/volatility'
 import SymbolSelector from './components/SymbolSelector.vue'
 import AnalysisPanel from './components/AnalysisPanel.vue'
@@ -9,11 +10,21 @@ import CalendarView from './components/CalendarView.vue'
 import EventCorrelationView from './components/EventCorrelationView.vue'
 import SessionAnalysisView from './components/SessionAnalysisView.vue'
 
-onMounted(() => {
+onMounted(async () => {
   console.log('🎯 Vue App.vue mounted - Application Vue initialisée');
   console.log('📱 activeTab:', activeTab.value);
   console.log('🌐 window.location:', window.location.href);
   console.log('📦 Composants importés:', { SymbolSelector, AnalysisPanel, HourlyTable, CalendarView, EventCorrelationView, SessionAnalysisView });
+  
+  // 🚀 OPTIMISATION: Initialiser l'index des candles au démarrage
+  try {
+    const result = await invoke('init_candle_index', {})
+    console.log('✅ CandleIndex initialisé:', result)
+  } catch (error) {
+    console.warn('⚠️ CandleIndex initialization warning:', error)
+    // Non-bloquant - l'app continue même si l'index ne charge pas
+  }
+  
   // Charger les symboles au démarrage
   store.loadSymbols()
 });
@@ -93,10 +104,6 @@ function switchTab(tab: 'volatility' | 'calendar' | 'correlation' | 'sessions') 
             <div v-if="!loading && !analysisResult && !error" class="welcome">
               <div class="welcome-icon">📊</div>
               <h3>Sélectionnez un symbole pour commencer</h3>
-              <p class="info-text">
-                Choisissez un symbole forex pour analyser sa volatilité historique 
-                par heure, jour et période.
-              </p>
               <div class="welcome-select-container">
                 <select 
                   id="volatility-symbol-select"

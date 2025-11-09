@@ -19,6 +19,7 @@ pub mod win_rate_calculator;
 pub mod entry_timing_optimizer;
 pub mod contextual_atr_analyzer;
 pub mod event_metrics_aggregator;
+pub mod candle_index;
 
 pub use csv_loader::*;
 pub use calendar_converter::*;

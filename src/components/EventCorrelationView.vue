@@ -34,67 +34,93 @@
           <p>Analyse de l'impact de l'événement...</p>
         </div>
 
-        <!-- Message de bienvenue avec dropdown événement -->
+        <!-- Message de bienvenue avec dropdowns événement -->
         <div v-if="!selectedEventId && !loadingEvent" class="welcome">
           <div class="welcome-icon">🎯</div>
           <h3>Analyse Rétrospective par Événement</h3>
-          <p class="info-text">
-            Explorez l'impact historique des événements économiques sur les différentes paires.<br>
-            Choisissez un événement pour voir quelle paire a le plus bougé.
-          </p>
           <div class="welcome-select-container">
-            <select 
-              id="event-select" 
-              v-model="selectedEventId" 
-              class="welcome-symbol-select"
-              @change="loadEventImpact"
-            >
-              <option value="">Choisir un événement</option>
-              <option v-for="event in pastEvents" :key="event.id" :value="event.id">
-                {{ event.name }} - {{ formatDate(event.datetime) }} ({{ event.impact }})
-              </option>
-            </select>
+            <!-- Dropdown HIGH IMPACT -->
+            <div class="dropdown-group">
+              <label for="event-high">📍 Événements HIGH Impact :</label>
+              <select 
+                id="event-high" 
+                v-model="selectedEventId" 
+                class="welcome-symbol-select"
+                @change="loadEventImpact"
+              >
+                <option value="">Choisir un événement HIGH</option>
+                <option v-for="event in pastEventsHigh" :key="`high-${event.name}`" :value="event.name">
+                  {{ event.name }} ({{ event.count }} occurrences)
+                </option>
+              </select>
+            </div>
+            
+            <!-- Dropdown MEDIUM IMPACT -->
+            <div class="dropdown-group">
+              <label for="event-medium">📌 Événements MEDIUM Impact :</label>
+              <select 
+                id="event-medium" 
+                v-model="selectedEventId" 
+                class="welcome-symbol-select"
+                @change="loadEventImpact"
+              >
+                <option value="">Choisir un événement MEDIUM</option>
+                <option v-for="event in pastEventsMedium" :key="`medium-${event.name}`" :value="event.name">
+                  {{ event.name }} ({{ event.count }} occurrences)
+                </option>
+              </select>
+            </div>
           </div>
         </div>
 
       <div v-if="eventImpact && !loadingEvent" class="event-impact-results">
-        <!-- Informations sur l'événement -->
+        <!-- Informations sur l'événement avec dropdown pour changer -->
         <div class="event-info-card">
           <div class="event-header">
-            <h3>{{ eventImpact.event_name }}</h3>
+            <div class="event-title-with-selector">
+              <h3>
+                {{ eventImpact.event_name }}
+                <span class="inline-info">| 🌍 {{ eventImpact.country }} | 💱 {{ eventImpact.currency }}</span>
+              </h3>
+              <!-- Dropdown pour changer d'événement -->
+              <select 
+                v-model="selectedEventId" 
+                class="inline-select"
+                @change="loadEventImpact"
+              >
+                <option value="">Changer d'événement</option>
+                <optgroup label="HIGH Impact">
+                  <option v-for="event in pastEventsHigh" :key="`high-${event.name}`" :value="event.name">
+                    {{ event.name }}
+                  </option>
+                </optgroup>
+                <optgroup label="MEDIUM Impact">
+                  <option v-for="event in pastEventsMedium" :key="`medium-${event.name}`" :value="event.name">
+                    {{ event.name }}
+                  </option>
+                </optgroup>
+              </select>
+            </div>
             <span class="event-badge" :class="`impact-${eventImpact.impact.toLowerCase()}`">
               {{ eventImpact.impact }}
             </span>
-          </div>
-          <div class="event-details">
-            <div class="detail-item">
-              <span class="label">📅 Date :</span>
-              <span class="value">{{ formatDateTime(eventImpact.datetime) }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="label">🌍 Pays :</span>
-              <span class="value">{{ eventImpact.country }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="label">💱 Devise :</span>
-              <span class="value">{{ eventImpact.currency }}</span>
-            </div>
           </div>
         </div>
 
         <!-- Classement des paires par impact -->
         <div class="impact-ranking">
-          <h3>📊 Impact mesuré par paire ({{ eventImpact.window_start }} → {{ eventImpact.window_end }})</h3>
+          <h3>📊 Impact mesuré par paire du {{ formatDateRange(eventImpact.datetime) }} au {{ formatDateRange(eventImpact.last_datetime) }} soit {{ eventImpact.event_count }} événements</h3>
           
           <table class="impact-table">
             <thead>
               <tr>
                 <th>Rang</th>
                 <th>Paire</th>
-                <th>Volatilité Event</th>
-                <th>Vol. Baseline</th>
-                <th>Multiplicateur</th>
-                <th>Direction</th>
+                <th style="cursor: pointer;" @click="sortEventVolatility">Volatilité Event</th>
+                <th title="Variation moyenne en pips sur les 7 jours ouvrables précédant l'événement, à la même heure">Vol. Baseline</th>
+                <th title="Ratio: volatilité event / volatilité baseline. Mesure l'amplification de la volatilité">Multiplicateur</th>
+                <th title="Points de trading (1 point = 1/10 pip)">Points</th>
+                <th title="Valeur monétaire approximative du mouvement de volatilité">Prix</th>
               </tr>
             </thead>
             <tbody>
@@ -106,18 +132,15 @@
                   <span v-else class="rank-badge">#{{ index + 1 }}</span>
                 </td>
                 <td class="pair-name">{{ pair.symbol }}</td>
-                <td class="volatility">{{ pair.event_volatility }} pips</td>
-                <td class="baseline">{{ pair.baseline_volatility }} pips</td>
+                <td class="volatility">{{ pair.event_volatility_formatted }} pips</td>
+                <td class="baseline">{{ pair.baseline_volatility_formatted }} pips</td>
                 <td class="multiplier">
                   <span class="multiplier-value" :class="getMultiplierClass(pair.multiplier)">
                     ×{{ pair.multiplier.toFixed(1) }}
                   </span>
                 </td>
-                <td>
-                  <span class="direction-badge" :class="`dir-${pair.direction}`">
-                    {{ getDirectionIcon(pair.direction) }} {{ pair.direction }}
-                  </span>
-                </td>
+                <td class="points">{{ pair.points_formatted }}</td>
+                <td class="price">{{ pair.price_formatted }}</td>
               </tr>
             </tbody>
           </table>
@@ -144,10 +167,6 @@
       <div v-if="!selectedPairSymbol && !loadingPair" class="welcome">
         <div class="welcome-icon">💱</div>
         <h3>Analyse Rétrospective par Paire</h3>
-        <p class="info-text">
-          Découvrez comment chaque paire a réagi historiquement aux événements économiques.<br>
-          Choisissez une paire pour voir son historique complet.
-        </p>
         <div class="welcome-select-container">
           <select 
             id="pair-select" 
@@ -164,9 +183,22 @@
       </div>
 
       <div v-if="pairHistory && !loadingPair" class="pair-history-results">
-        <!-- En-tête paire -->
+        <!-- En-tête paire avec dropdown pour changer -->
         <div class="pair-header-card">
-          <h3>💱 {{ pairHistory.symbol }}</h3>
+          <div class="pair-header-with-selector">
+            <h3>💱 {{ pairHistory.symbol }}</h3>
+            <select 
+              v-model="selectedPairSymbol" 
+              class="inline-select"
+              @change="loadPairEventHistory"
+            >
+              <option :value="selectedPairSymbol">{{ selectedPairSymbol }}</option>
+              <option value="">Changer de paire</option>
+              <option v-for="pair in availablePairs" :key="pair" :value="pair" v-show="pair !== selectedPairSymbol">
+                {{ pair }}
+              </option>
+            </select>
+          </div>
           <p>Historique des réactions aux événements ({{ pairHistory.period }})</p>
         </div>
 
@@ -179,17 +211,17 @@
           </div>
           <div class="stat-card">
             <div class="stat-icon">📈</div>
-            <div class="stat-value">{{ pairHistory.avg_volatility }} pips</div>
+            <div class="stat-value">{{ pairHistory.avg_volatility.toFixed(1) }} pips</div>
             <div class="stat-label">Volatilité moyenne</div>
           </div>
           <div class="stat-card">
             <div class="stat-icon">🎯</div>
-            <div class="stat-value">{{ pairHistory.max_volatility }} pips</div>
+            <div class="stat-value">{{ pairHistory.max_volatility.toFixed(1) }} pips</div>
             <div class="stat-label">Impact maximum</div>
           </div>
           <div class="stat-card">
             <div class="stat-icon">⚡</div>
-            <div class="stat-value">×{{ pairHistory.avg_multiplier }}</div>
+            <div class="stat-value">×{{ pairHistory.avg_multiplier.toFixed(2) }}</div>
             <div class="stat-label">Multiplicateur moyen</div>
           </div>
         </div>
@@ -201,12 +233,12 @@
           <table class="history-table">
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Événement</th>
-                <th>Impact</th>
-                <th>Volatilité</th>
-                <th>vs Baseline</th>
-                <th>Direction</th>
+                <th class="sortable" style="cursor: pointer;" @click="sortTable('date')">Date</th>
+                <th class="sortable" style="cursor: pointer;" @click="sortTable('event')">Événement</th>
+                <th class="sortable" style="cursor: pointer;" @click="sortTable('impact')">Impact</th>
+                <th class="sortable" style="cursor: pointer;" @click="sortTable('volatility')">Volatilité</th>
+                <th class="sortable" style="cursor: pointer;" @click="sortTable('baseline')">vs Baseline</th>
+                <th class="sortable" style="cursor: pointer;" @click="sortTable('direction')">Direction</th>
               </tr>
             </thead>
             <tbody>
@@ -218,9 +250,9 @@
                     {{ event.impact }}
                   </span>
                 </td>
-                <td class="volatility">{{ event.volatility }} pips</td>
+                <td class="volatility">{{ event.volatility_formatted || event.volatility.toFixed(1) }} pips</td>
                 <td class="percentage-change" :class="getChangeClass(event.change_percent)">
-                  +{{ event.change_percent }}%
+                  +{{ Math.round(event.change_percent) }}%
                 </td>
                 <td>
                   <span class="direction-badge" :class="`dir-${event.direction}`">
@@ -240,7 +272,7 @@
               <span class="rank">{{ index + 1 }}.</span>
               <span class="event-name">{{ event.name }}</span>
               <span class="event-date">({{ formatDate(event.datetime) }})</span>
-              <span class="event-volatility">→ {{ event.volatility }} pips</span>
+              <span class="event-volatility">→ {{ event.volatility.toFixed(1) }} pips</span>
             </div>
           </div>
         </div>
@@ -250,9 +282,6 @@
     <!-- Vue 3: Heatmap -->
     <template v-if="viewMode === 'heatmap'">
       <div class="heatmap-container">
-        <h3>🔥 Heatmap Événements × Paires</h3>
-        <p class="heatmap-subtitle">Volatilité moyenne mesurée (pips) - {{ heatmapData?.period || 'Chargement...' }}</p>
-
         <div v-if="loadingHeatmap" class="loading">
           <div class="spinner"></div>
           <p>Génération de la heatmap...</p>
@@ -277,7 +306,6 @@
                   :key="`${eventType.name}-${pair}`"
                   class="heatmap-cell"
                   :class="getHeatmapClass(getHeatmapValue(eventType.name, pair))"
-                  :title="`${eventType.name} → ${pair}: ${getHeatmapValue(eventType.name, pair)} pips`"
                 >
                   <span class="cell-value">{{ getHeatmapValue(eventType.name, pair) }}</span>
                 </td>
@@ -325,11 +353,8 @@ import { useDataRefresh } from '../composables/useDataRefresh'
 
 // Types
 interface PastEvent {
-  id: number
   name: string
-  datetime: string
-  country: string
-  currency: string
+  count: number
   impact: string
 }
 
@@ -337,6 +362,12 @@ interface PairImpact {
   symbol: string
   event_volatility: number
   baseline_volatility: number
+  event_volatility_formatted: string
+  baseline_volatility_formatted: string
+  points: number
+  points_formatted: string
+  price: number
+  price_formatted: string
   multiplier: number
   direction: string
 }
@@ -345,9 +376,11 @@ interface EventImpactResult {
   event_id: number
   event_name: string
   datetime: string
+  last_datetime: string
   country: string
   currency: string
   impact: string
+  event_count: number
   window_start: string
   window_end: string
   pair_impacts: PairImpact[]
@@ -376,7 +409,8 @@ interface HeatmapData {
 const viewMode = ref<'by-event' | 'by-pair' | 'heatmap'>('by-event')
 const selectedEventId = ref<string>('')
 const selectedPairSymbol = ref<string>('')
-const pastEvents = ref<PastEvent[]>([])
+const pastEventsHigh = ref<PastEvent[]>([])
+const pastEventsMedium = ref<PastEvent[]>([])
 const availablePairs = ref<string[]>([])
 const eventImpact = ref<EventImpactResult | null>(null)
 const pairHistory = ref<PairEventHistory | null>(null)
@@ -384,6 +418,13 @@ const heatmapData = ref<HeatmapData | null>(null)
 const loadingEvent = ref(false)
 const loadingPair = ref(false)
 const loadingHeatmap = ref(false)
+
+// État du tri
+const sortColumn = ref<'date' | 'event' | 'impact' | 'volatility' | 'baseline' | 'direction'>('date')
+const sortOrder = ref<'asc' | 'desc'>('desc')
+
+// État du tri pour "Par Événement"
+const eventVolatilitySortOrder = ref<'asc' | 'desc'>('desc')
 
 // Watch pour charger automatiquement la heatmap quand on switch
 watch(viewMode, (newMode) => {
@@ -395,15 +436,13 @@ watch(viewMode, (newMode) => {
 // Fonctions
 const { onPairDataRefresh } = useDataRefresh()
 
+// Enregistrer les lifecycle hooks AVANT les awaits
+const unsubscribe = onPairDataRefresh(loadAvailablePairs)
+onBeforeUnmount(() => unsubscribe())
+
 onMounted(async () => {
   await loadPastEvents()
   await loadAvailablePairs()
-  
-  // S'abonner aux événements de rafraîchissement
-  const unsubscribe = onPairDataRefresh(loadAvailablePairs)
-  
-  // Se désabonner au démontage
-  onBeforeUnmount(unsubscribe)
 })
 
 function switchViewMode(mode: 'by-event' | 'by-pair' | 'heatmap') {
@@ -422,12 +461,15 @@ function switchViewMode(mode: 'by-event' | 'by-pair' | 'heatmap') {
 async function loadPastEvents() {
   try {
     // Charger les vrais événements depuis la base de données
-    pastEvents.value = await invoke<PastEvent[]>('get_past_events', {
+    const result = await invoke<{ high: PastEvent[], medium: PastEvent[] }>('get_past_events', {
       monthsBack: 6
     })
+    pastEventsHigh.value = result.high
+    pastEventsMedium.value = result.medium
   } catch (error) {
     console.error('Erreur chargement événements:', error)
-    pastEvents.value = []
+    pastEventsHigh.value = []
+    pastEventsMedium.value = []
   }
 }
 
@@ -449,9 +491,17 @@ async function loadEventImpact() {
   
   loadingEvent.value = true
   try {
+    // Trouver le count de l'événement sélectionné dans les listes
+    const selectedEvent = 
+      pastEventsHigh.value.find(e => e.name === selectedEventId.value) ||
+      pastEventsMedium.value.find(e => e.name === selectedEventId.value)
+    
+    const eventCount = selectedEvent?.count || 0
+    
     // Charger les vraies données depuis le backend
     eventImpact.value = await invoke<EventImpactResult>('get_event_impact_by_pair', { 
-      eventId: parseInt(selectedEventId.value) 
+      eventType: selectedEventId.value,
+      eventCount: eventCount
     })
   } catch (error) {
     console.error('Erreur analyse événement:', error)
@@ -518,6 +568,15 @@ function formatDateTime(datetime: string): string {
   })
 }
 
+function formatDateRange(datetime: string): string {
+  const date = new Date(datetime)
+  return date.toLocaleString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  })
+}
+
 function getDirectionIcon(direction: string): string {
   if (direction === 'HAUSSIER') return '📈'
   if (direction === 'BAISSIER') return '📉'
@@ -537,6 +596,84 @@ function getChangeClass(percent: number): string {
   if (percent >= 500) return 'change-very-high'
   if (percent >= 200) return 'change-high'
   return 'change-medium'
+}
+
+function sortTable(column: 'date' | 'event' | 'impact' | 'volatility' | 'baseline' | 'direction') {
+  // Si on clique sur la même colonne, inverser l'ordre
+  if (sortColumn.value === column) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    // Nouvelle colonne: trier en desc par défaut
+    sortColumn.value = column
+    sortOrder.value = 'desc'
+  }
+
+  if (!pairHistory.value?.events) return
+
+  // Créer une copie et trier
+  const sorted = [...pairHistory.value.events]
+  
+  sorted.sort((a, b) => {
+    let aVal: any = a
+    let bVal: any = b
+
+    switch (column) {
+      case 'date':
+        aVal = new Date(a.datetime).getTime()
+        bVal = new Date(b.datetime).getTime()
+        break
+      case 'event':
+        aVal = a.event_name
+        bVal = b.event_name
+        break
+      case 'impact':
+        const impactOrder = { HIGH: 3, MEDIUM: 2, LOW: 1 }
+        aVal = impactOrder[a.impact as keyof typeof impactOrder] || 0
+        bVal = impactOrder[b.impact as keyof typeof impactOrder] || 0
+        break
+      case 'volatility':
+        aVal = a.volatility || 0
+        bVal = b.volatility || 0
+        break
+      case 'baseline':
+        aVal = a.change_percent || 0
+        bVal = b.change_percent || 0
+        break
+      case 'direction':
+        aVal = a.direction || ''
+        bVal = b.direction || ''
+        break
+    }
+
+    if (aVal < bVal) return sortOrder.value === 'asc' ? -1 : 1
+    if (aVal > bVal) return sortOrder.value === 'asc' ? 1 : -1
+    return 0
+  })
+
+  pairHistory.value.events = sorted
+}
+
+function sortEventVolatility() {
+  // Inverser l'ordre de tri
+  eventVolatilitySortOrder.value = eventVolatilitySortOrder.value === 'asc' ? 'desc' : 'asc'
+
+  if (!eventImpact.value?.pair_impacts) return
+
+  // Trier les pair_impacts par event_volatility
+  const sorted = [...eventImpact.value.pair_impacts]
+  
+  sorted.sort((a, b) => {
+    const aVal = a.event_volatility
+    const bVal = b.event_volatility
+
+    if (eventVolatilitySortOrder.value === 'asc') {
+      return aVal - bVal
+    } else {
+      return bVal - aVal
+    }
+  })
+
+  eventImpact.value.pair_impacts = sorted
 }
 
 function getHeatmapValue(eventType: string, pair: string): number {
@@ -812,13 +949,35 @@ function getHeatmapClass(value: number): string {
 .event-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 20px;
+  gap: 15px;
+}
+
+/* Titre événement + dropdown inline */
+.event-title-with-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.event-title-with-selector h3 {
+  margin: 0;
+  white-space: nowrap;
 }
 
 .event-header h3 {
   color: #e2e8f0;
   font-size: 1.5em;
+  margin: 0;
+}
+
+.inline-info {
+  font-size: 0.7em;
+  color: #cbd5e0;
+  font-weight: 400;
+  margin-left: 15px;
 }
 
 .event-badge {
@@ -826,6 +985,42 @@ function getHeatmapClass(value: number): string {
   border-radius: 6px;
   font-weight: 600;
   font-size: 0.9em;
+}
+
+.inline-select {
+  padding: 8px 12px;
+  border: 1px solid #4a5568;
+  background: #1c2128;
+  color: #000000;
+  border-radius: 6px;
+  font-size: 0.95em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.inline-select:hover {
+  border-color: #58a6ff;
+  background: #262d38;
+  color: #000000;
+}
+
+.inline-select:focus {
+  outline: none;
+  border-color: #58a6ff;
+  box-shadow: 0 0 8px rgba(88, 166, 255, 0.3);
+  color: #000000;
+}
+
+/* En-tête paire avec dropdown inline */
+.pair-header-with-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pair-header-with-selector h3 {
+  margin: 0;
 }
 
 .impact-high {
@@ -916,6 +1111,21 @@ function getHeatmapClass(value: number): string {
 .volatility {
   font-weight: 600;
   color: #818cf8;
+}
+
+.baseline {
+  font-weight: 600;
+  color: #a78bfa;
+}
+
+.points {
+  font-weight: 600;
+  color: #6ee7b7;
+}
+
+.price {
+  font-weight: 600;
+  color: #fbbf24;
 }
 
 .multiplier-value {
@@ -1111,6 +1321,18 @@ function getHeatmapClass(value: number): string {
   font-weight: 600;
   color: #e2e8f0;
   border-bottom: 2px solid #4a5568;
+  cursor: pointer !important;  /* ✅ Force le curseur pointeur */
+}
+
+.history-table th.sortable {
+  cursor: pointer !important;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.history-table th:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  cursor: pointer !important;
 }
 
 .history-table td {
@@ -1223,13 +1445,14 @@ function getHeatmapClass(value: number): string {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 30px;
+  font-size: 0.75em;
 }
 
 .header-corner {
   background: #2d3748;
   color: #e2e8f0;
   font-weight: 700;
-  padding: 15px;
+  padding: 8px;
   border: 1px solid #4a5568;
 }
 
@@ -1237,14 +1460,15 @@ function getHeatmapClass(value: number): string {
   background: #2d3748;
   color: #e2e8f0;
   font-weight: 600;
-  padding: 12px;
+  padding: 8px;
   border: 1px solid #4a5568;
   text-align: center;
+  font-size: 0.8em;
 }
 
 .event-type-cell {
   background: #2d3748;
-  padding: 12px;
+  padding: 8px;
   border: 1px solid #4a5568;
   text-align: left;
 }
@@ -1252,19 +1476,19 @@ function getHeatmapClass(value: number): string {
 .event-type-name {
   font-weight: 700;
   color: #e2e8f0;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+  font-size: 0.8em;
 }
 
 .event-count {
-  font-size: 0.85em;
+  font-size: 0.7em;
   color: #a0aec0;
 }
 
 .heatmap-cell {
-  padding: 15px;
+  padding: 8px;
   text-align: center;
   border: 1px solid #4a5568;
-  cursor: help;
   transition: all 0.2s;
 }
 
@@ -1275,7 +1499,7 @@ function getHeatmapClass(value: number): string {
 
 .cell-value {
   font-weight: 700;
-  font-size: 1.1em;
+  font-size: 0.9em;
 }
 
 .heat-very-high {
@@ -1367,8 +1591,25 @@ function getHeatmapClass(value: number): string {
 
 .welcome-select-container {
   display: flex;
+  flex-direction: column;
+  gap: 20px;
   justify-content: center;
+  align-items: center;
   margin-top: 30px;
+}
+
+.dropdown-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 450px;
+}
+
+.dropdown-group label {
+  font-weight: 600;
+  color: #cbd5e0;
+  font-size: 0.95em;
 }
 
 .welcome-symbol-select {
