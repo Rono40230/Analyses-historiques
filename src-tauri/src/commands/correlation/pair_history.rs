@@ -85,26 +85,16 @@ pub async fn get_pair_event_history(
         .collect::<SqliteResult<Vec<_>>>()
         .map_err(|e| format!("Failed to collect events: {}", e))?;
     
-    // Charge la paire à la demande (lazy loading)
-    {
-        let mut index_state = state.index.lock()
-            .map_err(|e| format!("Failed to lock candle index state: {}", e))?;
-        
-        let candle_index = index_state
-            .as_mut()
-            .ok_or("CandleIndex not initialized. Call init_candle_index first.")?;
-        
-        // Charger la paire si pas déjà en cache
-        let _ = candle_index.load_pair_candles(&pair_symbol);
-    }
-    
-    // ⚡ OPTIMISATION: Utiliser le CandleIndex au lieu de charger CSV
-    let index_state = state.index.lock()
+    // ⚠️ AUDIT FIX: Garder le lock pendant TOUTE l'opération (race condition fix)
+    let mut index_state = state.index.lock()
         .map_err(|e| format!("Failed to lock candle index state: {}", e))?;
     
     let candle_index = index_state
-        .as_ref()
+        .as_mut()
         .ok_or("CandleIndex not initialized. Call init_candle_index first.")?;
+    
+    // Charger la paire à la demande (lazy loading)
+    candle_index.load_pair_candles(&pair_symbol)?;  // ✅ AUDIT FIX: Propager erreurs
     
     let mut event_history = Vec::new();
     let mut total_volatility = 0.0;

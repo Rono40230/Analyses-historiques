@@ -253,28 +253,18 @@ pub async fn get_event_impact_by_pair(
         .collect();
     let event_datetimes = event_datetimes?;
     
-    // Charge les paires à la demande (lazy loading)
-    {
-        let mut index_state = state.index.lock()
-            .map_err(|e| format!("Failed to lock candle index state: {}", e))?;
-        
-        let candle_index = index_state
-            .as_mut()
-            .ok_or("CandleIndex not initialized. Call init_candle_index first.")?;
-        
-        for pair in &pairs {
-            // Charger la paire si pas déjà en cache
-            let _ = candle_index.load_pair_candles(pair);
-        }
-    }
-    
-    // OPTIMISATION: Récupérer l'index des candles depuis le state (pour lecture)
-    let index_state = state.index.lock()
+    // ⚠️ AUDIT FIX: Garder le lock pendant TOUTE l'opération (race condition fix)
+    let mut index_state = state.index.lock()
         .map_err(|e| format!("Failed to lock candle index state: {}", e))?;
     
     let candle_index = index_state
-        .as_ref()
+        .as_mut()
         .ok_or("CandleIndex not initialized. Call init_candle_index first.")?;
+    
+    // Charger les paires à la demande (lazy loading)
+    for pair in &pairs {
+        candle_index.load_pair_candles(pair)?;  // ✅ AUDIT FIX: Propager erreurs, pas ignorer
+    }
     
     let mut pair_impacts = Vec::new();
     
