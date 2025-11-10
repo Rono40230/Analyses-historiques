@@ -146,7 +146,7 @@ async function handleImportClick() {
   importError.value = ''
   
   try {
-    const report = await invoke<any>('import_and_clean_files', {
+    const report = await invoke<any>('import_pair_data', {
       paths: selectedPaths
     })
     
