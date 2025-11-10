@@ -100,16 +100,33 @@ fn clean_line(line: &str) -> Result<String, String> {
     }
     
     // Format virgule (ancien) : parsing complexe
-    let timestamp_parts: Vec<&str> = parts.iter()
-        .take_while(|p| p.contains('.') || p.contains(':'))
-        .copied()
-        .collect();
+    // Le timestamp est "YYYY.MM.DD HH:MM:SS" et les données OHLCV commencent après
+    // Exemple: 2024.10.10 13:33:00,108.114,108.131,108.102,108.113,278.52
+    // Les parts sont: ["2024", "10", "10 13:33:00", "108", "114", "108", "131", "108", "102", "108", "113", "278", "52"]
     
-    if timestamp_parts.is_empty() { return Err("Pas de timestamp".to_string()); }
+    // Chercher le timestamp : les parts qui commencent par des chiffres et contiennent ":" ou "-"
+    let mut timestamp_parts = Vec::new();
+    let mut data_start = 0;
     
-    let timestamp = timestamp_parts.join(" ");
-    let data_start = timestamp_parts.len();
+    for (i, part) in parts.iter().enumerate() {
+        // Le timestamp se termine quand on atteint une vraie valeur numérique (pas de ":")
+        if timestamp_parts.is_empty() {
+            timestamp_parts.push(*part);
+        } else if part.contains(':') || (i < 3 && part.len() <= 2) {
+            // Continuer le timestamp (heure, minute ou jour)
+            timestamp_parts.push(*part);
+        } else {
+            // On a atteint les données OHLCV
+            data_start = i;
+            break;
+        }
+    }
     
+    if timestamp_parts.is_empty() || timestamp_parts.len() < 3 { 
+        return Err(format!("Pas de timestamp valide dans: {}", line)); 
+    }
+    
+    let timestamp = timestamp_parts.join(".");
     let values: Vec<&str> = parts[data_start..].to_vec();
     let ohlcv = reconstruct_ohlcv(&values)?;
     

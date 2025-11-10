@@ -50,14 +50,24 @@ impl PairDataConverter {
             return Err("Fichier vide".to_string());
         }
         
-        // Les fichiers sont déjà nettoyés par csv_cleaner avant l'import
+        // Détecter le délimiteur à partir du header
+        let header_line = &lines[0];
+        let delimiter = if header_line.contains(';') {
+            b';'  // Format européen: point-virgule
+        } else {
+            b','  // Format standard: virgule
+        };
+        
+        tracing::info!("🔍 Délimiteur détecté: {}", if delimiter == b';' { ";" } else { "," });
+        
+        // Créer le contenu avec les lignes
         let content = lines.join("\n");
         
         let mut reader = csv::ReaderBuilder::new()
             .has_headers(true)
             .flexible(true)
             .trim(csv::Trim::All)
-            .delimiter(b';')  // Format européen: point-virgule
+            .delimiter(delimiter)
             .from_reader(content.as_bytes());
         
         // Lire les headers

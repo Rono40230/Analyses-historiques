@@ -122,3 +122,33 @@ pub fn ensure_pair_tables(pool: &DbPool) -> Result<(), Box<dyn std::error::Error
     
     Ok(())
 }
+
+/// Crée la table calendar_imports si elle n'existe pas
+pub fn ensure_calendar_imports_table(pool: &DbPool) -> Result<(), Box<dyn std::error::Error>> {
+    let mut conn = pool.get()?;
+    
+    diesel::sql_query(
+        "CREATE TABLE IF NOT EXISTS calendar_imports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            name TEXT NOT NULL UNIQUE,
+            filename TEXT NOT NULL,
+            event_count INTEGER NOT NULL DEFAULT 0,
+            oldest_event_date TIMESTAMP,
+            newest_event_date TIMESTAMP,
+            imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            is_active BOOLEAN NOT NULL DEFAULT 1
+        )"
+    ).execute(&mut conn)?;
+    
+    diesel::sql_query(
+        "CREATE INDEX IF NOT EXISTS idx_calendar_imports_is_active ON calendar_imports(is_active)"
+    ).execute(&mut conn)?;
+    
+    // Ajouter colonne calendar_import_id à calendar_events si elle n'existe pas
+    // (vérification basique pour éviter les erreurs)
+    let _ = diesel::sql_query(
+        "ALTER TABLE calendar_events ADD COLUMN calendar_import_id INTEGER"
+    ).execute(&mut conn);
+    
+    Ok(())
+}

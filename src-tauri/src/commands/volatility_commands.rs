@@ -50,7 +50,8 @@ pub async fn load_symbols(
     info!("Command: load_symbols");
 
     // Essayer d'abord de charger depuis la DB pairs
-    let pool_opt = pair_state.pool.lock().unwrap();
+    let pool_opt = pair_state.pool.lock()
+        .map_err(|_| CommandError::from("Failed to acquire database pool lock".to_string()))?;
     if let Some(pool) = pool_opt.as_ref() {
         match crate::services::DatabaseLoader::new(pool.clone()).get_all_symbols() {
             Ok(symbols) => {
@@ -108,11 +109,13 @@ pub async fn analyze_symbol(
 
     // Essayer d'abord DatabaseLoader
     let mut candles = Vec::new();
-    let pool_opt = pair_state.pool.lock().unwrap();
+    let pool_opt = pair_state.pool.lock()
+        .map_err(|_| CommandError::from("Failed to acquire database pool lock".to_string()))?;
     if let Some(pool) = pool_opt.as_ref() {
         let db_loader = crate::services::DatabaseLoader::new(pool.clone());
         // Charger tous les candles (période complète depuis 1970 jusqu'à maintenant)
-        let start = DateTime::<Utc>::from_timestamp(0, 0).unwrap();
+        let start = DateTime::<Utc>::from_timestamp(0, 0)
+            .ok_or(CommandError::from("Invalid Unix timestamp 0 for date range".to_string()))?;
         let end = Utc::now();
         match db_loader.load_candles_by_pair(&symbol, "M1", start, end) {
             Ok(loaded) => {
