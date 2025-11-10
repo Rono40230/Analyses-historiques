@@ -1,10 +1,7 @@
 <template>
   <div class="files-list-section">
     <div class="section-header">
-      <h4>📁 Fichiers CSV disponibles</h4>
-      <button @click="handleImportClick" class="btn-import-header" :disabled="importing">
-        📥 Importer vos données
-      </button>
+      <h4>💱 Paires de Trading Importées</h4>
     </div>
 
     <!-- Import en cours : sablier tournant -->
@@ -26,46 +23,37 @@
       ❌ {{ error }}
     </div>
 
-    <div v-else-if="files.length === 0" class="no-files-message">
-      📂 Aucun fichier CSV disponible
+    <div v-else-if="pairs.length === 0" class="no-files-message">
+      📂 Aucune donnée de paire importée. Importez vos fichiers CSV pour commencer.
     </div>
 
     <div v-else class="files-table-container">
       <table class="files-table">
         <thead>
           <tr>
-            <th>Fichier</th>
             <th>Paire</th>
             <th>Timeframe</th>
-            <th>Période</th>
-            <th>Lignes</th>
-            <th>Taille</th>
-            <th>Modifié</th>
-            <th class="actions-col">Actions</th>
+            <th>Candles</th>
+            <th>Dernier Import</th>
+            <th>Fichier Source</th>
+            <th>Score Qualité</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="file in files" :key="file.path">
+          <tr v-for="pair in pairs" :key="`${pair.symbol}-${pair.timeframe}`">
             <td>
-              <div class="filename-content">
-                <span class="file-icon">📊</span>
-                <span>{{ file.filename }}</span>
-              </div>
+              <span class="badge badge-pair">{{ pair.symbol }}</span>
             </td>
             <td>
-              <span class="badge badge-pair">{{ file.pair || 'N/A' }}</span>
+              <span class="badge badge-timeframe">{{ pair.timeframe }}</span>
             </td>
-            <td>
-              <span class="badge badge-timeframe">{{ file.timeframe || 'N/A' }}</span>
-            </td>
-            <td>{{ file.period || 'N/A' }}</td>
-            <td>{{ file.line_count ? file.line_count.toLocaleString() : 'N/A' }}</td>
-            <td>{{ formatSize(file.size_bytes) }}</td>
-            <td>{{ file.modified }}</td>
-            <td class="actions-col">
-              <button @click="deleteFile(file.path)" class="btn-delete" title="Supprimer ce fichier">
-                🗑️
-              </button>
+            <td class="text-right">{{ pair.row_count.toLocaleString() }}</td>
+            <td>{{ formatDate(pair.last_updated) }}</td>
+            <td class="filename-small">{{ pair.last_imported_file }}</td>
+            <td class="text-center">
+              <span class="quality-score" :class="`quality-${qualityLevel(pair.quality_score)}`">
+                ★ {{ (pair.quality_score * 100).toFixed(0) }}%
+              </span>
             </td>
           </tr>
         </tbody>
@@ -77,24 +65,19 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-import { open } from '@tauri-apps/plugin-dialog'
 import { useVolatilityStore } from '../stores/volatility'
 
-interface PairFileInfo {
-  filename: string
-  path: string
-  pair: string | null
-  timeframe: string | null
-  period: string | null
-  size_bytes: number
-  line_count: number | null
-  date_range: string | null
-  created: string
-  modified: string
+interface PairMetadataInfo {
+  symbol: string
+  timeframe: string
+  row_count: number
+  last_updated: string
+  last_imported_file: string
+  quality_score: number
 }
 
 const volatilityStore = useVolatilityStore()
-const files = ref<PairFileInfo[]>([])
+const pairs = ref<PairMetadataInfo[]>([])
 const loading = ref(false)
 const error = ref('')
 const importing = ref(false)
@@ -109,8 +92,8 @@ async function refreshFiles() {
   error.value = ''
   
   try {
-    const result = await invoke<PairFileInfo[]>('list_pair_csv_files')
-    files.value = result
+    const result = await invoke<PairMetadataInfo[]>('get_pair_metadata_from_db')
+    pairs.value = result
     emit('filesRefreshed')
   } catch (e) {
     error.value = `Erreur lors du chargement: ${e}`
@@ -119,86 +102,25 @@ async function refreshFiles() {
   }
 }
 
-async function selectFiles() {
-  try {
-    const selected = await open({
-      multiple: true,
-      filters: [{
-        name: 'Fichiers CSV',
-        extensions: ['csv']
-      }]
-    })
-    
-    if (selected) {
-      return Array.isArray(selected) ? selected : [selected]
-    }
-  } catch (e) {
-    importError.value = `Erreur sélection fichier: ${e}`
-  }
-  return null
-}
-
-async function handleImportClick() {
-  const selectedPaths = await selectFiles()
-  if (!selectedPaths || selectedPaths.length === 0) return
-  
-  importing.value = true
-  importError.value = ''
-  
-  try {
-    const report = await invoke<any>('import_pair_data', {
-      paths: selectedPaths
-    })
-    
-    console.log(`✅ Import terminé: ${report.successful}/${report.total_files} fichiers`)
-    
-    // Rafraîchir automatiquement la liste des fichiers
-    await refreshFiles()
-    
-    // Émettre l'événement pour rafraîchir le résumé
-    emit('filesRefreshed')
-    
-    // Rafraîchir le store
-    await volatilityStore.loadSymbols()
-  } catch (e) {
-    importError.value = `Échec import: ${e}`
-  } finally {
-    importing.value = false
-  }
-}
-
-// Exposer la fonction pour les composants parents
+async function refreshFiles() {
 defineExpose({
   refreshFiles
 })
 
-async function deleteFile(filePath: string) {
-  const confirmed = confirm(
-    `Êtes-vous sûr de vouloir supprimer ce fichier CSV ?\nCette action est irréversible.`
-  )
-  
-  if (!confirmed) return
-  
-  loading.value = true
-  error.value = ''
-  
+function formatDate(dateString: string): string {
   try {
-    await invoke<number>('delete_pair_files', { filePaths: [filePath] })
-    
-    // Rafraîchir la liste
-    await refreshFiles()
-    alert(`✅ Fichier supprimé avec succès`)
-  } catch (e) {
-    error.value = `Erreur lors de la suppression: ${e}`
-  } finally {
-    loading.value = false
+    const date = new Date(dateString)
+    return date.toLocaleDateString('fr-FR', { year: 'numeric', month: '2-digit', day: '2-digit' })
+  } catch {
+    return dateString
   }
 }
 
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+function qualityLevel(score: number): string {
+  if (score >= 0.95) return 'excellent'
+  if (score >= 0.80) return 'good'
+  if (score >= 0.60) return 'fair'
+  return 'poor'
 }
 
 onMounted(() => {
@@ -376,23 +298,47 @@ onMounted(() => {
   text-align: center;
 }
 
-.btn-delete {
-  padding: 6px 12px;
-  background: #da3633;
-  color: white;
-  border: none;
+.text-right {
+  text-align: right;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.filename-small {
+  font-size: 0.9em;
+  color: #8b949e;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quality-score {
+  padding: 4px 8px;
   border-radius: 4px;
-  cursor: pointer;
-  font-size: 1.1em;
-  transition: all 0.2s;
+  font-weight: 600;
+  font-size: 0.9em;
 }
 
-.btn-delete:hover {
-  background: #f85149;
-  transform: scale(1.1);
+.quality-excellent {
+  background: #238636;
+  color: #ffffff;
 }
 
-.btn-delete:active {
-  transform: scale(0.95);
+.quality-good {
+  background: #3fb950;
+  color: #ffffff;
+}
+
+.quality-fair {
+  background: #d29922;
+  color: #ffffff;
+}
+
+.quality-poor {
+  background: #da3633;
+  color: #ffffff;
 }
 </style>
