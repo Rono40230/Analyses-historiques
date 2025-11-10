@@ -41,11 +41,39 @@ impl From<crate::models::VolatilityError> for CommandError {
     }
 }
 
-/// Liste tous les symboles disponibles dans data/csv/
+/// Liste tous les symboles disponibles (depuis DB pairs ou fallback CSV)
 #[tauri::command]
-pub async fn load_symbols() -> Result<Vec<SymbolInfo>, CommandError> {
+pub async fn load_symbols(
+    pair_state: State<'_, super::pair_data_commands::PairDataState>,
+) -> Result<Vec<SymbolInfo>, CommandError> {
     info!("Command: load_symbols");
 
+    // Essayer d'abord de charger depuis la DB pairs
+    let pool_opt = pair_state.pool.lock().unwrap();
+    if let Some(pool) = pool_opt.as_ref() {
+        match crate::services::DatabaseLoader::new(pool.clone()).get_all_symbols() {
+            Ok(symbols) => {
+                if !symbols.is_empty() {
+                    let symbol_infos: Vec<SymbolInfo> = symbols
+                        .into_iter()
+                        .map(|symbol| SymbolInfo {
+                            symbol: symbol.clone(),
+                            file_path: format!("db://pairs.db/{}", symbol),
+                        })
+                        .collect();
+
+                    info!("Found {} symbols from DatabaseLoader", symbol_infos.len());
+                    return Ok(symbol_infos);
+                }
+            }
+            Err(e) => {
+                info!("DatabaseLoader failed: {}, falling back to CsvLoader", e);
+            }
+        }
+    }
+    drop(pool_opt);
+
+    // Fallback sur CsvLoader pour les anciennes données
     let loader = CsvLoader::new();
 
     let symbols = loader
@@ -63,7 +91,7 @@ pub async fn load_symbols() -> Result<Vec<SymbolInfo>, CommandError> {
         })
         .collect();
 
-    info!("Found {} symbols", symbol_infos.len());
+    info!("Found {} symbols from CsvLoader", symbol_infos.len());
     Ok(symbol_infos)
 }
 
