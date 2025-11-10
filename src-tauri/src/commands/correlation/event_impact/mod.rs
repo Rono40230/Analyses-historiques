@@ -11,13 +11,16 @@ use rusqlite::Connection;
 use chrono::{DateTime, Utc, TimeZone, Duration};
 use tauri::State;
 use crate::commands::candle_index_commands::CandleIndexState;
+use crate::commands::pair_data_commands::PairDataState;
+use crate::services::DatabaseLoader;
 use super::volatility_helpers::{parse_sqlite_datetime, calculate_volatilities_optimized};
 
 #[tauri::command]
 pub async fn get_event_impact_by_pair(
     event_type: String,
     event_count: i32,
-    state: State<'_, CandleIndexState>,
+    _state: State<'_, CandleIndexState>,
+    pair_state: State<'_, PairDataState>,
 ) -> Result<EventImpactResult, String> {
     let data_dir = dirs::data_local_dir()
         .ok_or("Failed to get data directory")?
@@ -61,8 +64,21 @@ pub async fn get_event_impact_by_pair(
     let _last_event_datetime = parse_sqlite_datetime(last_datetime)?;
     let last_datetime_formatted = last_datetime.clone();
     
-    // Obtenir toutes les paires disponibles
-    let pairs = get_available_pairs()?;
+    // Créer le DatabaseLoader depuis le pair_data pool
+    let pair_pool = pair_state
+        .pool
+        .lock()
+        .map_err(|e| format!("Failed to lock pair pool: {}", e))?
+        .clone()
+        .ok_or("Pair database pool not initialized")?;
+    
+    let db_loader = DatabaseLoader::new(pair_pool);
+    
+    // Créer un CandleIndex qui utilise le DatabaseLoader pour charger les paires
+    let mut candle_index = crate::services::candle_index::CandleIndex::with_db_loader(db_loader.clone());
+    
+    // Obtenir toutes les paires disponibles depuis la BD
+    let pairs = get_available_pairs(&db_loader)?;
     
     // Préparer les datetimes des événements
     let event_datetimes: Result<Vec<DateTime<Utc>>, String> = events
@@ -74,20 +90,12 @@ pub async fn get_event_impact_by_pair(
         .collect();
     let event_datetimes = event_datetimes?;
     
-    // ⚠️ AUDIT FIX: Garder le lock pendant TOUTE l'opération
-    let mut index_state = state.index.lock()
-        .map_err(|e| format!("Failed to lock candle index state: {}", e))?;
-    
-    let candle_index = index_state
-        .as_mut()
-        .ok_or("CandleIndex not initialized. Call init_candle_index first.")?;
-    
     // Charger les paires à la demande
     for pair in &pairs {
         candle_index.load_pair_candles(pair)?;
     }
     
-    let pair_impacts = calculate_pair_impacts(&pairs, &event_datetimes[0], candle_index)?;
+    let pair_impacts = calculate_pair_impacts(&pairs, &event_datetimes[0], &candle_index)?;
     let observations = generate_observations(&pair_impacts);
     
     Ok(EventImpactResult {

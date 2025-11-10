@@ -20,6 +20,7 @@ pub mod event_metrics_aggregator;
 pub mod candle_index;
 pub mod calendar_file_stats;
 pub mod pair_data_stats;
+pub mod database_loader;
 
 pub use csv_loader::*;
 pub use calendar_converter::*;
@@ -33,3 +34,4 @@ pub use import_processor::*;
 pub use session::*;
 pub use metrics::*;
 pub use pair_data::*;
+pub use database_loader::*;

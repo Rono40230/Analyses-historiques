@@ -5,25 +5,37 @@
 use std::collections::{HashMap, BTreeMap};
 use chrono::{NaiveDate, DateTime, Utc, Timelike};
 use crate::models::Candle;
-use crate::services::CsvLoader;
+use crate::services::{CsvLoader, DatabaseLoader};
 
 /// Structure pour stocker les candles indexées par paire et par date
 /// Permet des recherches O(log n) au lieu de O(n)
 pub struct CandleIndex {
     /// HashMap<pair_symbol, BTreeMap<NaiveDate, Vec<Candle>>>
     data: HashMap<String, BTreeMap<NaiveDate, Vec<Candle>>>,
+    /// Optional DatabaseLoader pour charger les paires depuis la BD
+    db_loader: Option<DatabaseLoader>,
 }
 
 impl CandleIndex {
-    /// Crée un nouvel index vide
+    /// Crée un nouvel index vide sans DatabaseLoader
     pub fn new() -> Self {
         Self {
             data: HashMap::new(),
+            db_loader: None,
+        }
+    }
+
+    /// Crée un nouvel index avec un DatabaseLoader pour charger depuis la BD
+    pub fn with_db_loader(loader: DatabaseLoader) -> Self {
+        Self {
+            data: HashMap::new(),
+            db_loader: Some(loader),
         }
     }
 
     /// Crée un index vide SANS charger les CSV (lazy loading)
     /// Les paires sont chargées à la demande avec load_pair_candles()
+    #[allow(dead_code)]
     pub fn new_lazy() -> Result<Self, String> {
         // Juste vérifie que les symboles existent
         let loader = CsvLoader::new();
@@ -63,16 +75,31 @@ impl CandleIndex {
 
     /// Charge une paire spécifique à la demande (lazy loading)
     /// Retourne true si la paire a été chargée, false si elle l'était déjà
+    /// Utilise DatabaseLoader si disponible, sinon fallback sur CsvLoader
     pub fn load_pair_candles(&mut self, symbol: &str) -> Result<bool, String> {
         // Vérifier si déjà chargée
         if self.data.contains_key(symbol) {
             return Ok(false); // Déjà en cache
         }
 
-        let loader = CsvLoader::new();
-        let candles = loader
-            .load_candles(symbol)
-            .map_err(|e| format!("Failed to load candles for {}: {}", symbol, e))?;
+        let candles = if let Some(ref loader) = self.db_loader {
+            // Charger depuis la BD via DatabaseLoader
+            // Charger TOUTES les candles disponibles pour ce symbole
+            let start_time = DateTime::from_timestamp(0, 0)
+                .ok_or_else(|| "Failed to create start datetime".to_string())?;
+            let end_time = DateTime::from_timestamp(i64::MAX / 2, 0)
+                .ok_or_else(|| "Failed to create end datetime".to_string())?;
+            
+            loader
+                .load_candles_by_pair(symbol, "M1", start_time, end_time)
+                .map_err(|e| format!("Failed to load candles for {} from DB: {}", symbol, e))?
+        } else {
+            // Fallback sur CsvLoader si pas de DatabaseLoader
+            let loader = CsvLoader::new();
+            loader
+                .load_candles(symbol)
+                .map_err(|e| format!("Failed to load candles for {}: {}", symbol, e))?
+        };
 
         if !candles.is_empty() {
             self.add_candles(symbol, candles);

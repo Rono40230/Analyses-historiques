@@ -1,7 +1,7 @@
 // event_impact/helpers.rs - Fonctions utilitaires pour analyse d'impact
 // Conforme .clinerules: <100L, fonctions pures
 
-use crate::services::CsvLoader;
+use crate::services::DatabaseLoader;
 
 /// Retourne la valeur d'1 pip pour une paire donnée
 pub fn get_pip_value(symbol: &str) -> f64 {
@@ -44,10 +44,9 @@ pub fn currency_to_country(currency: &str) -> String {
 }
 
 /// Récupère toutes les paires disponibles avec priorité
-pub fn get_available_pairs() -> Result<Vec<String>, String> {
-    let loader = CsvLoader::new();
+pub fn get_available_pairs(loader: &DatabaseLoader) -> Result<Vec<String>, String> {
     let symbols = loader
-        .list_available_symbols()
+        .get_all_symbols()
         .map_err(|e| format!("Failed to get available symbols: {}", e))?;
     
     let priority_pairs = vec!["USDJPY", "GBPJPY", "BTCUSD", "ETHUSD", "EURUSD", "GBPUSD", 

@@ -5,26 +5,41 @@
 use std::sync::Mutex;
 use tauri::State;
 use crate::services::candle_index::CandleIndex;
+use crate::services::DatabaseLoader;
+use crate::commands::pair_data_commands::PairDataState;
 
 pub struct CandleIndexState {
     pub index: Mutex<Option<CandleIndex>>,
 }
 
 /// Initialise l'index des candles au démarrage (LAZY LOADING)
-/// Crée un index vide et charge les paires seulement à la demande
+/// Crée un index vide avec DatabaseLoader pour charger paires depuis pairs.db
 /// Cela rend l'app responsiv au démarrage (< 1s au lieu de 50s)
 #[tauri::command]
 pub async fn init_candle_index(
     state: State<'_, CandleIndexState>,
+    pair_state: State<'_, PairDataState>,
 ) -> Result<String, String> {
-    let index = CandleIndex::new_lazy()?;
+    // Obtenir le pool pairs.db
+    let pair_pool = pair_state
+        .pool
+        .lock()
+        .map_err(|e| format!("Failed to lock pair pool: {}", e))?
+        .clone()
+        .ok_or("Pair database pool not initialized")?;
+    
+    // Créer le DatabaseLoader
+    let db_loader = DatabaseLoader::new(pair_pool);
+    
+    // Créer un CandleIndex avec le DatabaseLoader
+    let index = CandleIndex::with_db_loader(db_loader);
     
     let mut index_state = state.index.lock()
         .map_err(|e| format!("Failed to lock state: {}", e))?;
     
     *index_state = Some(index);
     
-    Ok("CandleIndex initialized (lazy loading mode) - paires chargées à la demande".to_string())
+    Ok("CandleIndex initialized avec DatabaseLoader - paires chargées depuis BD".to_string())
 }
 
 /// Charge une paire spécifique dans l'index (à la demande)

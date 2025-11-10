@@ -69,6 +69,35 @@ pub fn run() {
     };
 
     tracing::info!("✅ CalendarState créé avec pool actif");
+    
+    // Initialise le pool DB pour les paires (données de trading)
+    let pairs_db_path = data_dir
+        .join("volatility-analyzer")
+        .join("pairs.db");
+    
+    let pairs_db_url = format!("sqlite://{}", pairs_db_path.display());
+    let pairs_pool = match db::create_pool(&pairs_db_url) {
+        Ok(pool) => pool,
+        Err(e) => {
+            tracing::error!("❌ ERREUR: Impossible de créer le pool de base de données paires: {}", e);
+            std::process::exit(1);
+        }
+    };
+    
+    tracing::info!("✅ Pool de base de données paires initialisé");
+    
+    if let Err(e) = db::ensure_pair_tables(&pairs_pool) {
+        tracing::error!("❌ ERREUR: Impossible de créer les tables paires: {}", e);
+        std::process::exit(1);
+    }
+    
+    tracing::info!("✅ Tables paires vérifiées/créées");
+
+    let pair_state = pair_data_commands::PairDataState {
+        pool: Mutex::new(Some(pairs_pool)),
+    };
+
+    tracing::info!("✅ PairDataState créé avec pool actif");
 
     // Initialise le state pour les métriques d'événements
     let candles_state = event_metrics_commands::CandlesState {
@@ -88,6 +117,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(calendar_state)
+        .manage(pair_state)
         .manage(candles_state)
         .manage(candle_index_state)
         .invoke_handler(tauri::generate_handler![
