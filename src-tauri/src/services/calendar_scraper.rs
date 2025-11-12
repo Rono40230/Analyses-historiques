@@ -1,11 +1,11 @@
 // services/calendar_scraper.rs - Service de gestion des événements calendrier
 // NOTE: Ce module est conservé pour usage futur (Phase 2 - scraping événements)
 
+use crate::db::schema::calendar_events;
+use crate::db::DbPool;
+use crate::models::{CalendarEvent, VolatilityError};
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use crate::db::DbPool;
-use crate::db::schema::calendar_events;
-use crate::models::{CalendarEvent, VolatilityError};
 
 #[allow(dead_code)]
 pub struct CalendarScraper {
@@ -26,7 +26,9 @@ impl CalendarScraper {
         start_time: NaiveDateTime,
         end_time: NaiveDateTime,
     ) -> Result<Vec<CalendarEvent>, VolatilityError> {
-        let mut conn = self.db_pool.get()
+        let mut conn = self
+            .db_pool
+            .get()
             .map_err(|e| VolatilityError::DatabaseError(e.to_string()))?;
 
         calendar_events::table
@@ -45,7 +47,9 @@ impl CalendarScraper {
         symbol: &str,
         hours_ahead: i64,
     ) -> Result<Vec<CalendarEvent>, VolatilityError> {
-        let mut conn = self.db_pool.get()
+        let mut conn = self
+            .db_pool
+            .get()
             .map_err(|e| VolatilityError::DatabaseError(e.to_string()))?;
 
         let now = chrono::Utc::now().naive_utc();

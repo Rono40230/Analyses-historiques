@@ -1,9 +1,8 @@
 use crate::commands::calendar_commands::CalendarState;
 use crate::services::session_analyzer::{
-    OverlapStats, SessionAnalysisResult, SessionAnalyzer,
-    SessionStats, TradingSession,
+    OverlapStats, SessionAnalysisResult, SessionAnalyzer, SessionStats, TradingSession,
 };
-use crate::services::{CsvLoader, CalendarCorrelator};
+use crate::services::{CalendarCorrelator, CsvLoader};
 use chrono::{NaiveDateTime, Timelike};
 use std::collections::HashMap;
 use tauri::State;
@@ -15,7 +14,8 @@ pub async fn analyze_sessions(
 ) -> Result<SessionAnalysisResult, String> {
     // Charger les données depuis le fichier CSV au lieu de la DB
     let loader = CsvLoader::new();
-    let all_candles = loader.load_candles(&pair_symbol)
+    let all_candles = loader
+        .load_candles(&pair_symbol)
         .map_err(|e| format!("Erreur lors du chargement des données: {}", e))?;
 
     if all_candles.is_empty() {
@@ -26,7 +26,8 @@ pub async fn analyze_sessions(
     }
 
     // Convertir les bougies en format (timestamp, high, low)
-    let candles: Vec<(i64, f64, f64)> = all_candles.iter()
+    let candles: Vec<(i64, f64, f64)> = all_candles
+        .iter()
         .map(|c| (c.datetime.timestamp(), c.high, c.low))
         .collect();
 
@@ -78,7 +79,8 @@ pub async fn analyze_sessions(
     let is_winter = true;
 
     for session in &sessions {
-        let vols = session_volatilities.get(&session.name)
+        let vols = session_volatilities
+            .get(&session.name)
             .ok_or_else(|| "Session not found in volatilities map".to_string())?;
         if vols.is_empty() {
             continue;
@@ -108,10 +110,11 @@ pub async fn analyze_sessions(
     let overlaps = calculate_overlaps(&sessions, &candles, is_winter, avg_daily_volatility)?;
 
     // Corrélation avec calendrier (vraies données DB)
-    let pool_guard = _state.pool.lock()
+    let pool_guard = _state
+        .pool
+        .lock()
         .map_err(|e| format!("Erreur lock pool: {}", e))?;
-    let pool = pool_guard.as_ref()
-        .ok_or("Pool DB non initialisé")?;
+    let pool = pool_guard.as_ref().ok_or("Pool DB non initialisé")?;
     let calendar_correlation = CalendarCorrelator::calculate_correlation(&sessions, pool)?;
 
     // Générer les recommandations
@@ -120,11 +123,7 @@ pub async fn analyze_sessions(
 
     // Formater la période
     let period = if let (Some(first), Some(last)) = (first_date, last_date) {
-        format!(
-            "{} → {}",
-            first.format("%Y-%m-%d"),
-            last.format("%Y-%m-%d")
-        )
+        format!("{} → {}", first.format("%Y-%m-%d"), last.format("%Y-%m-%d"))
     } else {
         "N/A".to_string()
     };
@@ -150,7 +149,7 @@ fn calculate_overlaps(
 
     // Définir les chevauchements connus
     let overlap_pairs = vec![
-        ("Tokyo", "Londres", 8, 9),    // Tokyo+Londres: 8-9 UTC
+        ("Tokyo", "Londres", 8, 9),      // Tokyo+Londres: 8-9 UTC
         ("Londres", "New York", 13, 17), // Londres+NY: 13-17 UTC
     ];
 

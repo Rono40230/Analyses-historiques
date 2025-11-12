@@ -2,10 +2,10 @@
 // Index en mémoire pour recherche rapide de candles par date
 // Utilise BTreeMap pour requêtes range O(log n) au lieu de O(n) linéaire
 
-use std::collections::{HashMap, BTreeMap};
-use chrono::{NaiveDate, DateTime, Utc, Timelike};
 use crate::models::Candle;
 use crate::services::{CsvLoader, DatabaseLoader};
+use chrono::{DateTime, NaiveDate, Timelike, Utc};
+use std::collections::{BTreeMap, HashMap};
 
 /// Structure pour stocker les candles indexées par paire et par date
 /// Permet des recherches O(log n) au lieu de O(n)
@@ -42,7 +42,7 @@ impl CandleIndex {
         let _symbols = loader
             .list_available_symbols()
             .map_err(|e| format!("Failed to list symbols: {}", e))?;
-        
+
         Ok(CandleIndex::new())
     }
 
@@ -53,7 +53,7 @@ impl CandleIndex {
     pub fn load_all_pairs() -> Result<Self, String> {
         let mut index = CandleIndex::new();
         let loader = CsvLoader::new();
-        
+
         // Lister toutes les paires disponibles
         let symbols = loader
             .list_available_symbols()
@@ -87,9 +87,10 @@ impl CandleIndex {
             // Charger TOUTES les candles disponibles pour ce symbole
             let start_time = DateTime::from_timestamp(0, 0)
                 .ok_or_else(|| "Failed to create start datetime".to_string())?;
-            let end_time = DateTime::from_timestamp(i64::MAX / 2, 0)
-                .ok_or_else(|| "Failed to create end datetime".to_string())?;
-            
+            let end_time =
+                DateTime::from_timestamp(2_000_000_000, 0) // ~2033
+                    .ok_or_else(|| "Failed to create end datetime".to_string())?;
+
             loader
                 .load_candles_by_pair(symbol, "M1", start_time, end_time)
                 .map_err(|e| format!("Failed to load candles for {} from DB: {}", symbol, e))?
@@ -115,10 +116,7 @@ impl CandleIndex {
 
         for candle in candles {
             let date = candle.datetime.date_naive();
-            date_map
-                .entry(date)
-                .or_insert_with(Vec::new)
-                .push(candle);
+            date_map.entry(date).or_insert_with(Vec::new).push(candle);
         }
 
         self.data.insert(symbol.to_string(), date_map);
@@ -128,12 +126,9 @@ impl CandleIndex {
     /// NOTE: Cette fonction est conservée pour usage futur
     #[allow(dead_code)]
     pub fn get_all_candles(&self, symbol: &str) -> Option<Vec<Candle>> {
-        self.data.get(symbol).map(|date_map| {
-            date_map
-                .values()
-                .flat_map(|v| v.clone())
-                .collect()
-        })
+        self.data
+            .get(symbol)
+            .map(|date_map| date_map.values().flat_map(|v| v.clone()).collect())
     }
 
     /// Récupère les candles DANS UNE PLAGE DE DATES (optimisé O(log n))
@@ -188,7 +183,9 @@ impl CandleIndex {
             date_map
                 .range(baseline_start..event_date)
                 .flat_map(|(_, candles)| candles.iter())
-                .filter(|c| c.datetime.hour() == event_hour && c.datetime.date_naive() != event_date)
+                .filter(|c| {
+                    c.datetime.hour() == event_hour && c.datetime.date_naive() != event_date
+                })
                 .map(|c| (c.datetime, c.high, c.low))
                 .collect()
         })

@@ -1,84 +1,63 @@
-# Makefile pour vérifier le respect des .clinerules et compiler
-# Usage: make <commande>
+# Makefile - Automatisation des vérifications
+.PHONY: help pre-commit check-rules validate audit dev setup-hooks clean
 
-.PHONY: help dev check-rules validate all build-flatpak build-native
-
-# Affiche l'aide
 help:
 	@echo "════════════════════════════════════════════════"
 	@echo "   COMMANDES DISPONIBLES"
 	@echo "════════════════════════════════════════════════"
 	@echo ""
-	@echo "  make dev           - Lance le mode développement avec hot-reload"
-	@echo "  make check-rules   - Vérifie le respect des règles .clinerules"
-	@echo "  make validate      - Valide tout le code (clippy + tests)"
-	@echo "  make build-flatpak - Compile dans VSCode Flatpak (cargo check seulement)"
-	@echo "  make build-native  - Compile en natif Fedora (build complet)"
-	@echo "  make all           - Fait tout : check + validate + dev"
-	@echo ""
+	@echo "  make pre-commit    - Vérifie tout avant commit (RECOMMANDÉ)"
+	@echo "  make check-rules   - Vérifie conformité .clinerules"
+	@echo "  make validate      - Compile + teste + linte"
+	@echo "  make audit         - Audit sécurité dépendances"
+	@echo "  make report        - Génère rapport conformité"
+	@echo "  make dev           - Lance dev avec hot-reload"
 	@echo "════════════════════════════════════════════════"
 
-# Compile dans VSCode Flatpak (cargo check seulement - linker échoue)
-build-flatpak:
-	@echo "🔧 Configuration environnement Flatpak..."
-	@source ./fix_vscode_flatpak_env.sh && cd src-tauri && cargo check
-
-# Compile en mode natif Fedora (build complet) - utilise flatpak-spawn si dans Flatpak
-build-native:
-	@echo "🚀 Compilation native Fedora..."
-	@if command -v flatpak-spawn > /dev/null 2>&1; then \
-		echo "   Détecté: VSCode Flatpak - utilisation de flatpak-spawn..."; \
-		cd src-tauri && flatpak-spawn --host bash -c "cd '$$(pwd)' && cargo build"; \
-	else \
-		echo "   Détecté: Environnement natif"; \
-		cd src-tauri && cargo build; \
-	fi
-
-# Lance le développement avec hot-reload
-dev:
-	@echo "🔥 Lancement du mode développement avec hot-reload..."
-	@echo "   Les changements CSS/HTML se rechargent automatiquement"
-	@echo "   Les changements Rust recompilent automatiquement"
+pre-commit: check-rules validate audit
 	@echo ""
-	cargo watch -x run
+	@./scripts/generate-report.sh
 
-# Vérifie le respect des règles
 check-rules:
 	@echo "📋 Vérification du respect des .clinerules..."
-	@echo ""
-	@echo "1️⃣  Vérification des tailles de fichiers..."
+	@./scripts/auto-format.sh
 	@./scripts/check-file-size.sh
-	@echo ""
-	@echo "2️⃣  Vérification des anti-patterns..."
 	@./scripts/check-unwrap.sh
-	@echo "   ✅ Pas de unwrap() ni expect() hors tests"
-	@echo ""
-	@echo "   ❌ Recherche de TODO non formatés..."
-	@! grep -r "TODO" src-tauri/src/ --include="*.rs" | grep -v "TODO(" || (echo "⚠️  AVERTISSEMENT: TODO trouvé sans format standard" && true)
-	@echo "   ✅ Vérification TODO terminée"
-	@echo ""
+	@./scripts/check-antipatterns.sh
+	@./scripts/check-dead-code.sh
+	@./scripts/check-circular-imports.sh
+	@./scripts/check-architecture.sh
 	@echo "✅ Vérification des règles terminée !"
 
-# Valide le code complet
 validate:
 	@echo "🔍 Validation complète du code..."
-	@echo ""
-	@echo "1️⃣  Compilation..."
-	cargo build
-	@echo ""
-	@echo "2️⃣  Tests..."
-	cargo test
-	@echo ""
-	@echo "3️⃣  Clippy (détection de problèmes)..."
-	cargo clippy -- -D warnings
-	@echo ""
-	@echo "4️⃣  Formatage..."
-	cargo fmt -- --check
-	@echo ""
+	cd src-tauri && cargo build --release
+	@./scripts/validate-tests.sh
+	@./scripts/check-coverage.sh
+	cd src-tauri && cargo clippy --release -- -D warnings
+	cd src-tauri && cargo fmt -- --check
 	@echo "✅ Validation terminée avec succès !"
 
-# Fait tout (sans lancer dev qui est infini)
-all: check-rules validate
+audit:
+	@echo "🔍 Audit sécurité des dépendances..."
+	cargo audit 2>/dev/null || echo "⚠️ cargo-audit non installé"
+	@echo "✅ Audit terminé"
 
-# Commande par défaut
-.DEFAULT_GOAL := help
+report:
+	@./scripts/generate-report.sh
+
+dev:
+	@echo "🔥 Lancement mode développement..."
+	cargo watch -x "check" -x "test" -x "clippy -- -D warnings"
+
+setup-hooks:
+	@echo "🔧 Installation du pre-commit hook..."
+	ln -sf ../../scripts/pre-commit.sh .git/hooks/pre-commit
+	chmod +x .git/hooks/pre-commit
+	@echo "✅ Hook installé"
+
+clean:
+	@echo "🧹 Nettoyage..."
+	cargo clean
+	rm -rf target/
+	@echo "✅ Nettoyé"

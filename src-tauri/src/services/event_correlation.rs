@@ -1,8 +1,8 @@
 // services/event_correlation.rs - Service de corrélation événements/volatilité
 use crate::db::DbPool;
-use crate::models::{CalendarEvent, CorrelatedEvent, Candle, VolatilityError};
+use crate::models::{CalendarEvent, Candle, CorrelatedEvent, VolatilityError};
+use chrono::{Duration, NaiveDateTime, Timelike};
 use diesel::prelude::*;
-use chrono::{NaiveDateTime, Duration, Timelike};
 
 /// Service pour analyser la corrélation entre événements économiques et volatilité
 pub struct EventCorrelationService {
@@ -24,7 +24,7 @@ impl EventCorrelationService {
         use crate::db::schema::calendar_events::dsl::*;
 
         let mut conn = self.pool.get()?;
-        
+
         let events = calendar_events
             .filter(event_time.ge(start_time))
             .filter(event_time.le(end_time))
@@ -44,7 +44,7 @@ impl EventCorrelationService {
     ) -> Option<CorrelatedEvent> {
         // Cherche les bougies autour de l'événement (1h avant, pendant, 1h après)
         let event_hour = event.event_time.hour() as u8;
-        
+
         // Calcule la volatilité moyenne 1h avant l'événement
         let before_volatility = self.calculate_avg_volatility_around(
             event.event_time - Duration::hours(2),
@@ -63,7 +63,7 @@ impl EventCorrelationService {
         if let (Some(before), Some(during_after)) = (before_volatility, during_after_volatility) {
             if before > 0.0 {
                 let increase_pct = ((during_after - before) / before) * 100.0;
-                
+
                 // Score de corrélation basé sur :
                 // - Impact de l'événement (HIGH = bonus)
                 // - Magnitude de l'augmentation
@@ -126,12 +126,16 @@ impl EventCorrelationService {
         }
 
         // Période couverte par les bougies
-        let start_time = candles.first()
+        let start_time = candles
+            .first()
             .ok_or_else(|| VolatilityError::InsufficientData("Empty candles".to_string()))?
-            .datetime.naive_utc();
-        let end_time = candles.last()
+            .datetime
+            .naive_utc();
+        let end_time = candles
+            .last()
             .ok_or_else(|| VolatilityError::InsufficientData("Empty candles".to_string()))?
-            .datetime.naive_utc();
+            .datetime
+            .naive_utc();
 
         // Récupère les événements économiques dans cette période
         let events = self.get_events_for_period(symbol, start_time, end_time)?;
@@ -211,7 +215,6 @@ pub struct CorrelationStats {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::NaiveDate;
 
     #[test]
     fn test_correlation_stats_calculation() {

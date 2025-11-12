@@ -28,7 +28,7 @@ impl<T: Clone> CacheService<T> {
     /// Obtenir une valeur du cache (retourne None si expiré ou inexistant)
     pub fn get(&self, key: &str) -> Option<T> {
         let now = current_unix_timestamp();
-        let cache = self.cache.lock().unwrap();
+        let cache = self.cache.lock().map_err(|_| ()).ok()?;
         
         if let Some(entry) = cache.get(key) {
             if now < entry.expires_at {
@@ -46,21 +46,24 @@ impl<T: Clone> CacheService<T> {
             expires_at,
         };
         
-        let mut cache = self.cache.lock().unwrap();
-        cache.insert(key, entry);
+        if let Ok(mut cache) = self.cache.lock() {
+            cache.insert(key, entry);
+        }
     }
     
     /// Nettoyer les entrées expirées
     pub fn cleanup_expired(&self) {
         let now = current_unix_timestamp();
-        let mut cache = self.cache.lock().unwrap();
-        
-        cache.retain(|_, entry| entry.expires_at > now);
+        if let Ok(mut cache) = self.cache.lock() {
+            cache.retain(|_, entry| entry.expires_at > now);
+        }
     }
     
     /// Vider le cache complètement
     pub fn clear(&self) {
-        self.cache.lock().unwrap().clear();
+        if let Ok(mut cache) = self.cache.lock() {
+            cache.clear();
+        }
     }
 }
 

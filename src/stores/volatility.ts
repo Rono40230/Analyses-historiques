@@ -70,10 +70,11 @@ export interface AnalysisResult {
 export const useVolatilityStore = defineStore('volatility', () => {
   // State
   const symbols = ref<SymbolInfo[]>([])
-  const selectedSymbol = ref<string>('')
+  const selectedSymbol = ref('')
   const analysisResult = ref<AnalysisResult | null>(null)
   const loading = ref(false)
-  const error = ref<string>('')
+  const error = ref('')
+  const dataRefreshTrigger = ref(0) // Signal pour forcer le refresh des données
 
   // Computed
   const hasAnalysis = computed(() => analysisResult.value !== null)
@@ -144,6 +145,10 @@ export const useVolatilityStore = defineStore('volatility', () => {
     error.value = ''
   }
 
+  function triggerDataRefresh() {
+    dataRefreshTrigger.value++
+  }
+
   return {
     // State
     symbols,
@@ -151,6 +156,7 @@ export const useVolatilityStore = defineStore('volatility', () => {
     analysisResult,
     loading,
     error,
+    dataRefreshTrigger,
     // Computed
     hasAnalysis,
     bestHoursStats,
@@ -159,5 +165,6 @@ export const useVolatilityStore = defineStore('volatility', () => {
     analyzeSymbol,
     getHourlyStats,
     clearAnalysis,
+    triggerDataRefresh,
   }
 })

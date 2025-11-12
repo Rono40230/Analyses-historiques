@@ -22,7 +22,12 @@ pub fn delete_pair_from_db(symbol: String, timeframe: String) -> Result<String, 
         )
         .map_err(|e| format!("Failed to delete candles: {}", e))?;
 
-    tracing::info!("🗑️  Deleted {} candles for {}/{}", candles_deleted, symbol, timeframe);
+    tracing::info!(
+        "🗑️  Deleted {} candles for {}/{}",
+        candles_deleted,
+        symbol,
+        timeframe
+    );
 
     // Supprimer la métadonnée de la paire
     let metadata_deleted = tx
@@ -32,13 +37,21 @@ pub fn delete_pair_from_db(symbol: String, timeframe: String) -> Result<String, 
         )
         .map_err(|e| format!("Failed to delete pair metadata: {}", e))?;
 
-    tracing::info!("🗑️  Deleted {} metadata records for {}/{}", metadata_deleted, symbol, timeframe);
+    tracing::info!(
+        "🗑️  Deleted {} metadata records for {}/{}",
+        metadata_deleted,
+        symbol,
+        timeframe
+    );
 
     // Commit la transaction
     tx.commit()
         .map_err(|e| format!("Failed to commit transaction: {}", e))?;
 
-    Ok(format!("Paire {}/{} supprimée avec succès ({} candles supprimés)", symbol, timeframe, candles_deleted))
+    Ok(format!(
+        "Paire {}/{} supprimée avec succès ({} candles supprimés)",
+        symbol, timeframe, candles_deleted
+    ))
 }
 
 /// Supprime un calendrier (calendar_imports + tous les événements) de la BD
@@ -74,7 +87,11 @@ pub fn delete_calendar_from_db(calendar_id: i32) -> Result<String, String> {
         )
         .map_err(|e| format!("Failed to delete calendar events: {}", e))?;
 
-    tracing::info!("🗑️  Deleted {} events for calendar '{}'", events_deleted, calendar_name);
+    tracing::info!(
+        "🗑️  Deleted {} events for calendar '{}'",
+        events_deleted,
+        calendar_name
+    );
 
     // Supprimer l'enregistrement du calendrier
     let _metadata_deleted = tx
@@ -90,5 +107,8 @@ pub fn delete_calendar_from_db(calendar_id: i32) -> Result<String, String> {
     tx.commit()
         .map_err(|e| format!("Failed to commit transaction: {}", e))?;
 
-    Ok(format!("Calendrier '{}' supprimé avec succès ({} événements supprimés)", calendar_name, events_deleted))
+    Ok(format!(
+        "Calendrier '{}' supprimé avec succès ({} événements supprimés)",
+        calendar_name, events_deleted
+    ))
 }

@@ -25,7 +25,7 @@ impl EconomicEventLoader {
     }
 
     /// Charge un CSV d'événements économiques dans la DB
-    /// 
+    ///
     /// Format attendu du CSV (Investing.com style):
     /// Date,Time,Currency,Event,Impact,Actual,Forecast,Previous
     /// 2025-01-15,14:30,EUR,ECB Interest Rate Decision,HIGH,4.50,4.25,4.00
@@ -72,7 +72,10 @@ impl EconomicEventLoader {
         // let inserted = self.scraper.store_events(&events)?;
         // info!("Successfully inserted {} events into database", inserted);
         let inserted = events.len();
-        info!("Would have inserted {} events into database (store disabled)", inserted);
+        info!(
+            "Would have inserted {} events into database (store disabled)",
+            inserted
+        );
 
         Ok(inserted)
     }
@@ -114,8 +117,8 @@ impl EconomicEventLoader {
 
         // Parse datetime "2025-01-15" + "14:30" -> NaiveDateTime
         let datetime_str = format!("{} {}", date, time);
-        let event_time = NaiveDateTime::parse_from_str(&datetime_str, "%Y-%m-%d %H:%M")
-            .map_err(|e| {
+        let event_time =
+            NaiveDateTime::parse_from_str(&datetime_str, "%Y-%m-%d %H:%M").map_err(|e| {
                 VolatilityError::ParseError(format!(
                     "Line {}: Invalid datetime '{}': {}",
                     line_num, datetime_str, e
@@ -156,19 +159,24 @@ mod tests {
         Arc::new(pool)
     }
 
+    #[allow(dead_code)]
     fn create_test_csv() -> NamedTempFile {
         let mut file = NamedTempFile::new().expect("Failed to create temp file");
         writeln!(
             file,
             "Date,Time,Currency,Event,Impact,Actual,Forecast,Previous"
         )
-        .unwrap();
+        .expect("Failed to write header");
         writeln!(
             file,
             "2025-01-15,14:30,EUR,ECB Interest Rate Decision,HIGH,4.50,4.25,4.00"
         )
-        .unwrap();
-        writeln!(file, "2025-02-03,20:30,USD,Non-Farm Payrolls,HIGH,250000,220000,210000").unwrap();
+        .expect("Failed to write record 1");
+        writeln!(
+            file,
+            "2025-02-03,20:30,USD,Non-Farm Payrolls,HIGH,250000,220000,210000"
+        )
+        .expect("Failed to write record 2");
         file
     }
 
@@ -195,7 +203,9 @@ mod tests {
             "4.00",
         ]);
 
-        let event = loader.parse_csv_record(&record, 2).unwrap();
+        let event = loader
+            .parse_csv_record(&record, 2)
+            .expect("Failed to parse record");
 
         assert_eq!(event.symbol, "EUR");
         assert_eq!(event.description, "ECB Rate Decision");

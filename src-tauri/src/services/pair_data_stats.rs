@@ -1,9 +1,9 @@
 // services/pair_data_stats.rs - Calcul des statistiques pour les données de paires
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
-use std::path::{Path, PathBuf};
 use std::fs;
-use std::io::{BufReader, BufRead};
+use std::io::{BufRead, BufReader};
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PairDataSummary {
@@ -36,7 +36,7 @@ pub fn count_csv_lines(path: &PathBuf) -> Option<usize> {
 pub fn extract_date_range_from_filename(filename: &str) -> Option<String> {
     // Format attendu: SYMBOL_M1_YYYY-MM-DD-YYYY-MM-DD_YYYYMMDD.csv
     let parts: Vec<&str> = filename.split('_').collect();
-    
+
     for part in parts {
         if part.contains('-') && part.len() >= 10 {
             // Vérifie si c'est une plage de dates (YYYY-MM-DD-YYYY-MM-DD)
@@ -48,7 +48,7 @@ pub fn extract_date_range_from_filename(filename: &str) -> Option<String> {
             }
         }
     }
-    
+
     None
 }
 
@@ -74,24 +74,24 @@ pub fn calculate_pair_summary(files: Vec<PairFileInfo>) -> PairDataSummary {
             last_import_date: None,
         };
     }
-    
+
     let mut unique_pairs = HashSet::new();
     let mut total_lines = 0;
     let mut total_size = 0;
     let mut all_dates = Vec::new();
     let mut latest_modified: Option<String> = None;
-    
+
     for file in &files {
         if let Some(pair) = &file.pair {
             unique_pairs.insert(pair.clone());
         }
-        
+
         if let Some(count) = file.line_count {
             total_lines += count;
         }
-        
+
         total_size += file.size_bytes;
-        
+
         // Extraire les dates de la plage
         if let Some(range) = &file.date_range {
             let dates: Vec<&str> = range.split(" → ").collect();
@@ -102,18 +102,19 @@ pub fn calculate_pair_summary(files: Vec<PairFileInfo>) -> PairDataSummary {
                 all_dates.push(end.to_string());
             }
         }
-        
+
         // Trouver le dernier fichier modifié
-        if latest_modified.is_none() || file.modified > latest_modified.clone().unwrap_or_default() {
+        if latest_modified.is_none() || file.modified > latest_modified.clone().unwrap_or_default()
+        {
             latest_modified = Some(file.modified.clone());
         }
     }
-    
+
     // Trier les dates pour trouver min/max
     all_dates.sort();
     let date_range_start = all_dates.first().cloned();
     let date_range_end = all_dates.last().cloned();
-    
+
     PairDataSummary {
         total_pairs: unique_pairs.len(),
         total_files: files.len(),

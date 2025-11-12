@@ -11,7 +11,7 @@ use std::path::PathBuf;
 pub struct AppConfig {
     /// Fichier calendrier actuellement sélectionné
     pub selected_calendar_file: Option<String>,
-    
+
     /// Timestamp de dernière mise à jour
     #[serde(skip_serializing_if = "Option::is_none")]
     pub last_updated: Option<String>,
@@ -23,12 +23,11 @@ pub struct ConfigService;
 impl ConfigService {
     /// Obtient le chemin du fichier de configuration
     fn get_config_path() -> Result<PathBuf> {
-        let data_dir = dirs::data_local_dir()
-            .context("Impossible de trouver le dossier de données local")?;
+        let data_dir =
+            dirs::data_local_dir().context("Impossible de trouver le dossier de données local")?;
 
         let app_dir = data_dir.join("volatility-analyzer");
-        fs::create_dir_all(&app_dir)
-            .context("Impossible de créer le dossier de l'application")?;
+        fs::create_dir_all(&app_dir).context("Impossible de créer le dossier de l'application")?;
 
         Ok(app_dir.join("config.json"))
     }

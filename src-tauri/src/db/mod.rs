@@ -10,16 +10,14 @@ pub type DbPool = Arc<r2d2::Pool<ConnectionManager<SqliteConnection>>>;
 
 pub fn create_pool(database_url: &str) -> Result<DbPool, Box<dyn std::error::Error>> {
     let manager = ConnectionManager::<SqliteConnection>::new(database_url);
-    let pool = r2d2::Pool::builder()
-        .max_size(5)
-        .build(manager)?;
+    let pool = r2d2::Pool::builder().max_size(5).build(manager)?;
     Ok(Arc::new(pool))
 }
 
 /// Crée la table calendar_events si elle n'existe pas
 pub fn ensure_calendar_table(pool: &DbPool) -> Result<(), Box<dyn std::error::Error>> {
     let mut conn = pool.get()?;
-    
+
     diesel::sql_query(
         "CREATE TABLE IF NOT EXISTS calendar_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -31,17 +29,20 @@ pub fn ensure_calendar_table(pool: &DbPool) -> Result<(), Box<dyn std::error::Er
             forecast REAL,
             previous REAL,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-        )"
-    ).execute(&mut conn)?;
-    
+        )",
+    )
+    .execute(&mut conn)?;
+
     diesel::sql_query(
-        "CREATE INDEX IF NOT EXISTS idx_calendar_events_symbol ON calendar_events(symbol)"
-    ).execute(&mut conn)?;
-    
+        "CREATE INDEX IF NOT EXISTS idx_calendar_events_symbol ON calendar_events(symbol)",
+    )
+    .execute(&mut conn)?;
+
     diesel::sql_query(
-        "CREATE INDEX IF NOT EXISTS idx_calendar_events_time ON calendar_events(event_time)"
-    ).execute(&mut conn)?;
-    
+        "CREATE INDEX IF NOT EXISTS idx_calendar_events_time ON calendar_events(event_time)",
+    )
+    .execute(&mut conn)?;
+
     Ok(())
 }
 
@@ -50,7 +51,7 @@ pub fn ensure_calendar_table(pool: &DbPool) -> Result<(), Box<dyn std::error::Er
 #[allow(dead_code)]
 pub fn ensure_pair_tables(pool: &DbPool) -> Result<(), Box<dyn std::error::Error>> {
     let mut conn = pool.get()?;
-    
+
     diesel::sql_query(
         "CREATE TABLE IF NOT EXISTS candle_data (
             id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -64,22 +65,24 @@ pub fn ensure_pair_tables(pool: &DbPool) -> Result<(), Box<dyn std::error::Error
             volume REAL NOT NULL,
             imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             source_file TEXT NOT NULL
-        )"
-    ).execute(&mut conn)?;
-    
+        )",
+    )
+    .execute(&mut conn)?;
+
     diesel::sql_query(
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_candle_data_symbol_timeframe_time 
-            ON candle_data(symbol, timeframe, time)"
-    ).execute(&mut conn)?;
-    
+            ON candle_data(symbol, timeframe, time)",
+    )
+    .execute(&mut conn)?;
+
+    diesel::sql_query("CREATE INDEX IF NOT EXISTS idx_candle_data_time ON candle_data(time)")
+        .execute(&mut conn)?;
+
     diesel::sql_query(
-        "CREATE INDEX IF NOT EXISTS idx_candle_data_time ON candle_data(time)"
-    ).execute(&mut conn)?;
-    
-    diesel::sql_query(
-        "CREATE INDEX IF NOT EXISTS idx_candle_data_source_file ON candle_data(source_file)"
-    ).execute(&mut conn)?;
-    
+        "CREATE INDEX IF NOT EXISTS idx_candle_data_source_file ON candle_data(source_file)",
+    )
+    .execute(&mut conn)?;
+
     diesel::sql_query(
         "CREATE TABLE IF NOT EXISTS pair_metadata (
             id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -90,13 +93,15 @@ pub fn ensure_pair_tables(pool: &DbPool) -> Result<(), Box<dyn std::error::Error
             last_imported_file TEXT,
             data_quality_score REAL DEFAULT 1.0,
             UNIQUE(symbol, timeframe)
-        )"
-    ).execute(&mut conn)?;
-    
+        )",
+    )
+    .execute(&mut conn)?;
+
     diesel::sql_query(
-        "CREATE INDEX IF NOT EXISTS idx_pair_metadata_symbol ON pair_metadata(symbol)"
-    ).execute(&mut conn)?;
-    
+        "CREATE INDEX IF NOT EXISTS idx_pair_metadata_symbol ON pair_metadata(symbol)",
+    )
+    .execute(&mut conn)?;
+
     diesel::sql_query(
         "CREATE TABLE IF NOT EXISTS import_log (
             id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -109,24 +114,27 @@ pub fn ensure_pair_tables(pool: &DbPool) -> Result<(), Box<dyn std::error::Error
             status TEXT NOT NULL,
             error_message TEXT,
             checksum TEXT
-        )"
-    ).execute(&mut conn)?;
-    
+        )",
+    )
+    .execute(&mut conn)?;
+
     diesel::sql_query(
-        "CREATE INDEX IF NOT EXISTS idx_import_log_imported_at ON import_log(imported_at)"
-    ).execute(&mut conn)?;
-    
+        "CREATE INDEX IF NOT EXISTS idx_import_log_imported_at ON import_log(imported_at)",
+    )
+    .execute(&mut conn)?;
+
     diesel::sql_query(
-        "CREATE INDEX IF NOT EXISTS idx_import_log_symbol ON import_log(symbol, timeframe)"
-    ).execute(&mut conn)?;
-    
+        "CREATE INDEX IF NOT EXISTS idx_import_log_symbol ON import_log(symbol, timeframe)",
+    )
+    .execute(&mut conn)?;
+
     Ok(())
 }
 
 /// Crée la table calendar_imports si elle n'existe pas
 pub fn ensure_calendar_imports_table(pool: &DbPool) -> Result<(), Box<dyn std::error::Error>> {
     let mut conn = pool.get()?;
-    
+
     diesel::sql_query(
         "CREATE TABLE IF NOT EXISTS calendar_imports (
             id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -137,18 +145,19 @@ pub fn ensure_calendar_imports_table(pool: &DbPool) -> Result<(), Box<dyn std::e
             newest_event_date TIMESTAMP,
             imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             is_active BOOLEAN NOT NULL DEFAULT 1
-        )"
-    ).execute(&mut conn)?;
-    
+        )",
+    )
+    .execute(&mut conn)?;
+
     diesel::sql_query(
-        "CREATE INDEX IF NOT EXISTS idx_calendar_imports_is_active ON calendar_imports(is_active)"
-    ).execute(&mut conn)?;
-    
+        "CREATE INDEX IF NOT EXISTS idx_calendar_imports_is_active ON calendar_imports(is_active)",
+    )
+    .execute(&mut conn)?;
+
     // Ajouter colonne calendar_import_id à calendar_events si elle n'existe pas
     // (vérification basique pour éviter les erreurs)
-    let _ = diesel::sql_query(
-        "ALTER TABLE calendar_events ADD COLUMN calendar_import_id INTEGER"
-    ).execute(&mut conn);
-    
+    let _ = diesel::sql_query("ALTER TABLE calendar_events ADD COLUMN calendar_import_id INTEGER")
+        .execute(&mut conn);
+
     Ok(())
 }

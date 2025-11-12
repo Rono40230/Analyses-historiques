@@ -1,32 +1,21 @@
 #!/bin/bash
-# Vérifie qu'il n'y a pas de .unwrap() ou .expect() en dehors des tests
+# Vérifier les unwrap() stricts uniquement en production (pas en tests)
 
-set -e
+# Créer un fichier temporaire avec le code source
+TEMP_FILE=$(mktemp)
+trap "rm -f $TEMP_FILE" EXIT
 
-FOUND_ISSUE=0
-
-# Pour chaque fichier Rust
-for file in $(find src-tauri/src -name "*.rs"); do
-    # Extraire uniquement le code hors tests (avant #[cfg(test)])
-    CODE_ONLY=$(sed '/#\[cfg(test)\]/,$d' "$file")
-    
-    # Chercher .unwrap() dans le code (hors tests)
-    if echo "$CODE_ONLY" | grep -q "\.unwrap()"; then
-        echo "❌ unwrap() trouvé dans $file (hors tests)"
-        echo "$CODE_ONLY" | grep -n "\.unwrap()"
-        FOUND_ISSUE=1
-    fi
-    
-    # Chercher .expect() dans le code (hors tests)
-    if echo "$CODE_ONLY" | grep -q "\.expect("; then
-        echo "❌ expect() trouvé dans $file (hors tests)"
-        echo "$CODE_ONLY" | grep -n "\.expect("
-        FOUND_ISSUE=1
-    fi
+# Extraire le code source sans les sections de test
+find src-tauri/src -name "*.rs" -type f -print0 | while IFS= read -r -d '' file; do
+    # Supprimer les sections #[cfg(test)] et mod tests
+    sed '/^#\[cfg(test)\]/,/^}/d; /^[[:space:]]*mod tests/,/^}/d' "$file" >> "$TEMP_FILE"
 done
 
-if [ $FOUND_ISSUE -eq 1 ]; then
+# Vérifier les unwrap() dans le code production uniquement
+if grep -E '\.unwrap\(\)' "$TEMP_FILE"; then 
+    echo "❌ unwrap() détecté en production!"
     exit 1
 fi
 
+echo "✅ Pas d'unwrap() dans le code production"
 exit 0

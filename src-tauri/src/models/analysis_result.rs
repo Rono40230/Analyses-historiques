@@ -1,14 +1,14 @@
 // models/analysis_result.rs - Résultat d'analyse complète
-use serde::{Deserialize, Serialize};
-use super::HourlyStats;
 use super::calendar_event::CalendarEvent;
+use super::HourlyStats;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnalysisResult {
     pub symbol: String,
-    pub period_start: String,        // Date début analyse
-    pub period_end: String,          // Date fin analyse
-    pub timeframe: String,           // Ex: "M1", "M5", etc.
+    pub period_start: String, // Date début analyse
+    pub period_end: String,   // Date fin analyse
+    pub timeframe: String,    // Ex: "M1", "M5", etc.
     pub hourly_stats: Vec<HourlyStats>,
     pub best_hours: Vec<u8>,
     pub confidence_score: f64,
@@ -35,13 +35,19 @@ pub enum TradingRecommendation {
 
 impl TradingRecommendation {
     pub fn from_confidence(score: f64) -> Self {
-        if score >= 80.0 { Self::ScalpAggressive }
-        else if score >= 65.0 { Self::ScalpNormal }
-        else if score >= 50.0 { Self::ScalpCautious }
-        else if score >= 35.0 { Self::VeryCautious }
-        else { Self::NoTrade }
+        if score >= 80.0 {
+            Self::ScalpAggressive
+        } else if score >= 65.0 {
+            Self::ScalpNormal
+        } else if score >= 50.0 {
+            Self::ScalpCautious
+        } else if score >= 35.0 {
+            Self::VeryCautious
+        } else {
+            Self::NoTrade
+        }
     }
-    
+
     #[allow(dead_code)]
     pub fn to_string(&self) -> &'static str {
         match self {
@@ -64,9 +70,13 @@ pub enum RiskLevel {
 
 impl RiskLevel {
     pub fn from_volatility(volatility: f64) -> Self {
-        if volatility < 0.05 { Self::Low }
-        else if volatility < 0.15 { Self::Medium }
-        else { Self::High }
+        if volatility < 0.05 {
+            Self::Low
+        } else if volatility < 0.15 {
+            Self::Medium
+        } else {
+            Self::High
+        }
     }
 }
 
@@ -88,11 +98,26 @@ mod tests {
 
     #[test]
     fn test_trading_recommendation_from_confidence() {
-        assert_eq!(TradingRecommendation::from_confidence(85.0), TradingRecommendation::ScalpAggressive);
-        assert_eq!(TradingRecommendation::from_confidence(70.0), TradingRecommendation::ScalpNormal);
-        assert_eq!(TradingRecommendation::from_confidence(50.0), TradingRecommendation::ScalpCautious);
-        assert_eq!(TradingRecommendation::from_confidence(30.0), TradingRecommendation::VeryCautious);
-        assert_eq!(TradingRecommendation::from_confidence(10.0), TradingRecommendation::NoTrade);
+        assert_eq!(
+            TradingRecommendation::from_confidence(85.0),
+            TradingRecommendation::ScalpAggressive
+        );
+        assert_eq!(
+            TradingRecommendation::from_confidence(70.0),
+            TradingRecommendation::ScalpNormal
+        );
+        assert_eq!(
+            TradingRecommendation::from_confidence(50.0),
+            TradingRecommendation::ScalpCautious
+        );
+        assert_eq!(
+            TradingRecommendation::from_confidence(30.0),
+            TradingRecommendation::VeryCautious
+        );
+        assert_eq!(
+            TradingRecommendation::from_confidence(10.0),
+            TradingRecommendation::NoTrade
+        );
     }
 
     #[test]

@@ -1,17 +1,19 @@
 // models/mod.rs - Module principal des modèles de données
 // Niveau 4 de l'architecture DAG
 
-pub mod candle;
-pub mod hourly_stats;
 pub mod analysis_result;
 pub mod calendar_event;
-pub mod event_metrics;
+pub mod candle;
 pub mod errors;
+pub mod event_metrics;
+pub mod hourly_stats;
 
 // Re-exports pour faciliter les imports
-pub use candle::Candle;
-pub use hourly_stats::HourlyStats;
-pub use analysis_result::{AnalysisResult, CorrelatedEvent, GlobalMetrics, TradingRecommendation, RiskLevel};
+pub use analysis_result::{
+    AnalysisResult, CorrelatedEvent, GlobalMetrics, RiskLevel, TradingRecommendation,
+};
 pub use calendar_event::CalendarEvent;
+pub use candle::Candle;
+pub use errors::{Result, VolatilityError};
 pub use event_metrics::EventMetrics;
-pub use errors::{VolatilityError, Result};
+pub use hourly_stats::HourlyStats;

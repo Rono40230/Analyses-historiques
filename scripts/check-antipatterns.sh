@@ -1,0 +1,2 @@
+#!/bin/bash
+EXIT_CODE=0; if grep -r "vec!\[" src-tauri/src --include="*.rs" | grep -E "(Price|Trade|Order|User)" | grep -v "#\[test\]"; then echo "❌ Mock data détecté!"; EXIT_CODE=1; fi; while IFS= read -r file; do consecutive_comments=$(grep -c "//.*" "$file" || true); if [ "$consecutive_comments" -gt 3 ]; then echo "⚠️  $file: Plus de 3 lignes commentées"; fi; done < <(find src-tauri/src -name "*.rs" -type f); if [ $EXIT_CODE -eq 0 ]; then echo "✅ Aucun anti-pattern critique détecté"; fi; exit $EXIT_CODE

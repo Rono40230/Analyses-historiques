@@ -1,0 +1,86 @@
+use rusqlite::Connection;
+use tauri::State;
+
+use super::heatmap_helpers::{
+    calculate_avg_volatility_for_event_pair_optimized, get_available_pairs, get_event_types,
+    HeatmapData,
+};
+use crate::commands::candle_index_commands::CandleIndexState;
+
+#[tauri::command]
+pub async fn get_correlation_heatmap(
+    months_back: Option<i32>,
+    state: State<'_, CandleIndexState>,
+) -> Result<HeatmapData, String> {
+    let months = months_back.unwrap_or(6);
+
+    let data_dir = dirs::data_local_dir()
+        .ok_or("Failed to get data directory")?
+        .join("volatility-analyzer");
+
+    let db_path = data_dir.join("volatility.db");
+
+    if !db_path.exists() {
+        return Err("Database not found".to_string());
+    }
+
+    let conn = Connection::open(&db_path).map_err(|e| format!("Failed to open database: {}", e))?;
+
+    let pairs = get_available_pairs(&conn)?;
+
+    if pairs.is_empty() {
+        return Err("No pairs found in database".to_string());
+    }
+
+    let event_types = get_event_types(&conn, months)?;
+
+    if event_types.is_empty() {
+        return Ok(HeatmapData {
+            period: format!("Derniers {} mois", months),
+            pairs,
+            event_types: vec![],
+            data: std::collections::HashMap::new(),
+        });
+    }
+
+    let mut data: std::collections::HashMap<String, std::collections::HashMap<String, f64>> =
+        std::collections::HashMap::new();
+
+    let mut index_state = state
+        .index
+        .lock()
+        .map_err(|e| format!("Failed to lock candle index state: {}", e))?;
+
+    let candle_index = index_state
+        .as_mut()
+        .ok_or("CandleIndex not initialized. Call init_candle_index first.")?;
+
+    for pair in &pairs {
+        candle_index.load_pair_candles(pair)?;
+    }
+
+    for pair in &pairs {
+        for event_type in &event_types {
+            let avg_vol = calculate_avg_volatility_for_event_pair_optimized(
+                &conn,
+                &event_type.name,
+                pair,
+                months,
+                candle_index,
+            )?;
+
+            let avg_vol_rounded = (avg_vol * 10.0).round() / 10.0;
+
+            data.entry(event_type.name.clone())
+                .or_default()
+                .insert(pair.clone(), avg_vol_rounded);
+        }
+    }
+
+    Ok(HeatmapData {
+        period: format!("Derniers {} mois", months),
+        pairs,
+        event_types,
+        data,
+    })
+}

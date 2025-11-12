@@ -1,0 +1,56 @@
+# Makefile - Automatisation des vérifications
+.PHONY: help pre-commit check-rules validate audit dev setup-hooks clean
+
+help:
+	@echo "════════════════════════════════════════════════"
+	@echo "   COMMANDES DISPONIBLES"
+	@echo "════════════════════════════════════════════════"
+	@echo ""
+	@echo "  make pre-commit    - Vérifie tout avant commit (RECOMMANDÉ)"
+	@echo "  make check-rules   - Vérifie conformité .clinerules"
+	@echo "  make validate      - Compile + teste + linte"
+	@echo "  make audit         - Audit sécurité dépendances"
+	@echo "  make dev           - Lance dev avec hot-reload"
+	@echo "════════════════════════════════════════════════"
+
+pre-commit: check-rules validate audit
+	@echo ""
+	@echo "✅ Toutes les vérifications passées !"
+	@echo "   Le code est prêt à être commité."
+
+check-rules:
+	@echo "📋 Vérification du respect des .clinerules..."
+	@./scripts/check-file-size.sh
+	@./scripts/check-unwrap.sh
+	@./scripts/check-antipatterns.sh
+	@./scripts/check-dead-code.sh
+	@echo "✅ Vérification des règles terminée !"
+
+validate:
+	@echo "🔍 Validation complète du code..."
+	cargo build --release
+	cargo test -- --nocapture
+	cargo clippy --release -- -D warnings
+	cargo fmt -- --check
+	@echo "✅ Validation terminée avec succès !"
+
+audit:
+	@echo "🔍 Audit sécurité des dépendances..."
+	cargo audit 2>/dev/null || echo "⚠️ cargo-audit non installé"
+	@echo "✅ Audit terminé"
+
+dev:
+	@echo "🔥 Lancement mode développement..."
+	cargo watch -x "check" -x "test" -x "clippy -- -D warnings"
+
+setup-hooks:
+	@echo "🔧 Installation du pre-commit hook..."
+	ln -sf ../../scripts/pre-commit.sh .git/hooks/pre-commit
+	chmod +x .git/hooks/pre-commit
+	@echo "✅ Hook installé"
+
+clean:
+	@echo "🧹 Nettoyage..."
+	cargo clean
+	rm -rf target/
+	@echo "✅ Nettoyé"

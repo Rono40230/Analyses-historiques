@@ -2,11 +2,11 @@
 // Gère le chargement et l'initialisation du CandleIndex global
 // Appelé une fois au démarrage de l'app
 
-use std::sync::Mutex;
-use tauri::State;
+use crate::commands::pair_data::PairDataState;
 use crate::services::candle_index::CandleIndex;
 use crate::services::DatabaseLoader;
-use crate::commands::pair_data_commands::PairDataState;
+use std::sync::Mutex;
+use tauri::State;
 
 pub struct CandleIndexState {
     pub index: Mutex<Option<CandleIndex>>,
@@ -27,18 +27,20 @@ pub async fn init_candle_index(
         .map_err(|e| format!("Failed to lock pair pool: {}", e))?
         .clone()
         .ok_or("Pair database pool not initialized")?;
-    
+
     // Créer le DatabaseLoader
     let db_loader = DatabaseLoader::new(pair_pool);
-    
+
     // Créer un CandleIndex avec le DatabaseLoader
     let index = CandleIndex::with_db_loader(db_loader);
-    
-    let mut index_state = state.index.lock()
+
+    let mut index_state = state
+        .index
+        .lock()
         .map_err(|e| format!("Failed to lock state: {}", e))?;
-    
+
     *index_state = Some(index);
-    
+
     Ok("CandleIndex initialized avec DatabaseLoader - paires chargées depuis BD".to_string())
 }
 
@@ -49,12 +51,15 @@ pub async fn load_pair_candles(
     symbol: String,
     state: State<'_, CandleIndexState>,
 ) -> Result<String, String> {
-    let mut index_state = state.index.lock()
+    let mut index_state = state
+        .index
+        .lock()
         .map_err(|e| format!("Failed to lock state: {}", e))?;
-    
-    let index = index_state.as_mut()
+
+    let index = index_state
+        .as_mut()
         .ok_or("CandleIndex not initialized. Call init_candle_index first.")?;
-    
+
     match index.load_pair_candles(&symbol)? {
         true => Ok(format!("Paire {} chargée avec succès", symbol)),
         false => Ok(format!("Paire {} déjà en cache", symbol)),
@@ -63,18 +68,18 @@ pub async fn load_pair_candles(
 
 /// Retourne les stats de l'index (pour UI/debugging)
 #[tauri::command]
-pub async fn get_candle_index_stats(
-    state: State<'_, CandleIndexState>,
-) -> Result<String, String> {
-    let index_state = state.index.lock()
+pub async fn get_candle_index_stats(state: State<'_, CandleIndexState>) -> Result<String, String> {
+    let index_state = state
+        .index
+        .lock()
         .map_err(|e| format!("Failed to lock state: {}", e))?;
-    
+
     match &*index_state {
         Some(index) => {
             let stats = index.get_stats();
             let pairs: Vec<String> = index.get_available_pairs();
             Ok(format!("Pairs: {:?}, Stats: {:?}", pairs, stats))
         }
-        None => Err("CandleIndex not initialized. Call init_candle_index first.".to_string())
+        None => Err("CandleIndex not initialized. Call init_candle_index first.".to_string()),
     }
 }

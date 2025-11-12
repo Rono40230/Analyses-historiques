@@ -1,57 +1,225 @@
 <template>
-  <div v-if="result" class="analysis-panel">
+  <div v-if="props.result" class="analysis-panel">
+    <!-- DEBUG: Vérifier que result est chargé -->
+    <div v-if="props.result" style="display: none;">{{ console.log('AnalysisPanel result:', props.result) }}</div>
+    
     <div class="panel-header">
       <div class="header-title">
-        <h2>🎯 Analyse :</h2>
-        <select v-model="currentSymbol" @change="onSymbolChange" class="symbol-select">
+        <h2>🎯 Analyse: {{ props.result.symbol }}</h2>
+        <select :value="currentSymbol" @change="(e) => onSymbolChange((e.target as HTMLSelectElement).value)" class="symbol-select">
           <option v-for="s in symbols" :key="s.symbol" :value="s.symbol">{{ s.symbol }}</option>
         </select>
       </div>
       <div class="badges">
-        <span :class="['badge', 'recommendation', recommendationClass]">{{ formatRecommendation(result.recommendation) }}</span>
-        <span :class="['badge', 'risk']">Risque: {{ formatRisk(result.risk_level) }}</span>
+        <span 
+          :class="['badge', 'recommendation', recommendationClass]"
+          :title="getRecommendationTooltip(props.result.recommendation)"
+        >
+          {{ formatRecommendation(props.result.recommendation) }}
+        </span>
+        <span 
+          :class="['badge', 'risk', getRiskClass(props.result.risk_level)]"
+          :title="getRiskTooltip(props.result.risk_level)"
+        >
+          {{ formatRisk(props.result.risk_level) }}
+        </span>
       </div>
     </div>
 
     <div class="confidence-section">
-      <h3>Score de Confiance</h3>
-      <div class="confidence-bar" :style="{ width: result.confidence_score + '%' }"></div>
-      <span class="confidence-text">{{ result.confidence_score }}%</span>
+      <MetricTooltip title="Score de Confiance">
+        <h3>Score de Confiance</h3>
+        <template #definition>
+          <div class="tooltip-section-title">Définition</div>
+          <div class="tooltip-section-text">Niveau de confiance dans la recommandation de trading (%) calculé à partir de la qualité des données et de la stabilité des conditions.</div>
+        </template>
+        <template #usage>
+          <div class="tooltip-section-title">Utilité pour le Trading</div>
+          <div class="tooltip-section-text">Permet de mesurer la fiabilité de la recommandation. Un score élevé (≥80%) indique des conditions stables et prédictibles.</div>
+        </template>
+        <template #scoring>
+          <div class="tooltip-section-title">Interprétation</div>
+          <div class="tooltip-section-text">≥80% = Très confiant | ≥65% = Confiant | ≥50% = Modéré | ≥35% = Prudent | &lt;35% = Ne pas trader</div>
+        </template>
+      </MetricTooltip>
+      <div class="confidence-bar" :style="{ width: props.result.confidence_score + '%' }"></div>
+      <span class="confidence-text">{{ props.result.confidence_score }}%</span>
     </div>
 
     <div class="metrics-grid">
       <div class="metric-card">
-        <h4>📊 Volatilité Globale</h4>
-        <div class="metric-value">{{ result.global_metrics.avg_volatility.toFixed(2) }} pips</div>
-        <small>moyenne</small>
+        <MetricTooltip title="Nombre de Bougies">
+          <h4>🎯 Bougies</h4>
+          <template #definition>
+            <div class="tooltip-section-title">Définition</div>
+            <div class="tooltip-section-text">Quantité totale de bougies analysées sur la période.</div>
+          </template>
+          <template #usage>
+            <div class="tooltip-section-title">Utilité pour le Trading</div>
+            <div class="tooltip-section-text">Plus de données signifie une analyse plus fiable. Minimum recommandé: 100 bougies pour obtenir des résultats statistiquement significatifs.</div>
+          </template>
+          <template #scoring>
+            <div class="tooltip-section-title">Interprétation</div>
+            <div class="tooltip-section-text">&gt;500 = Excellent | &gt;200 = Bon | &gt;100 = Acceptable | &lt;100 = Données insuffisantes</div>
+          </template>
+        </MetricTooltip>
+        <div :class="['metric-value', getColorClass('bougies', props.result.global_metrics.total_candles)]">{{ props.result.global_metrics.total_candles }}</div>
       </div>
       <div class="metric-card">
-        <h4>📈 Trend</h4>
-        <div class="metric-value">{{ result.global_metrics.trend_strength }}</div>
-        <small>force</small>
+        <MetricTooltip title="ATR Moyen">
+          <h4>📊 ATR Moyen</h4>
+          <template #definition>
+            <div class="tooltip-section-title">Définition</div>
+            <div class="tooltip-section-text">Average True Range - Mesure la volatilité moyenne sur 14 périodes. Représente l'amplitude moyenne des mouvements.</div>
+          </template>
+          <template #usage>
+            <div class="tooltip-section-title">Utilité pour le Trading</div>
+            <div class="tooltip-section-text">Aide à définir les stops loss et take profit. Un ATR élevé = grands mouvements possibles = risque plus important. Utile pour ajuster la taille des positions.</div>
+          </template>
+          <template #scoring>
+            <div class="tooltip-section-title">Interprétation</div>
+            <div class="tooltip-section-text">&gt;0.001 = Excellent | &gt;0.0005 = Bon | &gt;0.0001 = Acceptable | &lt;0.0001 = Très faible volatilité</div>
+          </template>
+        </MetricTooltip>
+        <div :class="['metric-value', getColorClass('atr', props.result.global_metrics.mean_atr)]">{{ props.result.global_metrics.mean_atr.toFixed(5) }}</div>
       </div>
       <div class="metric-card">
-        <h4>🎯 Win Rate</h4>
-        <div class="metric-value">{{ (result.global_metrics.win_rate * 100).toFixed(1) }}%</div>
-        <small>sessions</small>
+        <MetricTooltip title="Volatilité Globale">
+          <h4>📈 Volatilité</h4>
+          <template #definition>
+            <div class="tooltip-section-title">Définition</div>
+            <div class="tooltip-section-text">Pourcentage moyen de variation des prix (écart-type des rendements).</div>
+          </template>
+          <template #usage>
+            <div class="tooltip-section-title">Utilité pour le Trading</div>
+            <div class="tooltip-section-text">Volatilité élevée = plus d'opportunités mais plus de risques. Volatilité basse = tendances plus stables mais moins de mouvements. Adapter le style de trading à la volatilité.</div>
+          </template>
+          <template #scoring>
+            <div class="tooltip-section-title">Interprétation</div>
+            <div class="tooltip-section-text">&lt;5% = Très basse (scalping) | 5-15% = Normale (swing) | &gt;15% = Élevée (prudence)</div>
+          </template>
+        </MetricTooltip>
+        <div :class="['metric-value', getColorClass('volatility', props.result.global_metrics.mean_volatility)]">{{ (props.result.global_metrics.mean_volatility * 100).toFixed(2) }}%</div>
+      </div>
+      <div class="metric-card">
+        <MetricTooltip title="Body Range">
+          <h4>📦 Body Range</h4>
+          <template #definition>
+            <div class="tooltip-section-title">Définition</div>
+            <div class="tooltip-section-text">Pourcentage du corps de la bougie (distance open-close) par rapport à l'amplitude totale (high-low).</div>
+          </template>
+          <template #usage>
+            <div class="tooltip-section-title">Utilité pour le Trading</div>
+            <div class="tooltip-section-text">Body Range élevé = bougies plus directionnelles et décisives. Body Range faible = bougies indécises avec beaucoup de mèches. Préférer les corps forts pour les signaux clairs.</div>
+          </template>
+          <template #scoring>
+            <div class="tooltip-section-title">Interprétation</div>
+            <div class="tooltip-section-text">&gt;50% = Excellent (très directif) | &gt;30% = Bon | &gt;10% = Acceptable | &lt;10% = Très indécis</div>
+          </template>
+        </MetricTooltip>
+        <div :class="['metric-value', getColorClass('bodyrange', props.result.global_metrics.mean_body_range)]">{{ props.result.global_metrics.mean_body_range.toFixed(1) }}%</div>
+      </div>
+      <div class="metric-card">
+        <MetricTooltip title="Tick Quality">
+          <h4>✨ Tick Quality</h4>
+          <template #definition>
+            <div class="tooltip-section-title">Définition</div>
+            <div class="tooltip-section-text">Qualité des ticks - taille moyenne des mouvements de prix unitaires. Mesure la liquidité et la granularité des données.</div>
+          </template>
+          <template #usage>
+            <div class="tooltip-section-title">Utilité pour le Trading</div>
+            <div class="tooltip-section-text">Tick Quality élevé = meilleure liquidité et données plus fiables. Important pour le scalping et les stratégies haute fréquence. Indique l'existence de market makers actifs.</div>
+          </template>
+          <template #scoring>
+            <div class="tooltip-section-title">Interprétation</div>
+            <div class="tooltip-section-text">&gt;0.001 = Excellent | &gt;0.0005 = Bon | &gt;0.0001 = Acceptable | Plus élevé = Meilleur</div>
+          </template>
+        </MetricTooltip>
+        <div :class="['metric-value', getColorClass('tickquality', props.result.global_metrics.mean_tick_quality)]">{{ props.result.global_metrics.mean_tick_quality.toFixed(5) }}</div>
+      </div>
+      <div class="metric-card">
+        <MetricTooltip title="Noise Ratio">
+          <h4>🔊 Noise Ratio</h4>
+          <template #definition>
+            <div class="tooltip-section-title">Définition</div>
+            <div class="tooltip-section-text">Ratio bruit/signal - compare les mouvements intra-bougie au mouvement directionnel net. Plus bas = moins de bruit.</div>
+          </template>
+          <template #usage>
+            <div class="tooltip-section-title">Utilité pour le Trading</div>
+            <div class="tooltip-section-text">Bruit élevé = plus de faux signaux et de whipsaws. Bruit bas = tendances plus nettes. Critère essentiel pour éviter de trader dans du bruit chaotique.</div>
+          </template>
+          <template #scoring>
+            <div class="tooltip-section-title">Interprétation</div>
+            <div class="tooltip-section-text">&lt;2.0 = Excellent | &lt;3.0 = Bon | &gt;3.0 = Élevé (à éviter) | &gt;5.0 = Très chaotique</div>
+          </template>
+        </MetricTooltip>
+        <div :class="['metric-value', getColorClass('noiseratio', props.result.global_metrics.mean_noise_ratio)]">{{ props.result.global_metrics.mean_noise_ratio.toFixed(2) }}</div>
+      </div>
+      <div class="metric-card">
+        <MetricTooltip title="Volume Imbalance">
+          <h4>⚖️ Volume Imbalance</h4>
+          <template #definition>
+            <div class="tooltip-section-title">Définition</div>
+            <div class="tooltip-section-text">Déséquilibre entre les volumes d'achat et de vente. Mesure la domination d'un côté du marché.</div>
+          </template>
+          <template #usage>
+            <div class="tooltip-section-title">Utilité pour le Trading</div>
+            <div class="tooltip-section-text">Imbalance élevé = forces acheteuses ou vendeuses dominantes = signaux de tendance forts. Imbalance équilibré (proche de 1.0) = marché dans l'indécision.</div>
+          </template>
+          <template #scoring>
+            <div class="tooltip-section-title">Interprétation</div>
+            <div class="tooltip-section-text">≈1.0 = Parfaitement équilibré | &gt;1.5 = Déséquilibre marqué | &lt;0.5 = Forte dominance vendeur</div>
+          </template>
+        </MetricTooltip>
+        <div :class="['metric-value', getColorClass('volumeimbalance', props.result.global_metrics.mean_volume_imbalance)]">{{ props.result.global_metrics.mean_volume_imbalance.toFixed(4) }}</div>
+      </div>
+      <div class="metric-card">
+        <MetricTooltip title="Breakout %">
+          <h4>🚀 Breakout %</h4>
+          <template #definition>
+            <div class="tooltip-section-title">Définition</div>
+            <div class="tooltip-section-text">Pourcentage de bougies qui sortent des niveaux de support/résistance (breakouts).</div>
+          </template>
+          <template #usage>
+            <div class="tooltip-section-title">Utilité pour le Trading</div>
+            <div class="tooltip-section-text">Breakout % élevé = marché actif avec beaucoup de cassures. Breakout % bas = marché consolidé. Détermine le style: range trading ou breakout trading.</div>
+          </template>
+          <template #scoring>
+            <div class="tooltip-section-title">Interprétation</div>
+            <div class="tooltip-section-text">&lt;10% = Peu de breakouts (range trading) | 10-30% = Modéré (swing) | &gt;30% = Très actif (trendy)</div>
+          </template>
+        </MetricTooltip>
+        <div :class="['metric-value', getColorClass('breakout', props.result.global_metrics.mean_breakout_percentage)]">{{ props.result.global_metrics.mean_breakout_percentage.toFixed(1) }}%</div>
       </div>
     </div>
 
-    <div class="volatility-section">
-      <h3>📊 Volatilité par Session</h3>
-      <div class="session-stats">
-        <div v-for="session in result.sessions" :key="session.session_name" class="session-stat">
-          <div class="session-name">{{ session.session_name }}</div>
-          <div class="stat-value">{{ session.volatility.toFixed(2) }} pips</div>
+    <div class="color-legend">
+      <div class="legend-grid">
+        <div class="legend-item">
+          <div class="legend-color excellent"></div>
+          <div class="legend-text">
+            <span>Métrique très bonne, conditions optimales</span>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color good"></div>
+          <div class="legend-text">
+            <span>Métrique satisfaisante, conditions acceptables</span>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color acceptable"></div>
+          <div class="legend-text">
+            <span>Métrique à la limite, à surveiller</span>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color poor"></div>
+          <div class="legend-text">
+            <span>Métrique insuffisante, déconseillé</span>
+          </div>
         </div>
       </div>
-    </div>
-
-    <div class="recommendations-section">
-      <h3>💡 Recommandations</h3>
-      <ul>
-        <li v-for="(rec, idx) in result.recommendations" :key="idx">{{ rec }}</li>
-      </ul>
     </div>
   </div>
   <div v-else class="loading">
@@ -60,42 +228,88 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { useVolatilityStore } from '../stores/volatility'
+import { useDataRefresh } from '../composables/useDataRefresh'
+import MetricTooltip from './MetricTooltip.vue'
+
+interface GlobalMetrics {
+  mean_atr: number
+  mean_volatility: number
+  mean_body_range: number
+  mean_tick_quality: number
+  mean_noise_ratio: number
+  mean_volume_imbalance: number
+  mean_breakout_percentage: number
+  total_candles: number
+}
+
+interface HourlyStats {
+  hour: number
+  candle_count: number
+  atr_mean: number
+}
+
+interface CorrelatedEvent {
+  event: any // CalendarEvent
+  volatility_hour: number
+  volatility_increase: number
+  correlation_score: number
+}
 
 interface AnalysisResult {
   symbol: string
   period_start: string
   period_end: string
+  timeframe: string
   recommendation: string
   risk_level: string
   confidence_score: number
-  global_metrics: { avg_volatility: number; trend_strength: string; win_rate: number; total_candles: number }
-  sessions: Array<{ session_name: string; volatility: number }>
-  recommendations: string[]
+  global_metrics: GlobalMetrics
+  hourly_stats: HourlyStats[]
+  best_hours: number[]
+  correlated_events: CorrelatedEvent[]
 }
 
-const currentSymbol = ref<string>('')
-const result = ref<AnalysisResult | null>(null)
+const props = defineProps<{
+  result: AnalysisResult | null
+  symbols: Array<{ symbol: string; file_path: string }>
+}>()
+
+const emit = defineEmits<{
+  symbolSelected: [symbol: string]
+}>()
+
+const store = useVolatilityStore()
+const currentSymbol = computed(() => props.result?.symbol || '')
 const symbols = ref<Array<{ symbol: string; file_path: string }>>([])
+const { onPairDataRefresh } = useDataRefresh()
+
+const unsubscribe = onPairDataRefresh(() => {
+  store.loadSymbols()
+})
 
 onMounted(async () => {
   try {
-    symbols.value = await invoke('load_symbols')
+    symbols.value = props.symbols || await invoke('load_symbols')
   } catch (err) {
     console.error('Erreur:', err)
   }
 })
 
-async function onSymbolChange() {
-  if (!currentSymbol.value) {
-    result.value = null
-    return
-  }
-  try {
-    result.value = await invoke('analyze_volatility', { symbol: currentSymbol.value })
-  } catch (err) {
-    console.error('Erreur analyse:', err)
+onBeforeUnmount(() => {
+  unsubscribe()
+})
+
+// Écouter les changements du store
+watch(() => store.symbols, (newSymbols) => {
+  symbols.value = newSymbols
+}, { deep: true })
+
+function onSymbolChange(newSymbol: string) {
+  if (newSymbol && newSymbol !== props.result?.symbol) {
+    emit('symbolSelected', newSymbol)
   }
 }
 
@@ -117,11 +331,101 @@ function formatRisk(risk: string): string {
   return map[risk] || risk
 }
 
-const recommendationClass = (() => {
-  if (result.value?.recommendation === 'BUY') return 'buy'
-  if (result.value?.recommendation === 'SELL') return 'sell'
+function getRecommendationTooltip(rec: string): string {
+  const tooltips: { [key: string]: string } = {
+    'BUY': 'ACHETER - Le marché offre une configuration favorable pour un achat',
+    'SELL': 'VENDRE - Le marché offre une configuration favorable pour une vente',
+    'HOLD': 'ATTENDRE - Le marché n\'offre pas de configuration clairement favorable'
+  }
+  return tooltips[rec] || rec
+}
+
+function getRiskClass(risk: string): string {
+  const map: { [key: string]: string } = {
+    'HIGH': 'high',
+    'MEDIUM': 'medium',
+    'LOW': 'low'
+  }
+  return map[risk] || ''
+}
+
+function getRiskTooltip(risk: string): string {
+  const tooltips: { [key: string]: string } = {
+    'HIGH': 'Risque ÉLEVÉ - Volatilité > 15% ou conditions instables. À approcher avec prudence.',
+    'MEDIUM': 'Risque MOYEN - Volatilité 5-15% avec conditions acceptables. Gestion stricte du risque recommandée.',
+    'LOW': 'Risque BAS - Volatilité < 5% avec conditions stables. Favorise les positions plus agressives.'
+  }
+  return tooltips[risk] || risk
+}
+
+const recommendationClass = computed(() => {
+  if (props.result?.recommendation === 'BUY') return 'buy'
+  if (props.result?.recommendation === 'SELL') return 'sell'
   return 'hold'
-})()
+})
+
+// Fonctions de scoring pour les métriques
+function getMetricQuality(metric: string, value: number): string {
+  if (!props.result) return 'neutral'
+  
+  switch (metric) {
+    case 'bougies':
+      if (value > 500) return 'excellent'
+      if (value > 200) return 'good'
+      if (value > 100) return 'acceptable'
+      return 'poor'
+    
+    case 'atr':
+      if (value > 0.001) return 'excellent'
+      if (value > 0.0005) return 'good'
+      if (value > 0.0001) return 'acceptable'
+      return 'poor'
+    
+    case 'volatility':
+      if (value >= 0.05 && value <= 0.15) return 'excellent'
+      if ((value >= 0.03 && value < 0.05) || (value > 0.15 && value <= 0.25)) return 'good'
+      if ((value >= 0.01 && value < 0.03) || (value > 0.25 && value <= 0.35)) return 'acceptable'
+      return 'poor'
+    
+    case 'bodyrange':
+      if (value > 50) return 'excellent'
+      if (value > 30) return 'good'
+      if (value > 10) return 'acceptable'
+      return 'poor'
+    
+    case 'tickquality':
+      if (value > 0.001) return 'excellent'
+      if (value > 0.0005) return 'good'
+      if (value > 0.0001) return 'acceptable'
+      return 'poor'
+    
+    case 'noiseratio':
+      if (value < 2.0) return 'excellent'
+      if (value < 3.0) return 'good'
+      if (value < 5.0) return 'acceptable'
+      return 'poor'
+    
+    case 'volumeimbalance':
+      const imbalanceScore = Math.abs(value - 1.0)
+      if (imbalanceScore < 0.2) return 'excellent'
+      if (imbalanceScore < 0.5) return 'good'
+      if (imbalanceScore < 1.5) return 'acceptable'
+      return 'poor'
+    
+    case 'breakout':
+      if (value < 10) return 'good' // Range trading favorable
+      if (value >= 10 && value <= 30) return 'excellent'
+      if (value > 30 && value <= 50) return 'good'
+      return 'acceptable'
+    
+    default:
+      return 'neutral'
+  }
+}
+
+function getColorClass(metric: string, value: number): string {
+  return `metric-${getMetricQuality(metric, value)}`
+}
 </script>
 
 <style scoped>
@@ -129,29 +433,58 @@ const recommendationClass = (() => {
 .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
 .header-title { display: flex; align-items: center; gap: 15px; }
 .header-title h2 { margin: 0; }
-.symbol-select { padding: 8px 12px; border: 2px solid #30363d; background: #1a202c; color: #e2e8f0; border-radius: 6px; cursor: pointer; }
+.symbol-select { padding: 8px 12px; border: 2px solid #30363d; background: #1a202c; color: #000000; border-radius: 6px; cursor: pointer; font-weight: 600; }
+.symbol-select option { background: #ffffff; color: #000000; }
 .badges { display: flex; gap: 10px; }
-.badge { padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.9em; color: white; }
-.recommendation.buy { background: #10b981; }
-.recommendation.sell { background: #dc2626; }
-.recommendation.hold { background: #f59e0b; }
-.badge.risk { background: #6b7280; }
+.badge { padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.9em; color: white; cursor: help; transition: all 0.2s; border: 2px solid transparent; }
+.badge:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+.recommendation.buy { background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-color: #047857; }
+.recommendation.sell { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); border-color: #991b1b; }
+.recommendation.hold { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-color: #b45309; }
+.badge.risk.low { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-color: #15803d; }
+.badge.risk.medium { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-color: #b45309; }
+.badge.risk.high { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-color: #b91c1c; }
 .confidence-section { background: #1a202c; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-.confidence-bar { height: 8px; background: #667eea; border-radius: 4px; }
+.confidence-section h3 { margin: 0 0 15px 0; }
+.confidence-bar { height: 8px; background: #667eea; border-radius: 4px; margin-bottom: 8px; }
 .confidence-text { color: #cbd5e0; font-size: 0.9em; }
 .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 30px; }
 .metric-card { background: #1a202c; padding: 15px; border-radius: 8px; border-left: 3px solid #667eea; }
 .metric-card h4 { margin: 0 0 10px 0; color: #e2e8f0; }
-.metric-value { font-size: 1.5em; font-weight: bold; color: #667eea; }
-.metric-card small { color: #a0aec0; }
-.volatility-section { background: #1a202c; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-.session-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-top: 15px; }
-.session-stat { background: #2d3748; padding: 10px; border-radius: 6px; text-align: center; }
-.session-name { color: #cbd5e0; font-size: 0.85em; }
-.stat-value { color: #667eea; font-weight: bold; }
-.recommendations-section { background: #1a202c; padding: 20px; border-radius: 8px; }
-.recommendations-section h3 { color: #e2e8f0; margin-top: 0; }
-.recommendations-section ul { list-style: none; padding: 0; margin: 0; }
-.recommendations-section li { padding: 8px; background: #2d3748; border-left: 3px solid #667eea; color: #e2e8f0; margin-bottom: 8px; border-radius: 4px; }
+.metric-value { font-size: 1.5em; font-weight: bold; transition: color 0.3s ease; }
+
+/* Couleurs dynamiques pour les métriques */
+.metric-value.metric-excellent { color: #10b981; text-shadow: 0 0 8px rgba(16, 185, 129, 0.3); }
+.metric-value.metric-good { color: #3b82f6; text-shadow: 0 0 8px rgba(59, 130, 246, 0.3); }
+.metric-value.metric-acceptable { color: #f59e0b; text-shadow: 0 0 8px rgba(245, 158, 11, 0.3); }
+.metric-value.metric-poor { color: #ef4444; text-shadow: 0 0 8px rgba(239, 68, 68, 0.3); }
+.metric-value.metric-neutral { color: #667eea; text-shadow: 0 0 8px rgba(102, 126, 234, 0.3); }
+
+/* Légende des couleurs */
+.metric-card:has(.metric-excellent) {
+  border-left-color: #10b981;
+}
+.metric-card:has(.metric-good) {
+  border-left-color: #3b82f6;
+}
+.metric-card:has(.metric-acceptable) {
+  border-left-color: #f59e0b;
+}
+.metric-card:has(.metric-poor) {
+  border-left-color: #ef4444;
+}
+
+/* Légende des couleurs */
+.color-legend { background: #1a202c; padding: 20px; border-radius: 8px; border: 1px solid #30363d; margin-top: 30px; }
+.legend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+.legend-item { display: flex; gap: 10px; align-items: center; }
+.legend-color { width: 16px; height: 16px; border-radius: 3px; flex-shrink: 0; }
+.legend-color.excellent { background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 0 8px rgba(16, 185, 129, 0.3); }
+.legend-color.good { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); box-shadow: 0 0 8px rgba(59, 130, 246, 0.3); }
+.legend-color.acceptable { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); box-shadow: 0 0 8px rgba(245, 158, 11, 0.3); }
+.legend-color.poor { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); box-shadow: 0 0 8px rgba(239, 68, 68, 0.3); }
+.legend-text { flex: 1; }
+.legend-text span { color: #a0aec0; font-size: 0.85em; display: block; }
+
 .loading { text-align: center; padding: 40px; color: #a0aec0; }
 </style>

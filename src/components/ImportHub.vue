@@ -17,16 +17,17 @@
               <tr v-for="cal in calendarsMetadata" :key="cal.id">
                 <td><strong>{{ cal.name }}</strong></td>
                 <td>{{ cal.event_count.toLocaleString() }}</td>
-                <td>{{ cal.start_date }} → {{ cal.end_date }}</td>
+                <td>{{ formatCalendarPeriod(cal) }}</td>
                 <td><button @click="deleteCalendar(cal.id)" class="btn-delete">🗑️ Supprimer</button></td>
               </tr>
             </tbody>
           </table>
         </div>
-        <div class="file-input-group">
-          <input type="file" ref="calendarFile" accept=".csv" />
-          <button @click="importCalendars" class="btn-import">📥 Importer calendrier</button>
-        </div>
+        <button @click="importCalendars" class="btn-import" :disabled="loadingCalendars">
+          <span v-if="loadingCalendars" class="spinner">⏳</span>
+          <span v-else>📥</span>
+          Importer calendrier
+        </button>
       </section>
 
       <section class="import-section">
@@ -42,19 +43,20 @@
               <tr><th>Paire</th><th>Bougies</th><th>Période</th><th>Actions</th></tr>
             </thead>
             <tbody>
-              <tr v-for="pair in pairsMetadata" :key="pair.id">
+              <tr v-for="pair in pairsMetadata" :key="pair.symbol">
                 <td><strong>{{ pair.symbol }}</strong></td>
                 <td>{{ pair.candle_count.toLocaleString() }}</td>
-                <td>{{ pair.start_date }} → {{ pair.end_date }}</td>
-                <td><button @click="deletePair(pair.id)" class="btn-delete">🗑️ Supprimer</button></td>
+                <td>{{ formatPeriod(pair) }}</td>
+                <td><button @click="deletePair(pair.symbol)" class="btn-delete">🗑️ Supprimer</button></td>
               </tr>
             </tbody>
           </table>
         </div>
-        <div class="file-input-group">
-          <input type="file" ref="pairFile" accept=".csv" />
-          <button @click="importPairs" class="btn-import">📥 Importer paires</button>
-        </div>
+        <button @click="importPairs" class="btn-import" :disabled="loadingPairs">
+          <span v-if="loadingPairs" class="spinner">⏳</span>
+          <span v-else>📥</span>
+          Importer paires
+        </button>
       </section>
     </div>
 
@@ -74,17 +76,21 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { open } from '@tauri-apps/plugin-dialog'
+import { useVolatilityStore } from '../stores/volatility'
+
+const store = useVolatilityStore()
 
 const calendarsMetadata = ref<any[]>([])
 const pairsMetadata = ref<any[]>([])
-const calendarFile = ref<HTMLInputElement>()
-const pairFile = ref<HTMLInputElement>()
 const loadingCalendars = ref(false)
 const loadingPairs = ref(false)
 const showDeleteConfirm = ref(false)
 const deleteMessage = ref('')
 const deleteType = ref<'calendar' | 'pair'>('calendar')
 const deleteId = ref(0)
+const deleteSymbol = ref('')
+const deleteTimeframe = ref('')
 
 onMounted(async () => {
   await loadMetadata()
@@ -101,12 +107,56 @@ async function loadMetadata() {
   }
 }
 
+function formatPeriod(pair: any): string {
+  if (!pair.start_date && !pair.end_date) return 'N/A'
+  
+  const formatDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return '?'
+    try {
+      const date = new Date(dateString)
+      return date.toLocaleDateString('fr-FR', { year: 'numeric', month: '2-digit', day: '2-digit' })
+    } catch {
+      return dateString.substring(0, 10)
+    }
+  }
+  
+  const start = formatDate(pair.start_date)
+  const end = formatDate(pair.end_date)
+  return `du ${start} au ${end}`
+}
+
+function formatCalendarPeriod(calendar: any): string {
+  if (!calendar.start_date && !calendar.end_date) return 'N/A'
+  
+  const formatDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return '?'
+    try {
+      const date = new Date(dateString)
+      return date.toLocaleDateString('fr-FR', { year: 'numeric', month: '2-digit', day: '2-digit' })
+    } catch {
+      return dateString.substring(0, 10)
+    }
+  }
+  
+  const start = formatDate(calendar.start_date)
+  const end = formatDate(calendar.end_date)
+  return `du ${start} au ${end}`
+}
+
 async function importCalendars() {
-  if (!calendarFile.value?.files?.length) return
   loadingCalendars.value = true
   try {
-    await invoke('import_calendar_file', { filePath: calendarFile.value.files[0].name })
+    const selected = await open({
+      multiple: true,
+      filters: [{ name: 'CSV', extensions: ['csv'] }]
+    })
+    
+    if (!selected) return
+    
+    const paths = Array.isArray(selected) ? selected : [selected]
+    await invoke('import_calendar_files', { paths })
     await loadMetadata()
+    store.triggerDataRefresh() // Rafraîchir les données
   } catch (err) {
     console.error('Erreur import calendrier:', err)
   } finally {
@@ -115,11 +165,19 @@ async function importCalendars() {
 }
 
 async function importPairs() {
-  if (!pairFile.value?.files?.length) return
   loadingPairs.value = true
   try {
-    await invoke('import_pair_file', { filePath: pairFile.value.files[0].name })
+    const selected = await open({
+      multiple: true,
+      filters: [{ name: 'CSV', extensions: ['csv'] }]
+    })
+    
+    if (!selected) return
+    
+    const paths = Array.isArray(selected) ? selected : [selected]
+    await invoke('import_pair_data', { paths })
     await loadMetadata()
+    store.triggerDataRefresh() // Rafraîchir les données
   } catch (err) {
     console.error('Erreur import paires:', err)
   } finally {
@@ -134,9 +192,14 @@ function deleteCalendar(id: number) {
   showDeleteConfirm.value = true
 }
 
-function deletePair(id: number) {
+function deletePair(symbol: string) {
+  const pair = pairsMetadata.value.find(p => p.symbol === symbol)
+  if (!pair) return
+  
   deleteType.value = 'pair'
-  deleteId.value = id
+  deleteId.value = pair.id
+  deleteSymbol.value = pair.symbol
+  deleteTimeframe.value = pair.timeframe
   deleteMessage.value = 'Supprimer cette paire et toutes ses bougies?'
   showDeleteConfirm.value = true
 }
@@ -144,9 +207,12 @@ function deletePair(id: number) {
 async function confirmDelete() {
   try {
     if (deleteType.value === 'calendar') {
-      await invoke('delete_calendar', { calendarId: deleteId.value })
+      await invoke('delete_calendar_from_db', { calendarId: deleteId.value })
     } else {
-      await invoke('delete_pair', { pairId: deleteId.value })
+      await invoke('delete_pair_from_db', { 
+        symbol: deleteSymbol.value, 
+        timeframe: deleteTimeframe.value 
+      })
     }
     await loadMetadata()
   } catch (err) {
@@ -159,7 +225,7 @@ async function confirmDelete() {
 
 <style scoped>
 .import-hub { padding: 30px; }
-.sections-container { display: grid; gap: 30px; }
+.sections-container { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
 .import-section { background: #1a202c; padding: 25px; border-radius: 12px; border: 1px solid #2d3748; }
 .import-section h3 { color: #e2e8f0; margin-top: 0; }
 .info-box { padding: 15px; background: #2d3748; border-radius: 8px; color: #e2e8f0; margin-bottom: 20px; }
@@ -168,9 +234,39 @@ async function confirmDelete() {
 .data-table { width: 100%; border-collapse: collapse; }
 .data-table th { background: #2d3748; padding: 12px; text-align: left; font-weight: 600; color: #e2e8f0; border-bottom: 2px solid #4a5568; }
 .data-table td { padding: 12px; border-bottom: 1px solid #2d3748; color: #e2e8f0; }
-.file-input-group { display: flex; gap: 10px; align-items: center; }
-.file-input-group input { flex: 1; padding: 10px; border: 1px solid #4a5568; border-radius: 6px; background: #2d3748; color: #e2e8f0; }
-.btn-import { padding: 10px 20px; background: #1f6feb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+.btn-import { 
+  display: block;
+  width: 100%;
+  padding: 12px 20px; 
+  background: linear-gradient(135deg, #1f6feb 0%, #388bfd 100%);
+  color: white; 
+  border: none; 
+  border-radius: 6px; 
+  cursor: pointer; 
+  font-weight: 600;
+  margin-top: 15px;
+  transition: all 0.3s;
+  font-size: 1em;
+}
+.btn-import:hover {
+  background: linear-gradient(135deg, #1664d9 0%, #2d7ee5 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(31, 111, 235, 0.4);
+}
+.btn-import:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+.spinner {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+  margin-right: 6px;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 .btn-delete { padding: 6px 12px; background: #dc2626; color: white; border: none; border-radius: 6px; cursor: pointer; }
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; }
 .modal { background: #1a202c; padding: 30px; border-radius: 12px; border: 1px solid #2d3748; max-width: 400px; }

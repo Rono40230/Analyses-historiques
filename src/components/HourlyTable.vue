@@ -1,6 +1,11 @@
 <template>
   <div v-if="stats.length > 0" class="hourly-table">
-    <h3>📅 Statistiques par Heure UTC</h3>
+    <!-- Header simple avec titre -->
+    <div class="table-header">
+      <div class="header-left">
+        <h3>📅 Statistiques par Heure UTC</h3>
+      </div>
+    </div>
     
     <div class="table-container">
       <table>
@@ -113,8 +118,16 @@ function getQualityClass(stat: HourlyStats): string {
   border: 1px solid #30363d;
 }
 
-.hourly-table h3 {
-  margin: 0 0 1.5rem 0;
+.table-header {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 2rem;
+}
+
+.header-left h3 {
+  margin: 0;
   color: #e6edf3;
 }
 

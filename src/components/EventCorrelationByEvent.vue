@@ -170,6 +170,7 @@ interface EventImpactResult {
 const props = defineProps<{
   pastEventsHigh: PastEvent[]
   pastEventsMedium: PastEvent[]
+  calendarId: number | null
 }>()
 
 const emit = defineEmits<{
@@ -200,7 +201,8 @@ async function loadEventImpact() {
     // Charger les vraies données depuis le backend
     eventImpact.value = await invoke<EventImpactResult>('get_event_impact_by_pair', { 
       eventType: selectedEventId.value,
-      eventCount: eventCount
+      eventCount: eventCount,
+      calendarId: props.calendarId
     })
     
     emit('event-loaded', eventImpact.value)
@@ -295,12 +297,14 @@ function sortEventVolatility() {
 }
 
 .welcome-select-container {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 20px;
-  justify-content: center;
-  align-items: center;
   margin-top: 30px;
+  max-width: 1000px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .dropdown-group {
@@ -308,7 +312,6 @@ function sortEventVolatility() {
   flex-direction: column;
   gap: 10px;
   width: 100%;
-  max-width: 450px;
 }
 
 .dropdown-group label {
