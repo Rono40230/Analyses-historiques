@@ -72,7 +72,11 @@
               <span v-else-if="index === 2" class="rank-badge rank-3">🥉 #3</span>
               <span v-else class="rank-badge">#{{ index + 1 }}</span>
             </td>
-            <td class="event-name">{{ event.name }}</td>
+            <td class="event-name">
+              {{ event.name }}
+              <span v-if="event.has_data === false" class="no-data-badge">❌</span>
+              <span v-else-if="event.has_data === true" class="has-data-badge">✅</span>
+            </td>
             <td class="volatility">{{ event.volatility_before_fmt }}</td>
             <td class="volatility">{{ event.volatility_after_fmt }}</td>
             <td class="volatility-total">{{ event.volatility_total_fmt }}</td>
@@ -119,6 +123,7 @@ interface EventCorrelation {
   volatility_after_fmt: string
   volatility_total_fmt: string
   correlation_score: number
+  has_data?: boolean
 }
 
 interface PairCorrelationData {
@@ -420,6 +425,28 @@ function getScoreClass(score: number): string {
 .event-name {
   font-weight: 500;
   color: #58a6ff;
+}
+
+.no-data-badge {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 0.9em;
+  padding: 2px 6px;
+  background: #7f1d1d;
+  color: #fca5a5;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.has-data-badge {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 0.9em;
+  padding: 2px 6px;
+  background: #15803d;
+  color: #bbf7d0;
+  border-radius: 4px;
+  font-weight: bold;
 }
 
 .impact-badge {

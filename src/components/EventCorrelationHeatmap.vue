@@ -14,9 +14,13 @@
       </thead>
       <tbody>
         <tr v-for="eventType in heatmapData.event_types" :key="eventType.name">
-          <td class="event-type-cell">
+          <td class="event-type-cell" :class="{ 'no-data': eventType.has_data === false }">
             <div class="event-type-name">{{ eventType.name }}</div>
-            <div class="event-count">({{ eventType.count }} evt)</div>
+            <div class="event-count">
+              ({{ eventType.count }} evt)
+              <span v-if="eventType.has_data === false" class="no-data-badge">❌ No data</span>
+              <span v-else-if="eventType.has_data === true" class="has-data-badge">✅ Data</span>
+            </div>
           </td>
           <td v-for="pair in heatmapData.pairs" :key="`${eventType.name}-${pair}`" class="heatmap-cell" :class="getHeatmapClass(getHeatmapValue(eventType.name, pair))">
             <span class="cell-value">{{ getHeatmapValue(eventType.name, pair) }}</span>
@@ -45,7 +49,7 @@ import { invoke } from '@tauri-apps/api/core'
 interface HeatmapData {
   period: string
   pairs: string[]
-  event_types: { name: string; count: number }[]
+  event_types: { name: string; count: number; has_data?: boolean }[]
   data: { [key: string]: { [key: string]: number } }
 }
 
@@ -174,6 +178,33 @@ function getHeatmapClass(value: number): string {
   padding: 8px;
   border: 1px solid #4a5568;
   text-align: left;
+}
+
+.event-type-cell.no-data {
+  opacity: 0.6;
+  background: #1a1f2e;
+}
+
+.no-data-badge {
+  display: inline-block;
+  font-size: 0.65em;
+  margin-left: 4px;
+  padding: 2px 4px;
+  background: #7f1d1d;
+  color: #fca5a5;
+  border-radius: 3px;
+  font-weight: bold;
+}
+
+.has-data-badge {
+  display: inline-block;
+  font-size: 0.65em;
+  margin-left: 4px;
+  padding: 2px 4px;
+  background: #15803d;
+  color: #bbf7d0;
+  border-radius: 3px;
+  font-weight: bold;
 }
 
 .event-type-name {

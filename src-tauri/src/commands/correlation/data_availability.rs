@@ -1,0 +1,96 @@
+// data_availability.rs
+// Utilitaires pour vérifier la disponibilité des données de candles
+// pour les événements calendrier
+
+use chrono::{Duration, NaiveDateTime, Utc, TimeZone};
+use crate::services::candle_index::CandleIndex;
+
+/// Vérifie si des candles existent dans la fenêtre temporelle d'un événement
+/// Fenêtre: [event_time - 30min, event_time + 30min]
+///
+/// # Arguments
+/// * `candle_index` - Index des candles chargés en mémoire
+/// * `pair_symbol` - Symbole de la paire (ex: "ADAUSD")
+/// * `event_dt` - NaiveDateTime de l'événement
+///
+/// # Retour
+/// `true` si au moins une candle existe dans la fenêtre, `false` sinon
+pub fn has_candles_for_event(
+    candle_index: &CandleIndex,
+    pair_symbol: &str,
+    event_dt: NaiveDateTime,
+) -> bool {
+    let event_window_start = event_dt - Duration::minutes(30);
+    let event_window_end = event_dt + Duration::minutes(30);
+
+    // Chercher les candles dans la fenêtre
+    let candles = candle_index.get_candles_in_range(
+        pair_symbol,
+        event_window_start.date(),
+        event_window_end.date(),
+    );
+
+    match candles {
+        Some(candle_list) => {
+            // Convertir les NaiveDateTime en DateTime<Utc> pour comparaison
+            let window_start_utc = Utc.from_utc_datetime(&event_window_start);
+            let window_end_utc = Utc.from_utc_datetime(&event_window_end);
+            
+            // Vérifier qu'au moins une candle est dans la fenêtre exacte
+            candle_list.iter().any(|(candle_dt, _, _)| {
+                *candle_dt >= window_start_utc && *candle_dt <= window_end_utc
+            })
+        }
+        None => false,
+    }
+}
+
+/// Batch check : vérifie la disponibilité pour plusieurs événements/paires
+/// Utile pour la heatmap qui a besoin de vérifier plusieurs combinaisons
+pub fn batch_check_events_has_candles(
+    candle_index: &CandleIndex,
+    pair_symbols: &[String],
+    event_datetimes: &[NaiveDateTime],
+) -> Vec<Vec<bool>> {
+    pair_symbols
+        .iter()
+        .map(|pair| {
+            event_datetimes
+                .iter()
+                .map(|&event_dt| has_candles_for_event(candle_index, pair, event_dt))
+                .collect()
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::NaiveDateTime;
+
+    #[test]
+    fn test_has_candles_for_event_with_data() {
+        // Test avec données fictives minimales
+        let index = CandleIndex::new();
+        let event_dt = NaiveDateTime::parse_from_str(
+            "2024-01-01 14:30:00",
+            "%Y-%m-%d %H:%M:%S",
+        ).unwrap();
+
+        // Index vide → pas de candles
+        let result = has_candles_for_event(&index, "ADAUSD", event_dt);
+        assert!(!result);
+    }
+
+    #[test]
+    fn test_batch_check_empty() {
+        let index = CandleIndex::new();
+        let pairs = vec!["ADAUSD".to_string(), "EURUSD".to_string()];
+        let events = vec![];
+
+        let result = batch_check_events_has_candles(&index, &pairs, &events);
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].len(), 0);
+        assert_eq!(result[1].len(), 0);
+    }
+}

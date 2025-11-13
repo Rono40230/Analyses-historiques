@@ -2,10 +2,19 @@ use rusqlite::{Connection, Result as SqliteResult};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+/// Résultat du calcul de volatilité avec indicateur de disponibilité des données
+#[derive(Debug, Clone)]
+pub struct VolatilityResult {
+    pub value: f64,
+    pub has_data: bool,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EventTypeInfo {
     pub name: String,
     pub count: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub has_data: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -54,6 +63,7 @@ pub fn get_event_types(conn: &Connection, calendar_id: Option<i32>) -> Result<Ve
             Ok(EventTypeInfo {
                 name: row.get(0)?,
                 count: row.get(1)?,
+                has_data: None,
             })
         })
         .map_err(|e| format!("Failed to query event types: {}", e))?
@@ -69,7 +79,7 @@ pub fn calculate_avg_volatility_for_event_pair_optimized(
     pair: &str,
     calendar_id: Option<i32>,
     candle_index: &crate::services::candle_index::CandleIndex,
-) -> Result<f64, String> {
+) -> Result<VolatilityResult, String> {
     use super::volatility_helpers::{calculate_volatilities_optimized, parse_sqlite_datetime};
 
     let query = if let Some(cal_id) = calendar_id {
@@ -102,14 +112,26 @@ pub fn calculate_avg_volatility_for_event_pair_optimized(
         .map_err(|e| format!("Failed to collect events: {}", e))?;
 
     if events.is_empty() {
-        return Ok(0.0);
+        return Ok(VolatilityResult {
+            value: 0.0,
+            has_data: false,
+        });
     }
 
     let mut total_volatility = 0.0;
     let mut valid_count = 0;
+    let mut has_data_found = false;
 
     for datetime_str in &events {
         let event_datetime = parse_sqlite_datetime(datetime_str)?;
+
+        // Vérifier si des candles existent pour cet événement
+        // Si pas de candles, SKIPER complètement cet événement
+        if !super::data_availability::has_candles_for_event(candle_index, pair, event_datetime) {
+            continue;
+        }
+        
+        has_data_found = true;
 
         let metrics = calculate_volatilities_optimized(
             candle_index,
@@ -132,9 +154,14 @@ pub fn calculate_avg_volatility_for_event_pair_optimized(
         }
     }
 
-    if valid_count == 0 {
-        Ok(0.0)
+    let avg_vol = if valid_count == 0 {
+        0.0
     } else {
-        Ok(total_volatility / valid_count as f64)
-    }
+        total_volatility / valid_count as f64
+    };
+
+    Ok(VolatilityResult {
+        value: avg_vol,
+        has_data: has_data_found,
+    })
 }

@@ -29,7 +29,7 @@ pub async fn get_correlation_heatmap(
         return Err("No pairs provided".to_string());
     }
 
-    let event_types = get_event_types(&conn, calendar_id)?;
+    let mut event_types = get_event_types(&conn, calendar_id)?;
 
     if event_types.is_empty() {
         return Ok(HeatmapData {
@@ -57,8 +57,8 @@ pub async fn get_correlation_heatmap(
     }
 
     for pair in &pairs {
-        for event_type in &event_types {
-            let avg_vol = calculate_avg_volatility_for_event_pair_optimized(
+        for event_type in &mut event_types {
+            let vol_result = calculate_avg_volatility_for_event_pair_optimized(
                 &conn,
                 &event_type.name,
                 pair,
@@ -66,7 +66,12 @@ pub async fn get_correlation_heatmap(
                 candle_index,
             )?;
 
-            let avg_vol_rounded = (avg_vol * 10.0).round() / 10.0;
+            let avg_vol_rounded = (vol_result.value * 10.0).round() / 10.0;
+
+            // Marquer has_data au moins une fois si vrai
+            if vol_result.has_data {
+                event_type.has_data = Some(true);
+            }
 
             data.entry(event_type.name.clone())
                 .or_default()
