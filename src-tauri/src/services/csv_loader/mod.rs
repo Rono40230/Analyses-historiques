@@ -18,39 +18,11 @@ pub struct CsvLoader {
 impl CsvLoader {
     /// Crée un nouveau CSV Loader
     pub fn new() -> Self {
-        let user_csv = dirs::data_local_dir()
-            .map(|dir| dir.join("volatility-analyzer").join("data").join("csv"));
+        let csv_directory = dirs::data_local_dir()
+            .map(|dir| dir.join("volatility-analyzer").join("data").join("csv"))
+            .unwrap_or_else(|| PathBuf::from("~/.local/share/volatility-analyzer/data/csv"));
 
-        let project_csv = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .unwrap_or(&PathBuf::from("."))
-            .join("data/csv");
-
-        let csv_directory = if let Some(ref user_dir) = user_csv {
-            let has_user_csv = user_dir
-                .read_dir()
-                .ok()
-                .and_then(|mut d| d.next())
-                .is_some();
-            let has_project_csv = project_csv
-                .read_dir()
-                .ok()
-                .and_then(|mut d| d.next())
-                .is_some();
-
-            if has_user_csv {
-                info!("Using user CSV: {:?}", user_dir);
-                user_dir.clone()
-            } else if has_project_csv {
-                info!("User empty, using project CSV: {:?}", project_csv);
-                project_csv
-            } else {
-                info!("No CSV found, using: {:?}", user_dir);
-                user_dir.clone()
-            }
-        } else {
-            project_csv
-        };
+        info!("Using user CSV directory: {:?}", csv_directory);
 
         Self { csv_directory }
     }

@@ -61,5 +61,4 @@ mod tests {
         let result = has_candles_for_event(&index, "ADAUSD", event_dt);
         assert!(!result);
     }
-
 }
