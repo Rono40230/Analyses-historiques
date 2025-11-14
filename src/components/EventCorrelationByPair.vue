@@ -97,14 +97,10 @@
         <tbody>
           <tr v-for="(event, index) in topEvents" :key="event.name" :class="{ 'top-event': index < 3 }">
             <td>
-              <span v-if="index === 0" class="rank-badge rank-1">🥇 #1</span>
-              <span v-else-if="index === 1" class="rank-badge rank-2">🥈 #2</span>
-              <span v-else-if="index === 2" class="rank-badge rank-3">🥉 #3</span>
-              <span v-else class="rank-badge">#{{ index + 1 }}</span>
+              #{{ index + 1 }}
             </td>
             <td class="event-name">
               {{ event.name }}
-              <span v-if="event.has_data === false" class="no-data-badge">❌</span>
             </td>
             <td class="volatility">{{ event.volatility_before_fmt }}</td>
             <td class="volatility">{{ event.volatility_after_fmt }}</td>

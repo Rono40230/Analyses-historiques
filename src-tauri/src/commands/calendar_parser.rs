@@ -76,7 +76,7 @@ fn parse_format_new(path: &str) -> Result<Vec<ParsedEvent>, String> {
             continue;
         }
 
-        if year < 2000 || month < 1 || month > 12 || day < 1 || day > 31 {
+        if year < 2000 || !(1..=12).contains(&month) || !(1..=31).contains(&day) {
             continue;
         }
 
@@ -135,7 +135,7 @@ fn parse_format_old(path: &str) -> Result<Vec<ParsedEvent>, String> {
             date_parts[1].parse::<i32>(),
             date_parts[2].parse::<i32>(),
         ) {
-            if y < 2000 || m < 1 || m > 12 || d < 1 || d > 31 {
+            if y < 2000 || !(1..=12).contains(&m) || !(1..=31).contains(&d) {
                 continue;
             }
 

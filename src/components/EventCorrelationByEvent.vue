@@ -53,7 +53,7 @@
 
     <!-- Classement des paires par impact -->
     <div class="impact-ranking">
-      <h3>📊 Impact mesuré par paire du {{ formatDateRange(eventImpact.datetime) }} au {{ formatDateRange(eventImpact.last_datetime) }} soit {{ eventImpact.event_count }} événements</h3>
+      <h3>📊 Impact mesuré par paire du {{ formatDateRange(eventImpact.datetime) }} au {{ formatDateRange(eventImpact.last_datetime) }} soit {{ eventImpact.event_count }}</h3>
       
       <table class="impact-table">
         <thead>

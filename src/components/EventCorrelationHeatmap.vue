@@ -5,7 +5,17 @@
   </div>
 
   <div v-if="heatmapData && !loadingHeatmap" class="heatmap-container">
-    <table class="heatmap-table">
+    <div class="heatmap-header">
+      <div class="heatmap-scale">
+        <span class="scale-item"><span class="scale-color heat-very-high"></span>≥12 pips</span>
+        <span class="scale-item"><span class="scale-color heat-high"></span>9-11 pips</span>
+        <span class="scale-item"><span class="scale-color heat-medium"></span>6-8 pips</span>
+        <span class="scale-item"><span class="scale-color heat-low"></span>3-5 pips</span>
+        <span class="scale-item"><span class="scale-color heat-very-low"></span>&lt;3 pips</span>
+      </div>
+    </div>
+    <div class="heatmap-wrapper">
+      <table class="heatmap-table">
       <thead>
         <tr>
           <th class="header-corner">Type d'événement</th>
@@ -13,30 +23,26 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="eventType in heatmapData.event_types" :key="eventType.name">
+        <tr v-for="eventType in getSortedEventTypes()" :key="eventType.name">
           <td class="event-type-cell" :class="{ 'no-data': eventType.has_data === false }">
             <div class="event-type-name">{{ eventType.name }}</div>
-            <div class="event-count">
-              ({{ eventType.count }} evt)
-              <span v-if="eventType.has_data === false" class="no-data-badge">❌ No data</span>
-              <span v-else-if="eventType.has_data === true" class="has-data-badge">✅ Data</span>
-            </div>
           </td>
-          <td v-for="pair in heatmapData.pairs" :key="`${eventType.name}-${pair}`" class="heatmap-cell" :class="getHeatmapClass(getHeatmapValue(eventType.name, pair))">
+          <td v-for="pair in heatmapData.pairs" :key="`${eventType.name}-${pair}`" :class="['heatmap-cell', getHeatmapClass(getHeatmapValue(eventType.name, pair))]">
             <span class="cell-value">{{ getHeatmapValue(eventType.name, pair) }}</span>
           </td>
         </tr>
       </tbody>
-    </table>
+      </table>
+    </div>
 
     <div class="heatmap-legend">
       <div class="legend-title">Légende :</div>
       <div class="legend-items">
-        <div class="legend-item"><div class="legend-color heat-very-high"></div><span>>500 pips</span></div>
-        <div class="legend-item"><div class="legend-color heat-high"></div><span>200-500 pips</span></div>
-        <div class="legend-item"><div class="legend-color heat-medium"></div><span>100-200 pips</span></div>
-        <div class="legend-item"><div class="legend-color heat-low"></div><span>50-100 pips</span></div>
-        <div class="legend-item"><div class="legend-color heat-very-low"></div><span><50 pips</span></div>
+        <div class="legend-item"><div class="legend-color heat-very-high"></div><span>≥12 pips</span></div>
+        <div class="legend-item"><div class="legend-color heat-high"></div><span>9-11 pips</span></div>
+        <div class="legend-item"><div class="legend-color heat-medium"></div><span>6-8 pips</span></div>
+        <div class="legend-item"><div class="legend-color heat-low"></div><span>3-5 pips</span></div>
+        <div class="legend-item"><div class="legend-color heat-very-low"></div><span><3 pips</span></div>
       </div>
     </div>
   </div>
@@ -110,11 +116,30 @@ function getHeatmapValue(eventType: string, pair: string): number {
   return heatmapData.value?.data[eventType]?.[pair] || 0
 }
 
+function getEventAverage(eventType: string): number {
+  if (!heatmapData.value) return 0
+  const pairs = heatmapData.value.pairs
+  const values = pairs.map(pair => getHeatmapValue(eventType, pair))
+  const sum = values.reduce((acc, val) => acc + val, 0)
+  return values.length > 0 ? sum / values.length : 0
+}
+
+function getSortedEventTypes() {
+  if (!heatmapData.value) return []
+  
+  // Trier les événements par moyenne décroissante
+  return [...heatmapData.value.event_types].sort((a, b) => {
+    const avgA = getEventAverage(a.name)
+    const avgB = getEventAverage(b.name)
+    return avgB - avgA // Ordre décroissant
+  })
+}
+
 function getHeatmapClass(value: number): string {
-  if (value >= 500) return 'heat-very-high'
-  if (value >= 200) return 'heat-high'
-  if (value >= 100) return 'heat-medium'
-  if (value >= 50) return 'heat-low'
+  if (value >= 12) return 'heat-very-high'
+  if (value >= 9) return 'heat-high'
+  if (value >= 6) return 'heat-medium'
+  if (value >= 3) return 'heat-low'
   return 'heat-very-low'
 }
 </script>
@@ -148,92 +173,154 @@ function getHeatmapClass(value: number): string {
   border: 1px solid #2d3748;
 }
 
+.heatmap-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #2d3748;
+}
+
+.heatmap-title {
+  font-size: 1.1em;
+  font-weight: 600;
+  color: #e2e8f0;
+  flex: 1;
+}
+
+.heatmap-scale {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  font-size: 0.85em;
+  color: #cbd5e0;
+}
+
+.scale-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.scale-color {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1px solid #1a202c;
+}
+
+.heatmap-wrapper {
+  overflow-x: auto;
+  margin-bottom: 30px;
+  border-radius: 8px;
+}
+
 .heatmap-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 4px;
   margin-bottom: 30px;
-  font-size: 0.75em;
+  font-size: 0.95em;
+  background: #0f1419;
+  padding: 15px;
+  border-radius: 8px;
 }
 
 .header-corner {
   background: #2d3748;
   color: #e2e8f0;
   font-weight: 700;
-  padding: 8px;
+  padding: 12px 8px;
   border: 1px solid #4a5568;
+  min-width: 200px;
+  text-align: left;
 }
 
 .heatmap-table th {
   background: #2d3748;
   color: #e2e8f0;
   font-weight: 600;
-  padding: 8px;
+  padding: 12px 8px;
   border: 1px solid #4a5568;
   text-align: center;
-  font-size: 0.8em;
+  font-size: 0.85em;
+  min-width: 60px;
 }
 
 .event-type-cell {
   background: #2d3748;
-  padding: 8px;
+  padding: 12px;
   border: 1px solid #4a5568;
   text-align: left;
+  min-width: 200px;
+  font-weight: 500;
 }
 
 .event-type-cell.no-data {
-  opacity: 0.6;
+  opacity: 0.5;
   background: #1a1f2e;
 }
 
 .no-data-badge {
   display: inline-block;
-  font-size: 0.65em;
-  margin-left: 4px;
-  padding: 2px 4px;
+  font-size: 0.75em;
+  margin-left: 8px;
+  padding: 3px 6px;
   background: #7f1d1d;
   color: #fca5a5;
-  border-radius: 3px;
+  border-radius: 4px;
   font-weight: bold;
 }
 
 .has-data-badge {
   display: inline-block;
-  font-size: 0.65em;
-  margin-left: 4px;
-  padding: 2px 4px;
+  font-size: 0.75em;
+  margin-left: 8px;
+  padding: 3px 6px;
   background: #15803d;
   color: #bbf7d0;
-  border-radius: 3px;
+  border-radius: 4px;
   font-weight: bold;
 }
 
 .event-type-name {
   font-weight: 700;
   color: #e2e8f0;
-  margin-bottom: 2px;
-  font-size: 0.8em;
+  margin-bottom: 4px;
+  font-size: 0.9em;
 }
 
 .event-count {
-  font-size: 0.7em;
+  font-size: 0.75em;
   color: #a0aec0;
 }
 
 .heatmap-cell {
-  padding: 8px;
+  padding: 16px 12px;
   text-align: center;
   border: 1px solid #4a5568;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  min-width: 70px;
+  min-height: 60px;
+  display: table-cell;
+  vertical-align: middle;
+  cursor: pointer;
 }
 
 .heatmap-cell:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+  transform: scale(1.08);
+  box-shadow: 0 0 15px rgba(102, 126, 234, 0.7);
+  border-color: #667eea;
+  z-index: 10;
 }
 
 .cell-value {
   font-weight: 700;
   font-size: 0.9em;
+  display: block;
 }
 
 .heat-very-high {

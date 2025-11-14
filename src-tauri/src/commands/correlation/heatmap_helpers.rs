@@ -25,15 +25,6 @@ pub struct HeatmapData {
     pub data: HashMap<String, HashMap<String, f64>>,
 }
 
-pub fn get_available_pairs(_conn: &Connection) -> Result<Vec<String>, String> {
-    use crate::services::csv_loader::CsvLoader;
-    let loader = CsvLoader::new();
-    let symbols = loader
-        .list_available_symbols()
-        .map_err(|e| format!("Failed to list symbols: {}", e))?;
-    Ok(symbols)
-}
-
 pub fn get_event_types(
     conn: &Connection,
     calendar_id: Option<i32>,

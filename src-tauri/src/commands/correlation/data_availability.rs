@@ -45,24 +45,6 @@ pub fn has_candles_for_event(
     }
 }
 
-/// Batch check : vérifie la disponibilité pour plusieurs événements/paires
-/// Utile pour la heatmap qui a besoin de vérifier plusieurs combinaisons
-pub fn batch_check_events_has_candles(
-    candle_index: &CandleIndex,
-    pair_symbols: &[String],
-    event_datetimes: &[NaiveDateTime],
-) -> Vec<Vec<bool>> {
-    pair_symbols
-        .iter()
-        .map(|pair| {
-            event_datetimes
-                .iter()
-                .map(|&event_dt| has_candles_for_event(candle_index, pair, event_dt))
-                .collect()
-        })
-        .collect()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -80,15 +62,4 @@ mod tests {
         assert!(!result);
     }
 
-    #[test]
-    fn test_batch_check_empty() {
-        let index = CandleIndex::new();
-        let pairs = vec!["ADAUSD".to_string(), "EURUSD".to_string()];
-        let events = vec![];
-
-        let result = batch_check_events_has_candles(&index, &pairs, &events);
-        assert_eq!(result.len(), 2);
-        assert_eq!(result[0].len(), 0);
-        assert_eq!(result[1].len(), 0);
-    }
 }

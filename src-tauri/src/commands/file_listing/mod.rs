@@ -51,7 +51,7 @@ pub async fn list_calendar_files() -> Result<Vec<CalendarFileInfo>, String> {
 
             Ok(CalendarFileInfo {
                 filename,
-                path: format!("<database>"),
+                path: "<database>".to_string(),
                 size_bytes: 0,
                 created: imported_at.clone(),
                 modified: imported_at,
