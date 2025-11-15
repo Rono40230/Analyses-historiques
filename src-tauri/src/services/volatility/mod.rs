@@ -5,8 +5,8 @@ mod analyzer;
 mod correlation;
 mod hourly_stats;
 mod metrics;
-mod utils;
 mod stats_15min;
+mod utils;
 
 // Ré-exporte l'analyseur principal
 pub use analyzer::VolatilityAnalyzer;

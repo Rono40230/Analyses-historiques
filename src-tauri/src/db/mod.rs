@@ -84,9 +84,9 @@ pub fn create_pool(database_url: &str) -> Result<DbPool, Box<dyn std::error::Err
         .connection_timeout(std::time::Duration::from_secs(5))
         .idle_timeout(Some(std::time::Duration::from_secs(60)))
         .build(manager)?;
-    
+
     tracing::debug!("✅ Pool créé avec config: max_size=5, min_idle=1, timeout=5s, idle=60s");
-    
+
     Ok(Arc::new(pool))
 }
 

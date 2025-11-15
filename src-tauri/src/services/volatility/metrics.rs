@@ -227,7 +227,11 @@ impl MetricsAggregator {
         scored_hours.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
         // Retourne les meilleures heures qualifiées (max 6)
-        scored_hours.iter().take(MAX_HOURS).map(|(hour, _)| *hour).collect()
+        scored_hours
+            .iter()
+            .take(MAX_HOURS)
+            .map(|(hour, _)| *hour)
+            .collect()
     }
 }
 
@@ -249,16 +253,20 @@ mod confidence_tests {
         };
 
         let score = MetricsAggregator::calculate_confidence_score(&metrics);
-        assert!(score < 20.0, "Mauvaises métriques doivent donner score < 20, obtenu {}", score);
+        assert!(
+            score < 20.0,
+            "Mauvaises métriques doivent donner score < 20, obtenu {}",
+            score
+        );
     }
 
     #[test]
     fn test_confidence_perfect_metrics() {
         let metrics = GlobalMetrics {
-            mean_atr: 0.0003,       // Excellent (>25 pips)
-            mean_volatility: 0.35,  // Excellent (>30%)
-            mean_body_range: 50.0,  // Excellent (>45%)
-            mean_noise_ratio: 1.5,  // Propre (<2.0)
+            mean_atr: 0.0003,               // Excellent (>25 pips)
+            mean_volatility: 0.35,          // Excellent (>30%)
+            mean_body_range: 50.0,          // Excellent (>45%)
+            mean_noise_ratio: 1.5,          // Propre (<2.0)
             mean_breakout_percentage: 20.0, // Excellent (>15%)
             mean_tick_quality: 0.001,
             mean_volume_imbalance: 0.05,
@@ -266,7 +274,11 @@ mod confidence_tests {
         };
 
         let score = MetricsAggregator::calculate_confidence_score(&metrics);
-        assert!(score >= 80.0, "Excellentes métriques doivent donner score >= 80, obtenu {}", score);
+        assert!(
+            score >= 80.0,
+            "Excellentes métriques doivent donner score >= 80, obtenu {}",
+            score
+        );
     }
 
     #[test]
@@ -293,7 +305,13 @@ mod confidence_tests {
             };
 
             let score = MetricsAggregator::calculate_confidence_score(&metrics);
-            assert!(score <= 100.0, "Score ne doit pas dépasser 100. ATR={}, Vol={}, Score={}", atr, volatility, score);
+            assert!(
+                score <= 100.0,
+                "Score ne doit pas dépasser 100. ATR={}, Vol={}, Score={}",
+                atr,
+                volatility,
+                score
+            );
         }
     }
 
@@ -312,14 +330,17 @@ mod confidence_tests {
         };
 
         let good_atr_metrics = GlobalMetrics {
-            mean_atr: 0.0003,  // Amélioration
+            mean_atr: 0.0003, // Amélioration
             ..bad_metrics.clone()
         };
 
         let bad_score = MetricsAggregator::calculate_confidence_score(&bad_metrics);
         let good_score = MetricsAggregator::calculate_confidence_score(&good_atr_metrics);
 
-        assert!(good_score > bad_score, "Améliorer ATR doit augmenter le score");
+        assert!(
+            good_score > bad_score,
+            "Améliorer ATR doit augmenter le score"
+        );
     }
 
     #[test]
@@ -369,7 +390,9 @@ mod confidence_tests {
         // Vérifier les catégories
         assert!(score_excellent >= 80.0, "Excellent >= 80");
         assert!(score_good >= 65.0 && score_good < 80.0, "Good entre 65-80");
-        assert!(score_prudent >= 50.0 && score_prudent < 65.0, "Prudent entre 50-65");
+        assert!(
+            score_prudent >= 50.0 && score_prudent < 65.0,
+            "Prudent entre 50-65"
+        );
     }
 }
-

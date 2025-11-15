@@ -2,8 +2,8 @@
 // Conforme .clinerules : < 150L, structure claire, pas d'unwrap()
 
 use super::hourly_stats::HourlyStatsCalculator;
-use super::stats_15min::Stats15MinCalculator;
 use super::metrics::MetricsAggregator;
+use super::stats_15min::Stats15MinCalculator;
 use crate::db::DbPool;
 use crate::models::{
     AnalysisResult, Candle, Result, RiskLevel, TradingRecommendation, VolatilityError,
@@ -115,8 +115,11 @@ impl VolatilityAnalyzer {
             }
         } else {
             // Pas assez de bougies pour calculer l'interval
-            tracing::warn!("Only {} candles loaded for symbol {} - cannot determine timeframe", 
-                          self.candles.len(), symbol);
+            tracing::warn!(
+                "Only {} candles loaded for symbol {} - cannot determine timeframe",
+                self.candles.len(),
+                symbol
+            );
             "M1_DEFAULT".to_string()
         };
 
@@ -135,7 +138,8 @@ impl VolatilityAnalyzer {
         }
 
         // 1c. Charge les événements pour les tranches de 15 minutes également
-        if let Err(e) = self.load_and_associate_events_15min(symbol, &mut stats_15min, pool.clone()) {
+        if let Err(e) = self.load_and_associate_events_15min(symbol, &mut stats_15min, pool.clone())
+        {
             tracing::warn!("Failed to load 15min events for {}: {}", symbol, e);
             // Continue quand même
         }
@@ -165,9 +169,7 @@ impl VolatilityAnalyzer {
 
         info!(
             "Analysis complete: confidence={:.1}, recommendation={:?}, risk={:?}",
-            confidence_score,
-            recommendation,
-            risk_level
+            confidence_score, recommendation, risk_level
         );
 
         Ok(AnalysisResult {
@@ -198,21 +200,17 @@ impl VolatilityAnalyzer {
         };
 
         // Charger les événements du calendrier pour la période analysée
-        let start_time = self
-            .candles
-            .first()
-            .map(|c| c.datetime.naive_utc())
-            .ok_or(crate::models::VolatilityError::InsufficientData(
+        let start_time = self.candles.first().map(|c| c.datetime.naive_utc()).ok_or(
+            crate::models::VolatilityError::InsufficientData(
                 "No candles to determine event period".to_string(),
-            ))?;
+            ),
+        )?;
 
-        let end_time = self
-            .candles
-            .last()
-            .map(|c| c.datetime.naive_utc())
-            .ok_or(crate::models::VolatilityError::InsufficientData(
+        let end_time = self.candles.last().map(|c| c.datetime.naive_utc()).ok_or(
+            crate::models::VolatilityError::InsufficientData(
                 "No candles to determine event period".to_string(),
-            ))?;
+            ),
+        )?;
 
         // Charger événements via EventCorrelationService
         let event_service = crate::services::EventCorrelationService::new(pool);
@@ -266,21 +264,17 @@ impl VolatilityAnalyzer {
         };
 
         // Charger les événements du calendrier pour la période analysée
-        let start_time = self
-            .candles
-            .first()
-            .map(|c| c.datetime.naive_utc())
-            .ok_or(crate::models::VolatilityError::InsufficientData(
+        let start_time = self.candles.first().map(|c| c.datetime.naive_utc()).ok_or(
+            crate::models::VolatilityError::InsufficientData(
                 "No candles to determine event period".to_string(),
-            ))?;
+            ),
+        )?;
 
-        let end_time = self
-            .candles
-            .last()
-            .map(|c| c.datetime.naive_utc())
-            .ok_or(crate::models::VolatilityError::InsufficientData(
+        let end_time = self.candles.last().map(|c| c.datetime.naive_utc()).ok_or(
+            crate::models::VolatilityError::InsufficientData(
                 "No candles to determine event period".to_string(),
-            ))?;
+            ),
+        )?;
 
         // Charger événements via EventCorrelationService
         let event_service = crate::services::EventCorrelationService::new(pool);
@@ -299,7 +293,7 @@ impl VolatilityAnalyzer {
             // Convertir l'heure UTC en heure de Paris
             let utc_hour = event.event_time.hour() as i32;
             let utc_minute = event.event_time.minute() as i32;
-            
+
             let paris_hour = (utc_hour + PARIS_OFFSET_HOURS) % 24;
             let paris_hour_u8 = paris_hour as u8;
             let quarter = (utc_minute / 15) as u8;

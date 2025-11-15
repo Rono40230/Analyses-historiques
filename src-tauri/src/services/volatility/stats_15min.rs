@@ -2,7 +2,7 @@
 // Conforme .clinerules : < 150L, pas d'unwrap()
 
 use super::utils::{max, mean};
-use crate::models::{Candle, Stats15Min, Result};
+use crate::models::{Candle, Result, Stats15Min};
 use crate::services::MetricsCalculator;
 use chrono::Timelike;
 use std::collections::HashMap;
@@ -31,14 +31,14 @@ impl<'a> Stats15MinCalculator<'a> {
         for candle in self.candles {
             let utc_hour = candle.hour_utc() as i32;
             let utc_minute = candle.datetime.minute() as i32;
-            
+
             // Convertir en Paris time
             let paris_hour = (utc_hour + PARIS_OFFSET_HOURS) % 24;
             let paris_minute = utc_minute; // Les minutes ne changent pas avec timezone
-            
+
             let paris_hour_u8 = paris_hour as u8;
             let quarter = (paris_minute / 15) as u8;
-            
+
             groups_15min
                 .entry((paris_hour_u8, quarter))
                 .or_default()
@@ -75,12 +75,20 @@ impl<'a> Stats15MinCalculator<'a> {
             }
         }
 
-        debug!("Calculated stats for {} 15-minute slices (Paris time)", stats.len());
+        debug!(
+            "Calculated stats for {} 15-minute slices (Paris time)",
+            stats.len()
+        );
         Ok(stats)
     }
 
     /// Calcule les statistiques pour une tranche de 15 minutes spécifique
-    fn calculate_for_slice(&self, hour: u8, quarter: u8, candles: &[&Candle]) -> Result<Stats15Min> {
+    fn calculate_for_slice(
+        &self,
+        hour: u8,
+        quarter: u8,
+        candles: &[&Candle],
+    ) -> Result<Stats15Min> {
         let candle_count = candles.len();
 
         if candle_count == 0 {
