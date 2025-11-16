@@ -62,6 +62,10 @@
                   Score: {{ analysis.slice.straddleScore.toFixed(0) }}/100
                 </div>
               </div>
+              <button class="btn-bidi-params" @click="openBidiParameters(analysis)" title="Voir les paramètres Bidi optimisés">
+                <span class="btn-icon">📋</span>
+                <span class="btn-text">Paramètres Bidi</span>
+              </button>
             </div>
 
             <!-- Métriques Détaillées -->
@@ -306,6 +310,14 @@
         <button class="btn-primary" @click="close">Fermer l'analyse</button>
       </div>
     </div>
+
+    <!-- Modal Bidi Parameters (enfant) -->
+    <BidiParametersModal
+      v-if="showBidiModal && selectedBidiParams"
+      :params="selectedBidiParams"
+      :sliceScore="selectedSliceScore"
+      @close="closeBidiModal"
+    />
   </div>
 </template>
 
@@ -313,7 +325,9 @@
 import { ref, watch } from 'vue'
 import type { AnalysisResult } from '../stores/volatility'
 import type { SliceAnalysis } from '../utils/straddleAnalysis'
-import { analyzeTop3Slices } from '../utils/straddleAnalysis'
+import { analyzeTop3Slices, calculateBidiParameters } from '../utils/straddleAnalysis'
+import BidiParametersModal from './BidiParametersModal.vue'
+import type { BidiParameters } from '../utils/straddleAnalysis'
 
 interface Props {
   isOpen: boolean
@@ -329,29 +343,68 @@ const emit = defineEmits<Emits>()
 
 const analysisData = ref<any>(null)
 const sliceAnalyses = ref<SliceAnalysis[] | null>(null)
+const showBidiModal = ref(false)
+const selectedBidiParams = ref<BidiParameters | null>(null)
+const selectedSliceScore = ref(0)
+
+// Fonction pour mettre à jour l'analyse
+function updateAnalysis() {
+  if (props.analysisResult && props.isOpen) {
+    const result = props.analysisResult
+    analysisData.value = {
+      globalMetrics: result.global_metrics,
+      confidence: Math.round(result.confidence_score),
+      strategy: 'SCALPING STANDARD',
+      bestHours: result.best_hours.slice(0, 3).join(', ')
+    }
+
+    // Analyser les TOP 3 tranches 15min
+    if (result.stats_15min && result.stats_15min.length > 0) {
+      console.log('Analyzing', result.stats_15min.length, 'slices')
+      sliceAnalyses.value = analyzeTop3Slices(result.stats_15min)
+      console.log('Top 3 slices:', sliceAnalyses.value)
+    }
+  }
+}
 
 // Watcher pour analyser quand analysisResult change
 watch(
   () => props.analysisResult,
-  (result) => {
-    if (result && props.isOpen) {
-      analysisData.value = {
-        globalMetrics: result.global_metrics,
-        confidence: Math.round(result.confidence_score),
-        strategy: 'SCALPING STANDARD',
-        bestHours: result.best_hours.slice(0, 3).join(', ')
-      }
+  () => {
+    updateAnalysis()
+  }
+)
 
-      // Analyser les TOP 3 tranches 15min
-      if (result.stats_15min && result.stats_15min.length > 0) {
-        sliceAnalyses.value = analyzeTop3Slices(result.stats_15min)
-      }
+// Watcher pour déclencher l'analyse quand le modal s'ouvre
+watch(
+  () => props.isOpen,
+  (isOpen) => {
+    if (isOpen) {
+      updateAnalysis()
     }
   }
 )
 
 const close = () => {
   emit('close')
+}
+
+/**
+ * Ouvre la modal Bidi pour une tranche donnée
+ */
+const openBidiParameters = (analysis: SliceAnalysis) => {
+  selectedBidiParams.value = calculateBidiParameters(analysis.slice, [analysis.slice])
+  selectedSliceScore.value = Math.round(analysis.slice.straddleScore)
+  console.log('🔧 Bidi Parameters:', selectedBidiParams.value)
+  showBidiModal.value = true
+}
+
+/**
+ * Ferme la modal Bidi
+ */
+const closeBidiModal = () => {
+  showBidiModal.value = false
+  selectedBidiParams.value = null
 }
 
 // Fonctions utilitaires de rendu
@@ -451,8 +504,8 @@ const getRankClass = (rank: number): string => {
   border: 2px solid #2d3748;
   border-radius: 12px;
   width: 100%;
-  max-width: 1400px;
-  max-height: 85vh;
+  max-width: 1600px;
+  max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
   color: #e2e8f0;
@@ -625,6 +678,7 @@ const getRankClass = (rank: number): string => {
   margin-bottom: 20px;
   padding-bottom: 20px;
   border-bottom: 1px solid #2d3748;
+  justify-content: space-between;
 }
 
 .rank-badge {
@@ -1089,6 +1143,41 @@ const getRankClass = (rank: number): string => {
   text-align: center;
   padding: 40px;
   color: #a0aec0;
+}
+
+/* Bouton Bidi Parameters */
+.btn-bidi-params {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+  color: #0d1117;
+  border: 1px solid #ffb300;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-bidi-params:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+  background: linear-gradient(135deg, #ffb300 0%, #ffa500 100%);
+}
+
+.btn-bidi-params:active {
+  transform: translateY(0);
+}
+
+.btn-bidi-params .btn-icon {
+  font-size: 16px;
+}
+
+.btn-bidi-params .btn-text {
+  font-size: 12px;
 }
 
 /* Scrollbar */

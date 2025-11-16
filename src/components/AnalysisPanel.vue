@@ -350,6 +350,7 @@ interface AnalysisResult {
   global_metrics: GlobalMetrics
   hourly_stats: HourlyStats[]
   best_hours: number[]
+  stats_15min?: any[]
 }
 
 const props = defineProps<{

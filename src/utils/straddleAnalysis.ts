@@ -468,3 +468,133 @@ export function getTop3Rank(
   const index = top3Slices.findIndex((s) => s.hour === hour && s.quarter === quarter)
   return index !== -1 ? index + 1 : -1
 }
+
+/**
+ * Paramètres optimisés pour le robot Bidi
+ * 🔐 RiskPercent est TOUJOURS 1.0 (constante immuable)
+ * 
+ * FOCUS: 3 paramètres opérationnels uniquement
+ * - EventTime: Heure de déclenchement (à la minute près)
+ * - StopLossLevelPercent: Distance SL en points concrets
+ * - ATRMultiplier: Agressivité du trailing stop
+ */
+export interface BidiParameters {
+  // 📍 HEURE EXACTE DE DÉCLENCHEMENT
+  eventTime: string // HH:MM:SS (ex: "14:29:50")
+  eventTimeExplanation: string // Explication simple
+
+  // 🛑 POSITIONNEMENT STOP LOSS
+  stopLossLevelPercent: number // % de l'ATR (25-40%)
+  stopLossPoints: number // Nombre de points concrets (ex: 15)
+  atrMeanForCalculation: number // ATR du créneau pour la calculatrice
+  stopLossExplanation: string // Pourquoi cette distance
+
+  // 📈 AGRESSIVITÉ DU TRAILING STOP
+  atrMultiplier: number // Multiplicateur (1.5-3.0)
+  trailingStepPoints: number // Nombre de points par tick (ex: 125)
+  atrMultiplierProfile: string // "Agressif" | "Normal" | "Généreux" | "Très Généreux"
+  atrMultiplierExplanation: string // Comportement du trailing
+
+  // 🔐 CONSTANTES (informel)
+  riskPercent: 1.0
+  tradeExpiration: 300
+}
+
+/**
+ * 🎯 Calcule les paramètres optimisés pour Bidi basés sur l'analyse d'une opportunité TOP 3
+ *
+ * FOCUS: 3 paramètres opérationnels uniquement
+ * - EventTime: Heure exacte du trigger
+ * - StopLossLevelPercent: Distance SL en points
+ * - ATRMultiplier: Agressivité du trailing
+ *
+ * @param slice Tranche 15min analysée avec son score
+ * @param allSlices Toutes les tranches pour contexte
+ * @returns BidiParameters simplifiés et concrets
+ */
+export function calculateBidiParameters(
+  slice: Slice15minWithScore,
+  allSlices: Slice15minWithScore[]
+): BidiParameters {
+  const stats = slice.stats
+
+  // ========================================
+  // 1️⃣ EVENT TIME - Heure de déclenchement
+  // ========================================
+  const hours = slice.hour < 10 ? `0${slice.hour}` : `${slice.hour}`
+  const minutes = slice.quarter === 1 ? '00' : slice.quarter === 2 ? '15' : slice.quarter === 3 ? '30' : '45'
+  const eventTime = `${hours}:${minutes === '45' ? '59' : minutes}:50`
+  const eventTimeExplanation = `Signal déclenché à la fin du créneau optimal (${slice.startTime})`
+
+  // ========================================
+  // 2️⃣ STOP LOSS - Distance en points concrets
+  // ========================================
+  // Récupère ATR (potentiellement en décimales, convertir en points si nécessaire)
+  let atrMean = stats.atr_mean || 30
+  
+  // Si ATR est très petit (< 1), c'est probablement en décimales (0.0015) → convertir en points
+  if (atrMean < 1) {
+    atrMean = atrMean * 10000 // 0.0015 × 10000 = 15 points
+  }
+  
+  const rangeAvg = stats.range_mean || 30
+  
+  let stopLossLevelPercent = 30.0
+  let stopLossExplanation = ''
+
+  if (rangeAvg > 60) {
+    stopLossLevelPercent = 25.0
+    stopLossExplanation = `Range large (${rangeAvg.toFixed(0)}pts) → SL serré pour capturer mouvements rapides`
+  } else if (rangeAvg > 40) {
+    stopLossLevelPercent = 30.0
+    stopLossExplanation = `Range modéré (${rangeAvg.toFixed(0)}pts) → SL équilibré`
+  } else if (rangeAvg > 20) {
+    stopLossLevelPercent = 35.0
+    stopLossExplanation = `Range moyen (${rangeAvg.toFixed(0)}pts) → SL un peu lâche`
+  } else {
+    stopLossLevelPercent = 40.0
+    stopLossExplanation = `Range serré (${rangeAvg.toFixed(0)}pts) → SL très lâche pour éviter fausses sorties`
+  }
+
+  // Calcul en points concrets
+  const stopLossPoints = Math.round((stopLossLevelPercent / 100) * atrMean)
+
+  // ========================================
+  // 3️⃣ ATR MULTIPLIER - Agressivité du trailing
+  // ========================================
+  let atrMultiplier = 2.0
+  let atrMultiplierProfile = 'Normal'
+
+  if (atrMean > 50) {
+    atrMultiplier = 1.5
+    atrMultiplierProfile = 'Agressif'
+  } else if (atrMean > 40) {
+    atrMultiplier = 2.0
+    atrMultiplierProfile = 'Normal'
+  } else if (atrMean > 25) {
+    atrMultiplier = 2.5
+    atrMultiplierProfile = 'Généreux'
+  } else {
+    atrMultiplier = 3.0
+    atrMultiplierProfile = 'Très Généreux'
+  }
+
+  // Calcul du trailing step en points
+  const trailingStepPoints = Math.round(atrMultiplier * atrMean)
+  const atrMultiplierExplanation = `À chaque tick, le TSL monte de ${trailingStepPoints}pts (irréversible). Profil: ${atrMultiplierProfile} (volatilité ${atrMean.toFixed(0)}pts)`
+
+  return {
+    eventTime,
+    eventTimeExplanation,
+    stopLossLevelPercent,
+    stopLossPoints,
+    atrMeanForCalculation: Math.round(atrMean),
+    stopLossExplanation,
+    atrMultiplier,
+    trailingStepPoints,
+    atrMultiplierProfile,
+    atrMultiplierExplanation,
+    riskPercent: 1.0,
+    tradeExpiration: 300
+  }
+}

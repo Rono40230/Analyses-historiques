@@ -43,6 +43,7 @@
               <td class="hour-cell">
                 {{ formatHour(stat.hour) }}
                 <span v-if="isBestHour(stat.hour)" class="star">⭐</span>
+                <span v-if="hasTop3SlicesInHour(stat.hour)" class="star-15min">⭐</span>
               </td>
               <td>{{ formatNumber(stat.atr_mean, 5) }}</td>
               <td :class="{ 'range-threshold': stat.range_mean > 0.0025 }">
@@ -316,6 +317,10 @@ function getTop3SliceRank(hour: number, quarter: number): number {
   const found = top3Slices.value.findIndex(item => item.hour === hour && item.quarter === quarter)
   return found >= 0 ? found + 1 : 0
 }
+
+function hasTop3SlicesInHour(hour: number): boolean {
+  return top3Slices.value.some(item => item.hour === hour)
+}
 </script>
 
 <style scoped>
@@ -355,7 +360,8 @@ function getTop3SliceRank(hour: number, quarter: number): number {
 
 .scalping-details {
   padding: 15px;
-  background: #0d1117;
+  background: #161b22;
+  border-top: 2px solid #21262d;
 }
 
 .scalping-table {
@@ -382,17 +388,23 @@ function getTop3SliceRank(hour: number, quarter: number): number {
   border: 1px solid #30363d;
 }
 
-.scalping-row:hover {
-  background: #161b22;
+/* Fond gris clair pour TOUTES les lignes 15min */
+.scalping-row {
+  background: #2d333b;
 }
 
+.scalping-row:hover {
+  background: #353d48;
+}
+
+/* Fond plus foncé (doré) pour les lignes TOP 3 */
 .scalping-row.top3-slice {
-  background: rgba(251, 191, 36, 0.1);
+  background: rgba(251, 191, 36, 0.25);
   border-left: 4px solid #fbbf24;
 }
 
 .scalping-row.top3-slice:hover {
-  background: rgba(251, 191, 36, 0.2);
+  background: rgba(251, 191, 36, 0.35);
 }
 
 .top3-star {
@@ -475,6 +487,12 @@ tbody tr:hover {
 
 .star {
   margin-left: 0.5rem;
+}
+
+.star-15min {
+  margin-left: 0.3rem;
+  color: #fbbf24;
+  font-size: 0.9em;
 }
 
 .quality-score {
