@@ -123,15 +123,15 @@ const showTooltip = ref(false)
 }
 
 /* Slots styling */
-.tooltip-body ::v-deep > * {
+.tooltip-body :deep(> *) {
   margin-bottom: 12px;
 }
 
-.tooltip-body ::v-deep > *:last-child {
+.tooltip-body :deep(> *:last-child) {
   margin-bottom: 0;
 }
 
-.tooltip-body ::v-deep .tooltip-section-title {
+.tooltip-body :deep(.tooltip-section-title) {
   font-weight: 600;
   color: #58a6ff;
   margin-bottom: 4px;
@@ -140,7 +140,7 @@ const showTooltip = ref(false)
   letter-spacing: 0.5px;
 }
 
-.tooltip-body ::v-deep .tooltip-section-text {
+.tooltip-body :deep(.tooltip-section-text) {
   color: #cbd5e0;
   font-size: 0.9em;
   line-height: 1.6;

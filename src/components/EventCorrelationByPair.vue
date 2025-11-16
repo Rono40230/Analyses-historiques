@@ -156,9 +156,7 @@ interface PairCorrelationData {
   events: EventCorrelation[]
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  availablePairs: () => []
-})
+const props = defineProps<Props>()
 
 const store = useAnalysisStore()
 const loading = ref(false)

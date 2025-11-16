@@ -20,7 +20,6 @@
             <th>Tick Quality</th>
             <th>Noise Ratio</th>
             <th>Breakouts %</th>
-            <th>Potentiel Straddle</th>
             <th>Événements</th>
           </tr>
         </thead>
@@ -55,11 +54,6 @@
               <td>{{ formatNumber(stat.tick_quality_mean, 5) }}</td>
               <td>{{ stat.noise_ratio_mean.toFixed(2) }}</td>
               <td>{{ stat.breakout_percentage.toFixed(1) }}</td>
-              <td>
-                <div class="quality-score straddle" :class="getQualityClass(stat)">
-                  {{ getQualityScore(stat).toFixed(0) }}
-                </div>
-              </td>
               <td class="events-cell">
                 <button
                   v-if="stat.events && stat.events.length > 0"

@@ -69,11 +69,11 @@ impl ConfidenceScorer {
     /// EXEMPLE : EURUSD 10:00-11:00 UTC
     /// > - ATR 0.0003 → 30 pts (excellent volatilité)
     /// > - BodyRange 52% → 25 pts (très directif)
-    /// - Volatilité 0.25 → 25 pts (bonus mouvement)
-    /// - NoiseRatio 1.8 → 10 pts (signal propre)
-    /// - BreakoutPct 18% → 10 pts (beaucoup de cassures)
-    /// - Bonus → 5 pts (données suffisantes)
-    /// = TOTAL 105 → capped à 100 = "EXCELLENT, scalpe agressif"
+    /// > - Volatilité 0.25 → 25 pts (bonus mouvement)
+    /// > - NoiseRatio 1.8 → 10 pts (signal propre)
+    /// > - BreakoutPct 18% → 10 pts (beaucoup de cassures)
+    /// > - Bonus → 5 pts (données suffisantes)
+    /// > = TOTAL 105 → capped à 100 = "EXCELLENT, scalpe agressif"
     pub(super) fn calculate_confidence_score(metrics: &GlobalMetrics) -> f64 {
         let mut score: f64 = 0.0;
 

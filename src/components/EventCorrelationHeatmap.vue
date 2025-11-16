@@ -49,7 +49,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, withDefaults } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 
 interface HeatmapData {
@@ -64,9 +64,7 @@ interface Props {
   availablePairs: string[]
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  availablePairs: () => []
-})
+const props = defineProps<Props>()
 
 const loadingHeatmap = ref(false)
 const heatmapData = ref<HeatmapData | null>(null)

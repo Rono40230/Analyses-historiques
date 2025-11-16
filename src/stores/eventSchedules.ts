@@ -407,8 +407,6 @@ export const eventSchedules: Record<string, string> = {
   'Foreign Direct Investment ytd/y': '20e – 09h00',
   'M2 Money Stock y/y': '15e – 09h00',
   'NBS Press Conference': 'Trimestriel – 03h00',
-  '10-y Bond Auction': 'Variable',
-  '30-y Bond Auction': 'Variable',
   'BRICS Summit': 'Variable',
   'Common CPI y/y': 'Variable',
   'FPI m/m': 'Variable',

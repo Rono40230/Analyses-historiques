@@ -31,27 +31,26 @@
         <h3>Score de Confiance 🎯</h3>
         <template #definition>
           <div class="tooltip-section-title">Définition</div>
-          <div class="tooltip-section-text">Mesure 0-100 : à quel point tu peux CONFIER la stratégie STRADDLE scalping à cette paire pendant cette période. Plus le score est élevé, plus les conditions sont stables et prévisibles.</div>
+          <div class="tooltip-section-text">Mesure 0-100 : probabilité de SUCCESS pour stratégie STRADDLE scalping. Score = synthèse de TOUS les métriques volatilité + signal-qualité.</div>
         </template>
         <template #usage>
-          <div class="tooltip-section-title">Formule (max 100 points)</div>
+          <div class="tooltip-section-title">📊 Facteurs (100 pts max)</div>
           <div class="tooltip-section-text">
-            <strong>ATR (30 pts)</strong> - Volatilité soutenue : >25 pips = 30 pts | 15-25 pips = 25 pts<br/>
-            <strong>Body Range (25 pts)</strong> - Directionnalité : >45% = 25 pts | 35-45% = 20 pts<br/>
-            <strong>Volatilité (25 pts)</strong> - Bonus mouvement : >30% = 25 pts | 20-30% = 20 pts<br/>
-            <strong>Noise Ratio (10 pts)</strong> - Signal/bruit : <2.0 = 10 pts | <3.0 = 7 pts<br/>
-            <strong>Breakout % (10 pts)</strong> - Cassures : >15% = 10 pts | >10% = 7 pts<br/>
-            <strong>Bonus Données (5 pts)</strong> - Si >100k candles = 5 pts
+            <strong>ATR (30 pts):</strong> Volatilité soutenue - >25 pips = 30 pts<br/>
+            <strong>Body Range (25 pts):</strong> Directionnalité - >45% = 25 pts<br/>
+            <strong>Volatilité (25 pts):</strong> Bonus mouvement - >30% = 25 pts<br/>
+            <strong>Noise Ratio (10 pts):</strong> Pureté signal - <2.0 = 10 pts (CRUCIAL!)<br/>
+            <strong>Breakout % (10 pts):</strong> Activité - >15% = 10 pts
           </div>
         </template>
         <template #scoring>
-          <div class="tooltip-section-title">Interprétation</div>
+          <div class="tooltip-section-title">💡 Interprétation & Action</div>
           <div class="tooltip-section-text">
-            <strong>80-100</strong> ✅ EXCELLENT - Scalpe agressivement<br/>
-            <strong>65-80</strong> 🟢 BON - Scalpe normalement<br/>
-            <strong>50-65</strong> 🟡 PRUDENT - Scalpe avec stop serrés<br/>
-            <strong>35-50</strong> 🟠 RISKY - Très prudent, breakouts only<br/>
-            <strong>0-35</strong> ❌ MAUVAIS - Ne pas trader
+            <strong>⭐ 80-100</strong> ✅ EXCELLENT - Conditions PARFAITES scalpe agressif SANS limite<br/>
+            <strong>🟢 65-80</strong> BON - Scalpe standard, appétit moyen, respect stop<br/>
+            <strong>🟡 50-65</strong> PRUDENT - Scalpe PETIT volumes, stop serrés, position sizes réduits<br/>
+            <strong>🟠 35-50</strong> RISKY - Breakouts SEULEMENT, ignorer scalp intra-candle<br/>
+            <strong>❌ 0-35</strong> MAUVAIS - ATTENDRE, pas assez conditions, recherche autre paire
           </div>
         </template>
       </MetricTooltip>
@@ -83,15 +82,24 @@
           <h4>📊 ATR Moyen</h4>
           <template #definition>
             <div class="tooltip-section-title">Définition</div>
-            <div class="tooltip-section-text">Average True Range - Mesure la volatilité moyenne sur 14 périodes. Représente l'amplitude moyenne des mouvements.</div>
+            <div class="tooltip-section-text">Average True Range (14 périodes) - Mesure la volatilité réelle en écartant les spikes isolés.</div>
           </template>
           <template #usage>
-            <div class="tooltip-section-title">Utilité pour le Trading</div>
-            <div class="tooltip-section-text">Aide à définir les stops loss et take profit. Un ATR élevé = grands mouvements possibles = risque plus important. Utile pour ajuster la taille des positions.</div>
+            <div class="tooltip-section-title">📈 Interprétation Forex M1</div>
+            <div class="tooltip-section-text">
+              🟢 <strong>&gt;0.00025 (25+ pips):</strong> Excellent - Scalpe agressivement, bons mouvements constants<br>
+              🟡 <strong>0.00015-0.00025:</strong> Bon - Scalpe normalement, volatilité fiable<br>
+              🟠 <strong>0.00010-0.00015:</strong> Moyen - Stop serré obligatoire, mouvement limité<br>
+              🔴 <strong>&lt;0.00010:</strong> Mauvais - Attendre, trop peu de volatilité
+            </div>
           </template>
           <template #scoring>
-            <div class="tooltip-section-title">Interprétation</div>
-            <div class="tooltip-section-text">&gt;0.001 = Excellent | &gt;0.0005 = Bon | &gt;0.0001 = Acceptable | &lt;0.0001 = Très faible volatilité</div>
+            <div class="tooltip-section-title">💡 Décision Trading</div>
+            <div class="tooltip-section-text">
+              ✅ <strong>Combine avec:</strong> Body Range &gt;40% → Signal confirmé<br>
+              ⚠️ <strong>ATR faible MAIS BodyRange élevé:</strong> Piège possible (spikes isolés)<br>
+              🎯 <strong>Action:</strong> ATR élevé + bruit bas = Scalpe agressif sans limite
+            </div>
           </template>
         </MetricTooltip>
         <div :class="['metric-value', getColorClass('atr', props.result.global_metrics.mean_atr)]">{{ props.result.global_metrics.mean_atr.toFixed(5) }}</div>
@@ -101,15 +109,24 @@
           <h4>📈 Volatilité</h4>
           <template #definition>
             <div class="tooltip-section-title">Définition</div>
-            <div class="tooltip-section-text">Pourcentage moyen de variation des prix (écart-type des rendements).</div>
+            <div class="tooltip-section-text">Écart-type des rendements (%) - Mesure la variation moyenne des prix sur la période.</div>
           </template>
           <template #usage>
-            <div class="tooltip-section-title">Utilité pour le Trading</div>
-            <div class="tooltip-section-text">Volatilité élevée = plus d'opportunités mais plus de risques. Volatilité basse = tendances plus stables mais moins de mouvements. Adapter le style de trading à la volatilité.</div>
+            <div class="tooltip-section-title">📊 Interprétation Scalping M1</div>
+            <div class="tooltip-section-text">
+              🟢 <strong>&gt;30%:</strong> Excellent - Crypto-like volatility, mouvements constants<br>
+              🟡 <strong>15-30%:</strong> Bon - Volatilité normale forex, scalpe standard<br>
+              🟠 <strong>5-15%:</strong> Moyen - Scalpe très serré, patience requise<br>
+              🔴 <strong>&lt;5%:</strong> Mauvais - Trop peu de mouvement, attendre
+            </div>
           </template>
           <template #scoring>
-            <div class="tooltip-section-title">Interprétation</div>
-            <div class="tooltip-section-text">&lt;5% = Très basse (scalping) | 5-15% = Normale (swing) | &gt;15% = Élevée (prudence)</div>
+            <div class="tooltip-section-title">💡 Décision Trading</div>
+            <div class="tooltip-section-text">
+              ✅ <strong>Scalping actif si:</strong> Vol &gt;15% + ATR élevé + Bruit faible<br>
+              ⚠️ <strong>Différent d'ATR:</strong> Vol mesure variation %, ATR mesure pips<br>
+              🎯 <strong>Action:</strong> Combine avec Breakout% pour stratégie
+            </div>
           </template>
         </MetricTooltip>
         <div :class="['metric-value', getColorClass('volatility', props.result.global_metrics.mean_volatility)]">{{ (props.result.global_metrics.mean_volatility * 100).toFixed(2) }}%</div>
@@ -119,15 +136,24 @@
           <h4>📦 Body Range</h4>
           <template #definition>
             <div class="tooltip-section-title">Définition</div>
-            <div class="tooltip-section-text">Pourcentage du corps de la bougie (distance open-close) par rapport à l'amplitude totale (high-low).</div>
+            <div class="tooltip-section-text">% du corps de bougie (open-close) vs amplitude totale (high-low) - Mesure la directionnalité.</div>
           </template>
           <template #usage>
-            <div class="tooltip-section-title">Utilité pour le Trading</div>
-            <div class="tooltip-section-text">Body Range élevé = bougies plus directionnelles et décisives. Body Range faible = bougies indécises avec beaucoup de mèches. Préférer les corps forts pour les signaux clairs.</div>
+            <div class="tooltip-section-title">📊 Interprétation Scalping</div>
+            <div class="tooltip-section-text">
+              🟢 <strong>&gt;45%:</strong> Excellent - Bougies directionnelles, signal/bruit élevé<br>
+              🟡 <strong>35-45%:</strong> Bon - Assez directif pour scalpe normal<br>
+              🟠 <strong>15-35%:</strong> Moyen - Bougies indécises, bruit modéré<br>
+              🔴 <strong>&lt;15%:</strong> Mauvais - Bougies indécises avec longues mèches
+            </div>
           </template>
           <template #scoring>
-            <div class="tooltip-section-title">Interprétation</div>
-            <div class="tooltip-section-text">&gt;50% = Excellent (très directif) | &gt;30% = Bon | &gt;10% = Acceptable | &lt;10% = Très indécis</div>
+            <div class="tooltip-section-title">💡 Décision Trading</div>
+            <div class="tooltip-section-text">
+              ✅ <strong>BodyRange élevé = signaux clairs</strong> (moins de faux mouvements)<br>
+              ⚠️ <strong>BodyRange faible MAIS ATR élevé:</strong> Spikes = à éviter<br>
+              🎯 <strong>Meilleur combo:</strong> BodyRange &gt;40% + NoiseRatio &lt;2.0 = Scalpe sûr
+            </div>
           </template>
         </MetricTooltip>
         <div :class="['metric-value', getColorClass('bodyrange', props.result.global_metrics.mean_body_range)]">{{ props.result.global_metrics.mean_body_range.toFixed(1) }}%</div>
@@ -137,15 +163,24 @@
           <h4>✨ Tick Quality</h4>
           <template #definition>
             <div class="tooltip-section-title">Définition</div>
-            <div class="tooltip-section-text">Qualité des ticks - taille moyenne des mouvements de prix unitaires. Mesure la liquidité et la granularité des données.</div>
+            <div class="tooltip-section-text">Taille moyenne des mouvements de prix unitaires = liquidity quality. Mesure l'existence de market makers et la granularité des données tick.</div>
           </template>
           <template #usage>
-            <div class="tooltip-section-title">Utilité pour le Trading</div>
-            <div class="tooltip-section-text">Tick Quality élevé = meilleure liquidité et données plus fiables. Important pour le scalping et les stratégies haute fréquence. Indique l'existence de market makers actifs.</div>
+            <div class="tooltip-section-title">📊 Interprétation (Scalping M1)</div>
+            <div class="tooltip-section-text">
+              🟢 <strong>&gt;0.001 (10+ pips):</strong> Excellent - Très liquide, spreads serrés, scalpe sûr<br>
+              🟡 <strong>0.0005-0.001:</strong> Bon - Liquide, spreads acceptables<br>
+              🟠 <strong>0.0001-0.0005:</strong> Moyen - Spreads plus larges, frais élevés<br>
+              🔴 <strong>&lt;0.0001:</strong> Mauvais - Très peu liquide, spreads prohibitifs
+            </div>
           </template>
           <template #scoring>
-            <div class="tooltip-section-title">Interprétation</div>
-            <div class="tooltip-section-text">&gt;0.001 = Excellent | &gt;0.0005 = Bon | &gt;0.0001 = Acceptable | Plus élevé = Meilleur</div>
+            <div class="tooltip-section-title">💡 Décision Trading</div>
+            <div class="tooltip-section-text">
+              ✅ <strong>Tick Quality élevé = meilleure rentabilité scalping</strong> (spreads faibles)<br>
+              ⚠️ <strong>Si &lt;0.0001:</strong> Les frais de trading dévorent les profits<br>
+              🎯 <strong>Excellent combo:</strong> Tick Quality &gt;0.001 + NoiseRatio &lt;2.0 = Scalpe hyper-rentable
+            </div>
           </template>
         </MetricTooltip>
         <div :class="['metric-value', getColorClass('tickquality', props.result.global_metrics.mean_tick_quality)]">{{ props.result.global_metrics.mean_tick_quality.toFixed(5) }}</div>
@@ -155,15 +190,24 @@
           <h4>🔊 Noise Ratio</h4>
           <template #definition>
             <div class="tooltip-section-title">Définition</div>
-            <div class="tooltip-section-text">Ratio bruit/signal - compare les mouvements intra-bougie au mouvement directionnel net. Plus bas = moins de bruit.</div>
+            <div class="tooltip-section-text">Ratio bruit/signal = (Intra-candle range) / (Net directional move) - Plus bas = plus propre.</div>
           </template>
           <template #usage>
-            <div class="tooltip-section-title">Utilité pour le Trading</div>
-            <div class="tooltip-section-text">Bruit élevé = plus de faux signaux et de whipsaws. Bruit bas = tendances plus nettes. Critère essentiel pour éviter de trader dans du bruit chaotique.</div>
+            <div class="tooltip-section-title">📊 Interprétation (CRITIQUE pour Scalping)</div>
+            <div class="tooltip-section-text">
+              🟢 <strong>&lt;2.0:</strong> Excellent - Signal très propre, tendance claire = SCALPE!<br>
+              🟡 <strong>2.0-3.0:</strong> Bon - Signal acceptable mais attention aux whipsaws<br>
+              🟠 <strong>3.0-4.0:</strong> Moyen - Bruit modéré, beaucoup de faux signaux<br>
+              🔴 <strong>&gt;4.0:</strong> Mauvais - Chaos total, NE PAS TRADER
+            </div>
           </template>
           <template #scoring>
-            <div class="tooltip-section-title">Interprétation</div>
-            <div class="tooltip-section-text">&lt;2.0 = Excellent | &lt;3.0 = Bon | &gt;3.0 = Élevé (à éviter) | &gt;5.0 = Très chaotique</div>
+            <div class="tooltip-section-title">💡 Décision Trading (CRUCIAL!)</div>
+            <div class="tooltip-section-text">
+              ✅ <strong>Si NoiseRatio &lt;2.0:</strong> C'est TON meilleur moment de scalpe<br>
+              ⚠️ <strong>Si &gt;3.0:</strong> Ignore ATR/Vol, c'est du bruit, ATTENDS<br>
+              🎯 <strong>Golden combo:</strong> NoiseRatio &lt;2.0 + BodyRange &gt;40% + ATR élevé = JACKPOT
+            </div>
           </template>
         </MetricTooltip>
         <div :class="['metric-value', getColorClass('noiseratio', props.result.global_metrics.mean_noise_ratio)]">{{ props.result.global_metrics.mean_noise_ratio.toFixed(2) }}</div>
@@ -173,15 +217,24 @@
           <h4>⚖️ Volume Imbalance</h4>
           <template #definition>
             <div class="tooltip-section-title">Définition</div>
-            <div class="tooltip-section-text">Déséquilibre entre les volumes d'achat et de vente. Mesure la domination d'un côté du marché.</div>
+            <div class="tooltip-section-text">Déséquilibre acheteurs vs vendeurs = Ratio (volume acheteur) / (volume vendeur). Mesure qui contrôle le marché.</div>
           </template>
           <template #usage>
-            <div class="tooltip-section-title">Utilité pour le Trading</div>
-            <div class="tooltip-section-text">Imbalance élevé = forces acheteuses ou vendeuses dominantes = signaux de tendance forts. Imbalance équilibré (proche de 1.0) = marché dans l'indécision.</div>
+            <div class="tooltip-section-title">📊 Interprétation (Scalping & Tendance)</div>
+            <div class="tooltip-section-text">
+              🟢 <strong>&gt;2.0 ou &lt;0.5:</strong> Excellent - Déséquilibre FORT = Tendance claire, scalpe facile<br>
+              🟡 <strong>1.5-2.0 ou 0.5-0.67:</strong> Bon - Déséquilibre modéré, tendance visible<br>
+              🟠 <strong>1.0-1.5 ou 0.67-1.0:</strong> Moyen - Équilibre, indécision, beaucoup de whipsaws<br>
+              🔴 <strong>≈1.0:</strong> Mauvais - Marché indécis, NE PAS SCALPER
+            </div>
           </template>
           <template #scoring>
-            <div class="tooltip-section-title">Interprétation</div>
-            <div class="tooltip-section-text">≈1.0 = Parfaitement équilibré | &gt;1.5 = Déséquilibre marqué | &lt;0.5 = Forte dominance vendeur</div>
+            <div class="tooltip-section-title">💡 Décision Trading</div>
+            <div class="tooltip-section-text">
+              ✅ <strong>Si &gt;1.5 ou &lt;0.67:</strong> Trading directionnel facile, follow the trend<br>
+              ⚠️ <strong>Si ≈1.0:</strong> ATTENDS, pas d'avantage directionnel<br>
+              🎯 <strong>Best combo:</strong> Imbalance &gt;2.0 + NoiseRatio &lt;2.0 = Tendance très claire
+            </div>
           </template>
         </MetricTooltip>
         <div :class="['metric-value', getColorClass('volumeimbalance', props.result.global_metrics.mean_volume_imbalance)]">{{ props.result.global_metrics.mean_volume_imbalance.toFixed(4) }}</div>
@@ -191,15 +244,24 @@
           <h4>🚀 Breakout %</h4>
           <template #definition>
             <div class="tooltip-section-title">Définition</div>
-            <div class="tooltip-section-text">Pourcentage de bougies qui sortent des niveaux de support/résistance (breakouts).</div>
+            <div class="tooltip-section-text">% de bougies sortant du range (cassure de support/résistance) - Mesure l'activité directionelle.</div>
           </template>
           <template #usage>
-            <div class="tooltip-section-title">Utilité pour le Trading</div>
-            <div class="tooltip-section-text">Breakout % élevé = marché actif avec beaucoup de cassures. Breakout % bas = marché consolidé. Détermine le style: range trading ou breakout trading.</div>
+            <div class="tooltip-section-title">📊 Interprétation Stratégie</div>
+            <div class="tooltip-section-text">
+              🟢 <strong>&gt;20%:</strong> Excellent - Marché actif, beaucoup de cassures = TREND/BREAKOUT<br>
+              🟡 <strong>10-20%:</strong> Bon - Activité modérée, scalpe avec cassures<br>
+              🟠 <strong>5-10%:</strong> Moyen - Peu de cassures = RANGE TRADING préféré<br>
+              🔴 <strong>&lt;5%:</strong> Mauvais - Très peu de mouvement, attendre
+            </div>
           </template>
           <template #scoring>
-            <div class="tooltip-section-title">Interprétation</div>
-            <div class="tooltip-section-text">&lt;10% = Peu de breakouts (range trading) | 10-30% = Modéré (swing) | &gt;30% = Très actif (trendy)</div>
+            <div class="tooltip-section-title">💡 Décision Trading</div>
+            <div class="tooltip-section-text">
+              ✅ <strong>Si &gt;15%:</strong> Trade les breakouts, IGNORÉ les ranges<br>
+              ⚠️ <strong>Si &lt;10%:</strong> Range trading UNIQUEMENT, pas de breakout<br>
+              🎯 <strong>Combine avec:</strong> Volatility % pour style adapté
+            </div>
           </template>
         </MetricTooltip>
         <div :class="['metric-value', getColorClass('breakout', props.result.global_metrics.mean_breakout_percentage)]">{{ props.result.global_metrics.mean_breakout_percentage.toFixed(1) }}%</div>
