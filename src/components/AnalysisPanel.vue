@@ -116,7 +116,7 @@
           </div>
         </template>
       </MetricTooltip>
-      <div class="confidence-bar" :class="getConfidenceBarClass(props.result.confidence_score)" :style="{ width: props.result.confidence_score + '%' }"></div>
+      <div class="confidence-bar" :class="getConfidenceBarClass(props.result.confidence_score)" style="width: var(--confidence-width);" :style="{ '--confidence-width': props.result.confidence_score + '%' }"></div>
       <span class="confidence-text">{{ props.result.confidence_score.toFixed(0) }}/100</span>
     </div>
 
@@ -672,7 +672,6 @@ function getConfidenceBarClass(score: number): string {
   if (score >= 50) return 'confidence-acceptable'
   if (score >= 35) return 'confidence-risky'
   return 'confidence-poor'
-}
 }
 </script>
 
