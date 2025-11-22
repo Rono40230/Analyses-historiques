@@ -29,6 +29,16 @@ fi
 echo ""
 echo "───────────────────────────────────────────────────────────"
 echo ""
+echo "📍 Étape 1.5 : Vérification de la qualité du code..."
+echo ""
+if ! ./scripts/impact-detection/check-quality.sh; then
+    echo "❌ Qualité insuffisante (règles non respectées)"
+    exit 1
+fi
+
+echo ""
+echo "───────────────────────────────────────────────────────────"
+echo ""
 echo "📍 Étape 2 : Détection des régressions..."
 echo ""
 if ! ./scripts/impact-detection/regression-detector.sh; then

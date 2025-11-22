@@ -92,7 +92,8 @@ impl<'a> HourlyStatsCalculator<'a> {
         let body_range_mean = mean(&body_ranges);
         let shadow_ratio_mean = mean(&shadow_ratios);
         let tick_quality_mean = mean(&tick_qualities);
-        let volume_imbalance_mean = mean(&volume_imbalances);
+        // FIX: Utiliser la valeur absolue pour que les variations +/- ne s'annulent pas
+        let volume_imbalance_mean = volume_imbalances.iter().map(|v| v.abs()).sum::<f64>() / volume_imbalances.len().max(1) as f64;
         let noise_ratio_mean = mean(&noise_ratios);
 
         let breakout_count = tr_dist.is_breakout.iter().filter(|&&b| b).count();

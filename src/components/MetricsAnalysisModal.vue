@@ -558,24 +558,40 @@
 
       <!-- Footer -->
       <div class="modal-footer">
+        <button v-if="!isArchiveMode" class="btn-archive" @click="openArchiveModal">💾 Archiver</button>
         <button class="btn-primary" @click="close">Fermer l'analyse</button>
       </div>
     </div>
   </div>
+
+  <!-- Modale d'archivage -->
+  <ArchiveModal
+    :show="showArchiveModal"
+    archive-type="Volatilité brute"
+    :period-start="archivePeriodStart"
+    :period-end="archivePeriodEnd"
+    :symbol="analysisData?.symbol"
+    :timeframe="'M1'"
+    :data-json="archiveDataJson"
+    @close="showArchiveModal = false"
+    @saved="handleArchiveSaved"
+  />
 </template>
 
 <script setup lang="ts">
-import { ref, watch, reactive } from 'vue'
+import { ref, watch, reactive, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import type { AnalysisResult } from '../stores/volatility'
 import type { SliceAnalysis } from '../utils/straddleAnalysis'
 import { analyzeTop3Slices, calculateBidiParameters } from '../utils/straddleAnalysis'
 import type { BidiParameters } from '../utils/straddleAnalysis'
 import MetricTooltip from './MetricTooltip.vue'
+import ArchiveModal from './ArchiveModal.vue'
 
 interface Props {
   isOpen: boolean
   analysisResult: AnalysisResult | null
+  isArchiveMode?: boolean
 }
 
 interface Emits {
@@ -690,7 +706,7 @@ async function updateAnalysis() {
           console.log('📊 Appel Tauri: analyze_volatility_duration avec Stats15Min:', stats15min)
           
           volatilityDuration.value = await invoke('analyze_volatility_duration', {
-            stats_15min: {
+            stats: {
               hour: stats15min.hour,
               quarter: stats15min.quarter,
               candle_count: stats15min.candle_count,
@@ -729,7 +745,7 @@ async function updateAnalysis() {
       if (sliceAnalyses.value && sliceAnalyses.value.length > 0) {
         console.log(`💫 Chargement des qualités pour ${sliceAnalyses.value.length} slices...`)
         for (const analysis of sliceAnalyses.value) {
-          if (analysis.slice.stats.events.length > 0) {
+          if (analysis.slice.stats.events && analysis.slice.stats.events.length > 0) {
             const eventName = analysis.slice.stats.events[0].event_name
             console.log(`  → Appel loadMovementQuality(${result.symbol}, ${eventName})`)
             await loadMovementQuality(result.symbol, eventName)
@@ -782,8 +798,55 @@ watch(
   }
 )
 
+onMounted(() => {
+  if (props.isOpen && props.analysisResult) {
+    updateAnalysis()
+  }
+})
+
 const close = () => {
   emit('close')
+}
+
+// Variables pour l'archivage
+const showArchiveModal = ref(false)
+const archivePeriodStart = ref('')
+const archivePeriodEnd = ref('')
+const archiveDataJson = ref('')
+
+function openArchiveModal() {
+  if (!props.analysisResult) return
+  
+  // Calculer la période depuis les données
+  const result = props.analysisResult
+  
+  if (result.period_start && result.period_end) {
+    archivePeriodStart.value = result.period_start
+    archivePeriodEnd.value = result.period_end
+  } else {
+    // Fallback si les dates ne sont pas disponibles
+    const now = new Date()
+    const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
+    archivePeriodStart.value = oneYearAgo.toISOString()
+    archivePeriodEnd.value = now.toISOString()
+  }
+  
+  // Sérialiser les données d'analyse
+  archiveDataJson.value = JSON.stringify({
+    analysisResult: result,
+    sliceAnalyses: sliceAnalyses.value,
+    movementQualities: movementQualities.value,
+    volatilityDuration: volatilityDuration.value,
+    tradingPlan: tradingPlan.value,
+    entryWindowAnalysis: entryWindowAnalysis
+  })
+  
+  showArchiveModal.value = true
+}
+
+function handleArchiveSaved() {
+  console.log('Archive sauvegardée avec succès')
+  showArchiveModal.value = false
 }
 
 /**
@@ -1693,6 +1756,23 @@ const getQualityRecommendation = (score: number): string => {
 
 .btn-primary:hover {
   background: #2563eb;
+}
+
+.btn-archive {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-right: 10px;
+}
+
+.btn-archive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 /* No Data */

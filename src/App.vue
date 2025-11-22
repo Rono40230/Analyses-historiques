@@ -8,6 +8,7 @@ import AnalysisPanel from './components/AnalysisPanel.vue'
 import HourlyTable from './components/HourlyTable.vue'
 import ImportHub from './components/ImportHub.vue'
 import EventCorrelationView from './components/EventCorrelationView.vue'
+import ArchivesView from './views/ArchivesView.vue'
 
 onMounted(async () => {
   console.log('🎯 Vue App.vue mounted - Application Vue initialisée');
@@ -31,7 +32,7 @@ onMounted(async () => {
 const store = useVolatilityStore()
 const { analysisResult, selectedSymbol, loading, error } = storeToRefs(store)
 
-const activeTab = ref<'volatility' | 'calendar' | 'correlation'>('volatility')
+const activeTab = ref<'volatility' | 'calendar' | 'correlation' | 'archives'>('volatility')
 const selectedSymbolLocal = ref('')
 const activeCalendarId = ref<number | null>(null)
 
@@ -47,7 +48,7 @@ async function handleSymbolChange() {
   }
 }
 
-function switchTab(tab: 'volatility' | 'calendar' | 'correlation') {
+function switchTab(tab: 'volatility' | 'calendar' | 'correlation' | 'archives') {
   console.log('🔄 Changement d onglet:', tab);
   activeTab.value = tab
 }
@@ -69,6 +70,13 @@ function switchTab(tab: 'volatility' | 'calendar' | 'correlation') {
         @click="switchTab('correlation')"
       >
         📈 Volatilité par rapport aux événements économiques
+      </button>
+      <button 
+        class="tab-button" 
+        :class="{ active: activeTab === 'archives' }"
+        @click="switchTab('archives')"
+      >
+        🗄️ Archives
       </button>
       <div class="tab-spacer"></div>
       <button 
@@ -127,6 +135,7 @@ function switchTab(tab: 'volatility' | 'calendar' | 'correlation') {
                 :stats="analysisResult.hourly_stats" 
                 :best-hours="analysisResult.best_hours"
                 :stats15min="analysisResult.stats_15min"
+                :global-metrics="analysisResult.global_metrics"
               />
             </template>
           </div>
@@ -139,6 +148,10 @@ function switchTab(tab: 'volatility' | 'calendar' | 'correlation') {
 
       <template v-if="activeTab === 'correlation'">
         <EventCorrelationView />
+      </template>
+
+      <template v-if="activeTab === 'archives'">
+        <ArchivesView />
       </template>
     </main>
 

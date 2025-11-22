@@ -8,7 +8,6 @@ Application d'analyse de volatilité pour le trading forex, corrélant les mouve
 - **Corrélation événements économiques** : Impact des annonces économiques sur la volatilité
 - **Import de données** : Support de multiples formats CSV (TradingView, MetaTrader, etc.)
 - **Calendrier économique** : Import et gestion d'événements économiques
-- **Machine Learning** : Prédiction de volatilité basée sur l'historique
 - **Interface moderne** : Vue 3 + Tauri 2.0 pour une expérience desktop native
 
 ## 🏗️ Architecture
@@ -28,9 +27,7 @@ src-tauri/
 │   │   ├── metrics/       # Calculs de métriques
 │   │   ├── pair_data/     # Parsers de données
 │   │   ├── volatility/    # Analyse de volatilité
-│   │   ├── event_correlation.rs
-│   │   ├── ml_predictor.rs
-│   │   └── ml_trainer.rs
+│   │   └── event_correlation.rs
 │   ├── models/            # Structures de données
 │   └── db/                # Schéma et migrations Diesel
 └── migrations/            # Migrations SQL

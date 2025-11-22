@@ -36,33 +36,36 @@ impl EventLoader {
             .get_events_for_period(symbol, start_time, end_time)
             .map_err(|e| VolatilityError::DatabaseError(e.to_string()))?;
 
-        // Filtrer HIGH/MEDIUM impact et compter par heure (Paris)
-        // NOTE: Les candles sont en UTC, on les convertit en heure de Paris (UTC+1/+2 selon DST)
-        // Paris: UTC+1 en hiver, UTC+2 en été
-        // Pour simplifier, on utilise UTC+1 (heure d'hiver standard)
-        const PARIS_OFFSET_HOURS: i32 = 1;
+        tracing::info!("EventLoader: Found {} events for period {} to {}", events.len(), start_time, end_time);
 
-        for event in events {
-            if event.impact != "HIGH" && event.impact != "MEDIUM" {
-                continue;
+        // Debug: afficher les heures disponibles dans stats
+        let stats_hours: Vec<u8> = hourly_stats.iter().map(|s| s.hour).collect();
+        tracing::info!("   Stats available hours (UTC): {:?}", stats_hours);
+
+        let mut associated_count = 0;
+        for (i, event) in events.iter().enumerate() {
+            // On utilise l'heure UTC pour matcher les stats UTC
+            let event_hour = event.event_time.hour() as u8;
+            
+            if i < 3 { // Logger les 3 premiers pour debug
+                tracing::info!("   Event sample: '{}' at {:?} (UTC Hour: {})", event.description, event.event_time, event_hour);
             }
 
-            // Convertir l'heure UTC en heure de Paris
-            let utc_hour = event.event_time.hour() as i32;
-            let paris_hour = (utc_hour + PARIS_OFFSET_HOURS) % 24;
-            let paris_hour_u8 = paris_hour as u8;
-
-            // Trouver l'heure correspondante dans hourly_stats
-            if let Some(hour_stat) = hourly_stats.iter_mut().find(|h| h.hour == paris_hour_u8) {
+            if let Some(stat) = hourly_stats.iter_mut().find(|s| s.hour == event_hour) {
                 let event_in_hour = EventInHour {
                     event_name: event.description.clone(),
                     impact: event.impact.clone(),
                     datetime: event.event_time.format("%H:%M:%S").to_string(),
                     volatility_increase: 0.0,
                 };
-                hour_stat.events.push(event_in_hour);
+                stat.events.push(event_in_hour);
+                associated_count += 1;
+            } else if i < 3 {
+                 tracing::warn!("⚠️ Could not find stat for UTC hour {}", event_hour);
             }
         }
+        
+        tracing::info!("✅ [EventLoader] Associated {} events to hourly stats", associated_count);
 
         Ok(())
     }

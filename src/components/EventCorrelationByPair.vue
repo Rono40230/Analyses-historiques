@@ -31,6 +31,7 @@
       <div class="pair-header">
         <h3>{{ selectedPair }}</h3>
         <select 
+          v-if="!isArchiveMode"
           v-model="selectedPair" 
           class="inline-select"
           @change="loadPairCorrelation"
@@ -40,6 +41,7 @@
             {{ pair }}
           </option>
         </select>
+        <button v-if="!isArchiveMode" class="btn-archive" @click="openArchiveModal">💾 Archiver</button>
       </div>
     </div>
 
@@ -126,6 +128,19 @@
       </ul>
     </div>
   </div>
+
+  <!-- Modale d'archivage -->
+  <ArchiveModal
+    :show="showArchiveModal"
+    archive-type="Corrélation paire/événement"
+    :period-start="archivePeriodStart"
+    :period-end="archivePeriodEnd"
+    :symbol="selectedPair"
+    :timeframe="'M1'"
+    :data-json="archiveDataJson"
+    @close="showArchiveModal = false"
+    @saved="handleArchiveSaved"
+  />
 </template>
 
 <script setup lang="ts">
@@ -133,9 +148,12 @@ import { ref, computed, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { useAnalysisStore } from '../stores/analysisStore'
 import MetricTooltip from './MetricTooltip.vue'
+import ArchiveModal from './ArchiveModal.vue'
 
 interface Props {
-  availablePairs: string[]
+  availablePairs?: string[]
+  archiveData?: PairCorrelationData
+  isArchiveMode?: boolean
 }
 
 interface EventCorrelation {
@@ -153,10 +171,15 @@ interface EventCorrelation {
 
 interface PairCorrelationData {
   pair: string
+  period_start?: string
+  period_end?: string
   events: EventCorrelation[]
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  availablePairs: () => [],
+  isArchiveMode: false
+})
 
 const store = useAnalysisStore()
 const loading = ref(false)
@@ -168,8 +191,17 @@ const selectedPair = computed({
 })
 
 const pairCorrelation = computed({
-  get: () => store.pairCorrelationData as PairCorrelationData | null,
-  set: (value) => store.setPairCorrelationData(value),
+  get: () => {
+    if (props.isArchiveMode && props.archiveData) {
+      return props.archiveData
+    }
+    return store.pairCorrelationData as PairCorrelationData | null
+  },
+  set: (value) => {
+    if (!props.isArchiveMode) {
+      store.setPairCorrelationData(value)
+    }
+  }
 })
 
 const topEvents = computed(() => {
@@ -200,6 +232,7 @@ const observations = computed(() => {
 })
 
 async function loadPairCorrelation() {
+  if (props.isArchiveMode) return
   if (!selectedPair.value) return
   
   loading.value = true
@@ -225,6 +258,38 @@ function getScoreClass(score: number): string {
   if (score >= 75) return 'score-green'
   if (score >= 50) return 'score-orange'
   return 'score-red'
+}
+
+// Variables pour l'archivage
+const showArchiveModal = ref(false)
+const archivePeriodStart = ref('')
+const archivePeriodEnd = ref('')
+const archiveDataJson = ref('')
+
+function openArchiveModal() {
+  if (!pairCorrelation.value) return
+  
+  if (pairCorrelation.value.period_start && pairCorrelation.value.period_end) {
+    archivePeriodStart.value = pairCorrelation.value.period_start
+    archivePeriodEnd.value = pairCorrelation.value.period_end
+  } else {
+    const now = new Date()
+    const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
+    archivePeriodStart.value = oneYearAgo.toISOString()
+    archivePeriodEnd.value = now.toISOString()
+  }
+  
+  archiveDataJson.value = JSON.stringify({
+    pairCorrelation: pairCorrelation.value,
+    selectedPair: selectedPair.value
+  })
+  
+  showArchiveModal.value = true
+}
+
+function handleArchiveSaved() {
+  console.log('Archive sauvegardée avec succès')
+  showArchiveModal.value = false
 }
 </script>
 
@@ -337,6 +402,24 @@ function getScoreClass(score: number): string {
   justify-content: flex-start;
   align-items: center;
   gap: 20px;
+}
+
+.btn-archive {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.btn-archive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 .pair-header h3 {

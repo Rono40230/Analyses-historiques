@@ -18,7 +18,6 @@ pub struct Stats15Min {
     pub volume_imbalance_mean: f64,
     pub noise_ratio_mean: f64,
     pub breakout_percentage: f64,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub events: Vec<EventInHour>,
 }
 

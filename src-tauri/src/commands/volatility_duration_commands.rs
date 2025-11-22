@@ -15,7 +15,7 @@ use crate::services::VolatilityDurationAnalyzer;
 /// # Returns
 /// * `Result<VolatilityDuration, String>` - Analysis result or error message
 #[tauri::command]
-pub fn analyze_volatility_duration(stats_15min: Stats15Min) -> Result<VolatilityDuration, String> {
-    VolatilityDurationAnalyzer::analyze(&stats_15min)
+pub fn analyze_volatility_duration(stats: Stats15Min) -> Result<VolatilityDuration, String> {
+    VolatilityDurationAnalyzer::analyze(&stats)
         .map_err(|e| format!("Failed to analyze volatility duration: {}", e))
 }

@@ -72,8 +72,10 @@ interface HeatmapData {
 }
 
 interface Props {
-  calendarId: number | null
-  availablePairs: string[]
+  calendarId?: number | null
+  availablePairs?: string[]
+  archiveData?: HeatmapData | null
+  isArchiveMode?: boolean
 }
 
 const props = defineProps<Props>()
@@ -84,7 +86,13 @@ const minVolatilityThreshold = ref(3)  // Seuil minimum en pips: 3, 6, 9, 12
 const maxEventsToDisplay = ref(10)     // Nombre max: 5, 10, 15, 20
 
 async function loadHeatmap() {
-  if (!props.calendarId || props.availablePairs.length === 0) {
+  if (props.isArchiveMode && props.archiveData) {
+    heatmapData.value = props.archiveData
+    console.log('📊 Heatmap loaded from archive:', heatmapData.value)
+    return
+  }
+
+  if (!props.calendarId || !props.availablePairs || props.availablePairs.length === 0) {
     heatmapData.value = null
     return
   }
@@ -119,9 +127,11 @@ onMounted(() => {
   loadHeatmap()
 })
 
-// Recharger si le calendrier change
+// Recharger si le calendrier change (seulement hors mode archive)
 watch(() => props.calendarId, () => {
-  loadHeatmap()
+  if (!props.isArchiveMode) {
+    loadHeatmap()
+  }
 })
 
 function getHeatmapValue(eventType: string, pair: string): number {

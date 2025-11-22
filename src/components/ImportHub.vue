@@ -14,11 +14,17 @@
               <tr><th>Nom</th><th>Événements</th><th>Période</th><th>Actions</th></tr>
             </thead>
             <tbody>
-              <tr v-for="cal in calendarsMetadata" :key="cal.id">
-                <td><strong>{{ cal.name }}</strong></td>
+              <tr v-for="cal in calendarsMetadata" :key="cal.id" :class="{ 'active-row': isActiveCalendar(cal.id) }">
+                <td>
+                  <span v-if="isActiveCalendar(cal.id)" class="active-badge">✅ Actif</span>
+                  <strong>{{ cal.name }}</strong>
+                </td>
                 <td>{{ cal.event_count.toLocaleString() }}</td>
                 <td>{{ formatCalendarPeriod(cal) }}</td>
-                <td><button @click="deleteCalendar(cal.id)" class="btn-delete">🗑️ Supprimer</button></td>
+                <td class="actions-cell">
+                  <button v-if="!isActiveCalendar(cal.id)" @click="setActiveCalendar(cal.id)" class="btn-activate" title="Utiliser ce calendrier pour l'analyse">Activer</button>
+                  <button @click="deleteCalendar(cal.id)" class="btn-delete">🗑️ Supprimer</button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -92,9 +98,28 @@ const deleteId = ref(0)
 const deleteSymbol = ref('')
 const deleteTimeframe = ref('')
 
+const activeCalendarId = ref<number | null>(null)
+
 onMounted(async () => {
   await loadMetadata()
+  // Charger l'ID actif depuis localStorage
+  const storedId = localStorage.getItem('activeCalendarId')
+  if (storedId) {
+    activeCalendarId.value = parseInt(storedId, 10)
+  } else if (calendarsMetadata.value.length > 0) {
+    // Si aucun actif mais qu'il y en a un, on active le premier par défaut
+    setActiveCalendar(calendarsMetadata.value[0].id)
+  }
 })
+
+function isActiveCalendar(id: number): boolean {
+  return activeCalendarId.value === id
+}
+
+function setActiveCalendar(id: number) {
+  activeCalendarId.value = id
+  localStorage.setItem('activeCalendarId', id.toString())
+}
 
 async function loadMetadata() {
   try {
@@ -275,4 +300,19 @@ async function confirmDelete() {
 .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
 .btn-confirm { flex: 1; padding: 10px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; }
 .btn-cancel { flex: 1; padding: 10px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; }
+
+.active-row { background: rgba(34, 197, 94, 0.1); }
+.active-badge { 
+  display: inline-block; 
+  background: #22c55e; 
+  color: white; 
+  padding: 2px 6px; 
+  border-radius: 4px; 
+  font-size: 0.7em; 
+  margin-right: 6px; 
+  vertical-align: middle;
+}
+.actions-cell { display: flex; gap: 8px; }
+.btn-activate { padding: 6px 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; }
+.btn-activate:hover { background: #2563eb; }
 </style>

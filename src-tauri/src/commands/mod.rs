@@ -1,4 +1,5 @@
 // commands/mod.rs - Exports des commandes Tauri
+pub mod archive_commands;
 pub mod calendar_commands;
 pub mod calendar_import_commands;
 pub mod calendar_parser;
@@ -11,6 +12,7 @@ pub mod economic_commands;
 pub mod entry_window_analysis_commands;
 pub mod event_metrics;
 pub mod file_listing;
+pub mod global_analysis_commands;
 pub mod import_clean;
 pub mod metadata;
 pub mod movement_analysis_commands;
@@ -20,6 +22,7 @@ pub mod session_commands;
 pub mod volatility;
 pub mod volatility_duration_commands;
 
+pub use archive_commands::*;
 pub use calendar_commands::get_upcoming_events;
 pub use calendar_import_commands::*;
 pub use candle_index_commands::{get_candle_index_stats, init_candle_index, load_pair_candles};
@@ -36,6 +39,7 @@ pub use event_metrics::{
     calculate_event_metrics, clear_candles, get_available_symbols, load_candles_for_metrics,
 };
 pub use file_listing::*;
+pub use global_analysis_commands::*;
 pub use import_clean::import_and_clean_files;
 pub use metadata::{
     get_calendar_id_by_filename, get_calendars_metadata, get_pair_metadata_from_db,

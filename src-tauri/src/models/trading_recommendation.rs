@@ -1,31 +1,31 @@
 // models/trading_recommendation.rs - Enums et logique pour recommandations de trading
 use serde::{Deserialize, Serialize};
 
-/// Recommandation de trading basée sur le score de confiance
+/// Recommandation de trading pour stratégie STRADDLE (News Trading)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum TradingRecommendation {
-    /// Scalper agressivement
-    ScalpAggressive,
-    /// Scalper normalement
-    ScalpNormal,
-    /// Scalper prudemment
-    ScalpCautious,
-    /// Très prudent / breakouts only
-    VeryCautious,
-    /// Ne pas trader
+    /// Setup idéal - Offset standard, forte probabilité de breakout
+    StraddleOptimal,
+    /// Setup correct - Offset légèrement élargi recommandé
+    StraddleGood,
+    /// Setup acceptable - Offset large, surveillance accrue
+    StraddleCautious,
+    /// Setup médiocre - Envisager de passer l'événement
+    StraddleRisky,
+    /// Ne pas trader - Conditions inadaptées au Straddle
     NoTrade,
 }
 
 impl TradingRecommendation {
     pub fn from_confidence(score: f64) -> Self {
         if score >= 80.0 {
-            Self::ScalpAggressive
+            Self::StraddleOptimal
         } else if score >= 65.0 {
-            Self::ScalpNormal
+            Self::StraddleGood
         } else if score >= 50.0 {
-            Self::ScalpCautious
+            Self::StraddleCautious
         } else if score >= 35.0 {
-            Self::VeryCautious
+            Self::StraddleRisky
         } else {
             Self::NoTrade
         }
@@ -34,10 +34,10 @@ impl TradingRecommendation {
     #[allow(dead_code)]
     pub fn to_string(&self) -> &'static str {
         match self {
-            Self::ScalpAggressive => "✅ SCALPER AGRESSIF",
-            Self::ScalpNormal => "🟢 SCALPER NORMAL",
-            Self::ScalpCautious => "🟡 SCALPER PRUDENT",
-            Self::VeryCautious => "🟠 TRÈS PRUDENT",
+            Self::StraddleOptimal => "✅ SETUP OPTIMAL",
+            Self::StraddleGood => "🟢 SETUP CORRECT",
+            Self::StraddleCautious => "🟡 SETUP ACCEPTABLE",
+            Self::StraddleRisky => "🟠 SETUP RISQUÉ",
             Self::NoTrade => "❌ NE PAS TRADER",
         }
     }
@@ -46,48 +46,58 @@ impl TradingRecommendation {
     pub fn validate_with_risk(self, risk: &RiskLevel) -> Self {
         match (&self, risk) {
             // ✅ COHÉRENT - pas d'ajustement
-            (TradingRecommendation::ScalpAggressive, RiskLevel::Low) => self,
-            (TradingRecommendation::ScalpAggressive, RiskLevel::Medium) => self,
-            (TradingRecommendation::ScalpNormal, _) => self,
-            (TradingRecommendation::ScalpCautious, RiskLevel::Medium) => self,
-            (TradingRecommendation::ScalpCautious, RiskLevel::High) => self,
-            (TradingRecommendation::VeryCautious, RiskLevel::Medium) => self,
-            (TradingRecommendation::VeryCautious, RiskLevel::High) => self,
+            (TradingRecommendation::StraddleOptimal, RiskLevel::Low) => self,
+            (TradingRecommendation::StraddleOptimal, RiskLevel::Medium) => self,
+            (TradingRecommendation::StraddleGood, _) => self,
+            (TradingRecommendation::StraddleCautious, RiskLevel::Medium) => self,
+            (TradingRecommendation::StraddleCautious, RiskLevel::High) => self,
+            (TradingRecommendation::StraddleRisky, RiskLevel::Medium) => self,
+            (TradingRecommendation::StraddleRisky, RiskLevel::High) => self,
             (TradingRecommendation::NoTrade, _) => self,
 
             // ❌ INCOHÉRENT - ajuste Recommendation
-            (TradingRecommendation::ScalpAggressive, RiskLevel::High) => {
-                tracing::warn!("Cohérence : ScalpAggressive + High Risk → ajuste à ScalpNormal");
-                TradingRecommendation::ScalpNormal
+            (TradingRecommendation::StraddleOptimal, RiskLevel::High) => {
+                tracing::warn!("Cohérence : StraddleOptimal + High Risk → ajuste à StraddleGood");
+                TradingRecommendation::StraddleGood
             }
-            (TradingRecommendation::ScalpCautious, RiskLevel::Low) => {
-                tracing::warn!("Cohérence : ScalpCautious + Low Risk → ajuste à ScalpNormal");
-                TradingRecommendation::ScalpNormal
+            (TradingRecommendation::StraddleCautious, RiskLevel::Low) => {
+                tracing::warn!("Cohérence : StraddleCautious + Low Risk → ajuste à StraddleGood");
+                TradingRecommendation::StraddleGood
             }
-            (TradingRecommendation::VeryCautious, RiskLevel::Low) => {
-                tracing::warn!("Cohérence : VeryCautious + Low Risk → ajuste à ScalpCautious");
-                TradingRecommendation::ScalpCautious
+            (TradingRecommendation::StraddleRisky, RiskLevel::Low) => {
+                tracing::warn!("Cohérence : StraddleRisky + Low Risk → ajuste à StraddleCautious");
+                TradingRecommendation::StraddleCautious
             }
         }
     }
 }
 
-/// Niveau de risque basé sur la volatilité
+/// Qualité du mouvement pour stratégie STRADDLE
+/// (Basé sur volatilité ET bruit - un mouvement erratique est risqué pour le Straddle)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum RiskLevel {
+    /// Mouvement directionnel et propre - Idéal pour Straddle
     Low,
+    /// Mouvement modéré avec du bruit acceptable
     Medium,
+    /// Mouvement erratique ou trop de faux breakouts - Risqué
     High,
 }
 
 impl RiskLevel {
     pub fn from_volatility(volatility: f64) -> Self {
+        // Pour le Straddle, on veut de la volatilité mais pas trop de chaos
+        // Low = mouvement directionnel fort
+        // Medium = volatilité normale
+        // High = trop erratique (ou trop calme, pas de mouvement)
         if volatility < 0.05 {
-            Self::Low
+            Self::High // Trop calme, pas de breakout
         } else if volatility < 0.15 {
             Self::Medium
+        } else if volatility < 0.30 {
+            Self::Low // Sweet spot : volatilité forte mais contrôlée
         } else {
-            Self::High
+            Self::High // Trop chaotique
         }
     }
 }

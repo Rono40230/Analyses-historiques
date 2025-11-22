@@ -56,6 +56,7 @@ export interface GlobalMetrics {
   mean_noise_ratio: number
   mean_volume_imbalance: number
   mean_breakout_percentage: number
+  mean_range: number
   total_candles: number
 }
 

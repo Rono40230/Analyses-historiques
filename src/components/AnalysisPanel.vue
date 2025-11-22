@@ -11,18 +11,80 @@
         </select>
       </div>
       <div class="badges">
-        <span 
-          :class="['badge', 'recommendation', recommendationClass]"
-          :title="getRecommendationTooltip(props.result.recommendation)"
-        >
-          {{ formatRecommendation(props.result.recommendation) }}
-        </span>
-        <span 
-          :class="['badge', 'risk', getRiskClass(props.result.risk_level)]"
-          :title="getRiskTooltip(props.result.risk_level)"
-        >
-          {{ formatRisk(props.result.risk_level) }}
-        </span>
+        <MetricTooltip title="Qualité du Setup Straddle">
+          <span 
+            :class="['badge', 'recommendation', recommendationClass]"
+          >
+            {{ formatRecommendation(props.result.recommendation) }}
+          </span>
+          <template #definition>
+            <div class="tooltip-section-title">Définition</div>
+            <div class="tooltip-section-text">
+              Évalue la qualité des conditions de marché pour exécuter un <strong>Straddle</strong> (placement d'ordres Buy Stop et Sell Stop de part et d'autre du prix avant une annonce économique).
+            </div>
+          </template>
+          <template #usage>
+            <div class="tooltip-section-title">📊 Codes Couleurs & Signification</div>
+            <div class="tooltip-section-text">
+              <strong style="color: #10b981;">✅ SETUP OPTIMAL (Vert)</strong><br/>
+              Score 80-100 : Conditions idéales. Offset standard <strong>10-15 pips</strong>. Forte probabilité de breakout directionnel franc.<br/><br/>
+              
+              <strong style="color: #3b82f6;">🟢 SETUP CORRECT (Bleu)</strong><br/>
+              Score 65-80 : Bon setup. Élargir légèrement l'offset à <strong>15-20 pips</strong> pour éviter les fausses mèches.<br/><br/>
+              
+              <strong style="color: #f59e0b;">🟡 SETUP ACCEPTABLE (Orange)</strong><br/>
+              Score 50-65 : Setup moyen. Offset large recommandé <strong>20-30 pips</strong>. Surveillance accrue du bruit.<br/><br/>
+              
+              <strong style="color: #f97316;">🟠 SETUP RISQUÉ (Orange foncé)</strong><br/>
+              Score 35-50 : Conditions médiocres. Envisager de passer l'événement ou réduire drastiquement la taille.<br/><br/>
+              
+              <strong style="color: #ef4444;">❌ NE PAS TRADER (Rouge)</strong><br/>
+              Score &lt;35 : Conditions inadaptées (volatilité insuffisante ou trop de bruit).
+            </div>
+          </template>
+          <template #scoring>
+            <div class="tooltip-section-title">💡 Action Recommandée</div>
+            <div class="tooltip-section-text">
+              Le badge indique la <strong>distance d'offset optimale</strong> à utiliser pour vos ordres Stop.<br/>
+              Plus le setup est bon (vert), plus vous pouvez serrer vos ordres près du prix actuel.
+            </div>
+          </template>
+        </MetricTooltip>
+
+        <MetricTooltip title="Qualité du Mouvement">
+          <span 
+            :class="['badge', 'risk', getRiskClass(props.result.risk_level)]"
+          >
+            {{ formatRisk(props.result.risk_level) }}
+          </span>
+          <template #definition>
+            <div class="tooltip-section-title">Définition</div>
+            <div class="tooltip-section-text">
+              Caractérise le <strong>type de mouvement</strong> attendu après l'annonce, basé sur la volatilité historique et le niveau de bruit.
+            </div>
+          </template>
+          <template #usage>
+            <div class="tooltip-section-title">📊 Codes Couleurs & Signification</div>
+            <div class="tooltip-section-text">
+              <strong style="color: #22c55e;">🟢 DIRECTIONNEL (Vert)</strong><br/>
+              Volatilité 15-30% avec faible bruit. <strong>Idéal pour Straddle</strong> : mouvement franc, prévisible, peu de faux breakouts.<br/><br/>
+              
+              <strong style="color: #f59e0b;">🟡 MODÉRÉ (Orange)</strong><br/>
+              Volatilité 5-15% avec bruit acceptable. Straddle possible mais offset à élargir. Mouvement moins explosif.<br/><br/>
+              
+              <strong style="color: #ef4444;">🔴 ERRATIQUE (Rouge)</strong><br/>
+              Soit trop calme (&lt;5% volatilité, pas de breakout) soit trop chaotique (&gt;30%, faux breakouts multiples). <strong>Risque élevé</strong>.
+            </div>
+          </template>
+          <template #scoring>
+            <div class="tooltip-section-title">💡 Interprétation</div>
+            <div class="tooltip-section-text">
+              <strong>Vert</strong> : Le mouvement sera probablement unidirectionnel et propre.<br/>
+              <strong>Orange</strong> : Mouvement modéré, ajustez vos attentes de gain.<br/>
+              <strong>Rouge</strong> : Mouvement imprévisible ou absent, évitez ou réduisez la taille.
+            </div>
+          </template>
+        </MetricTooltip>
       </div>
     </div>
 
@@ -85,12 +147,12 @@
             <div class="tooltip-section-text">Average True Range (14 périodes) - Mesure la volatilité réelle en écartant les spikes isolés.</div>
           </template>
           <template #usage>
-            <div class="tooltip-section-title">📈 Interprétation Forex M1</div>
+            <div class="tooltip-section-title">📈 Interprétation (Tous actifs)</div>
             <div class="tooltip-section-text">
-              🟢 <strong>&gt;0.00025 (25+ pips):</strong> Excellent - Scalpe agressivement, bons mouvements constants<br>
-              🟡 <strong>0.00015-0.00025:</strong> Bon - Scalpe normalement, volatilité fiable<br>
-              🟠 <strong>0.00010-0.00015:</strong> Moyen - Stop serré obligatoire, mouvement limité<br>
-              🔴 <strong>&lt;0.00010:</strong> Mauvais - Attendre, trop peu de volatilité
+              🟢 <strong>&gt;0.025%:</strong> Excellent - Forte volatilité, mouvements constants<br>
+              🟡 <strong>0.015-0.025%:</strong> Bon - Volatilité fiable pour scalping<br>
+              🟠 <strong>0.010-0.015%:</strong> Moyen - Stop serré obligatoire<br>
+              🔴 <strong>&lt;0.010%:</strong> Mauvais - Attendre, trop peu de volatilité
             </div>
           </template>
           <template #scoring>
@@ -102,7 +164,38 @@
             </div>
           </template>
         </MetricTooltip>
-        <div :class="['metric-value', getColorClass('atr', props.result.global_metrics.mean_atr)]">{{ props.result.global_metrics.mean_atr.toFixed(5) }}</div>
+        <div :class="['metric-value', getColorClass('atr', props.result.global_metrics.mean_atr)]">
+          {{ formatATR(props.result.global_metrics.mean_atr) }}
+        </div>
+      </div>
+      <div class="metric-card">
+        <MetricTooltip title="Range (H-L)">
+          <h4>📏 Range (H-L)</h4>
+          <template #definition>
+            <div class="tooltip-section-title">Définition</div>
+            <div class="tooltip-section-text">Amplitude moyenne des bougies (Haut - Bas) sans tenir compte des gaps. C'est l'espace de mouvement intra-bougie disponible.</div>
+          </template>
+          <template #usage>
+            <div class="tooltip-section-title">📊 Interprétation</div>
+            <div class="tooltip-section-text">
+              🟢 <strong>&gt;0.025%:</strong> Excellent - Grande amplitude, idéal scalping<br>
+              🟡 <strong>0.015-0.025%:</strong> Bon - Amplitude correcte<br>
+              🟠 <strong>0.010-0.015%:</strong> Moyen - Mouvements limités<br>
+              🔴 <strong>&lt;0.010%:</strong> Mauvais - Bougies minuscules
+            </div>
+          </template>
+          <template #scoring>
+            <div class="tooltip-section-title">💡 Décision Trading</div>
+            <div class="tooltip-section-text">
+              ✅ <strong>Si &gt;0.025%:</strong> Espace suffisant pour TP rapide<br>
+              ⚠️ <strong>Si &lt;0.010%:</strong> Spread coûteux par rapport au mouvement<br>
+              🎯 <strong>Action:</strong> Vise des TP inférieurs au Range moyen
+            </div>
+          </template>
+        </MetricTooltip>
+        <div :class="['metric-value', getColorClass('range', props.result.global_metrics.mean_range)]">
+          {{ formatATR(props.result.global_metrics.mean_range) }}
+        </div>
       </div>
       <div class="metric-card">
         <MetricTooltip title="Volatilité Globale">
@@ -156,7 +249,10 @@
             </div>
           </template>
         </MetricTooltip>
-        <div :class="['metric-value', getColorClass('bodyrange', props.result.global_metrics.mean_body_range)]">{{ props.result.global_metrics.mean_body_range.toFixed(1) }}%</div>
+        <div :class="['metric-value', getColorClass('bodyrange', Math.abs(props.result.global_metrics.mean_body_range))]">
+          {{ Math.abs(props.result.global_metrics.mean_body_range).toFixed(2) }}%
+          <span style="font-size: 0.8em; opacity: 0.7;">{{ props.result.global_metrics.mean_body_range >= 0 ? '↗' : '↘' }}</span>
+        </div>
       </div>
       <div class="metric-card">
         <MetricTooltip title="Tick Quality">
@@ -166,12 +262,12 @@
             <div class="tooltip-section-text">Taille moyenne des mouvements de prix unitaires = liquidity quality. Mesure l'existence de market makers et la granularité des données tick.</div>
           </template>
           <template #usage>
-            <div class="tooltip-section-title">📊 Interprétation (Scalping M1)</div>
+            <div class="tooltip-section-title">📊 Interprétation (Tous actifs)</div>
             <div class="tooltip-section-text">
-              🟢 <strong>&gt;0.001 (10+ pips):</strong> Excellent - Très liquide, spreads serrés, scalpe sûr<br>
-              🟡 <strong>0.0005-0.001:</strong> Bon - Liquide, spreads acceptables<br>
-              🟠 <strong>0.0001-0.0005:</strong> Moyen - Spreads plus larges, frais élevés<br>
-              🔴 <strong>&lt;0.0001:</strong> Mauvais - Très peu liquide, spreads prohibitifs
+              🟢 <strong>&gt;0.1%:</strong> Excellent - Très liquide, spreads serrés<br>
+              🟡 <strong>0.05-0.1%:</strong> Bon - Liquide, spreads acceptables<br>
+              🟠 <strong>0.01-0.05%:</strong> Moyen - Spreads plus larges<br>
+              🔴 <strong>&lt;0.01%:</strong> Mauvais - Peu liquide, spreads prohibitifs
             </div>
           </template>
           <template #scoring>
@@ -183,7 +279,9 @@
             </div>
           </template>
         </MetricTooltip>
-        <div :class="['metric-value', getColorClass('tickquality', props.result.global_metrics.mean_tick_quality)]">{{ props.result.global_metrics.mean_tick_quality.toFixed(5) }}</div>
+        <div :class="['metric-value', getColorClass('tickquality', props.result.global_metrics.mean_tick_quality)]">
+          {{ formatTickQuality(props.result.global_metrics.mean_tick_quality) }}
+        </div>
       </div>
       <div class="metric-card">
         <MetricTooltip title="Noise Ratio">
@@ -217,27 +315,29 @@
           <h4>⚖️ Volume Imbalance</h4>
           <template #definition>
             <div class="tooltip-section-title">Définition</div>
-            <div class="tooltip-section-text">Déséquilibre acheteurs vs vendeurs = Ratio (volume acheteur) / (volume vendeur). Mesure qui contrôle le marché.</div>
+            <div class="tooltip-section-text">Moyenne des variations absolues du volume par rapport à sa moyenne mobile. Mesure l'instabilité et la nervosité du marché en pourcentage.</div>
           </template>
           <template #usage>
-            <div class="tooltip-section-title">📊 Interprétation (Scalping & Tendance)</div>
+            <div class="tooltip-section-title">📊 Interprétation</div>
             <div class="tooltip-section-text">
-              🟢 <strong>&gt;2.0 ou &lt;0.5:</strong> Excellent - Déséquilibre FORT = Tendance claire, scalpe facile<br>
-              🟡 <strong>1.5-2.0 ou 0.5-0.67:</strong> Bon - Déséquilibre modéré, tendance visible<br>
-              🟠 <strong>1.0-1.5 ou 0.67-1.0:</strong> Moyen - Équilibre, indécision, beaucoup de whipsaws<br>
-              🔴 <strong>≈1.0:</strong> Mauvais - Marché indécis, NE PAS SCALPER
+              🟢 <strong>&gt;50%:</strong> Excellent - Marché très nerveux, gros volumes<br>
+              🟡 <strong>30-50%:</strong> Bon - Activité soutenue<br>
+              🟠 <strong>10-30%:</strong> Moyen - Activité standard<br>
+              🔴 <strong>&lt;10%:</strong> Mauvais - Volume plat, marché mort
             </div>
           </template>
           <template #scoring>
             <div class="tooltip-section-title">💡 Décision Trading</div>
             <div class="tooltip-section-text">
-              ✅ <strong>Si &gt;1.5 ou &lt;0.67:</strong> Trading directionnel facile, follow the trend<br>
-              ⚠️ <strong>Si ≈1.0:</strong> ATTENDS, pas d'avantage directionnel<br>
-              🎯 <strong>Best combo:</strong> Imbalance &gt;2.0 + NoiseRatio &lt;2.0 = Tendance très claire
+              ✅ <strong>Si &gt;50%:</strong> Gros mouvements attendus (Breakouts probables)<br>
+              ⚠️ <strong>Si &lt;10%:</strong> Évite de trader, pas de carburant<br>
+              🎯 <strong>Action:</strong> Cherche des entrées sur les pics de volume
             </div>
           </template>
         </MetricTooltip>
-        <div :class="['metric-value', getColorClass('volumeimbalance', props.result.global_metrics.mean_volume_imbalance)]">{{ props.result.global_metrics.mean_volume_imbalance.toFixed(4) }}</div>
+        <div :class="['metric-value', getColorClass('volumeimbalance', props.result.global_metrics.mean_volume_imbalance)]">
+          {{ (props.result.global_metrics.mean_volume_imbalance * 100).toFixed(2) }}%
+        </div>
       </div>
       <div class="metric-card">
         <MetricTooltip title="Breakout %">
@@ -264,7 +364,7 @@
             </div>
           </template>
         </MetricTooltip>
-        <div :class="['metric-value', getColorClass('breakout', props.result.global_metrics.mean_breakout_percentage)]">{{ props.result.global_metrics.mean_breakout_percentage.toFixed(1) }}%</div>
+        <div :class="['metric-value', getColorClass('breakout', props.result.global_metrics.mean_breakout_percentage)]">{{ props.result.global_metrics.mean_breakout_percentage.toFixed(2) }}%</div>
       </div>
     </div>
 
@@ -330,6 +430,7 @@ interface GlobalMetrics {
   mean_noise_ratio: number
   mean_volume_imbalance: number
   mean_breakout_percentage: number
+  mean_range: number
   total_candles: number
 }
 
@@ -397,45 +498,49 @@ function onSymbolChange(newSymbol: string) {
 
 function formatRecommendation(rec: string): string {
   const map: { [key: string]: string } = {
-    'BUY': '✅ ACHETER',
-    'SELL': '⛔ VENDRE',
-    'HOLD': '⏸️ ATTENDRE'
+    'StraddleOptimal': '✅ SETUP OPTIMAL',
+    'StraddleGood': '🟢 SETUP CORRECT',
+    'StraddleCautious': '🟡 SETUP ACCEPTABLE',
+    'StraddleRisky': '🟠 SETUP RISQUÉ',
+    'NoTrade': '❌ NE PAS TRADER'
   }
   return map[rec] || rec
 }
 
 function formatRisk(risk: string): string {
   const map: { [key: string]: string } = {
-    'HIGH': '🔴 ÉLEVÉ',
-    'MEDIUM': '🟡 MOYEN',
-    'LOW': '🟢 BAS'
+    'Low': '🟢 DIRECTIONNEL',
+    'Medium': '🟡 MODÉRÉ',
+    'High': '🔴 ERRATIQUE'
   }
   return map[risk] || risk
 }
 
 function getRecommendationTooltip(rec: string): string {
   const tooltips: { [key: string]: string } = {
-    'BUY': 'ACHETER - Le marché offre une configuration favorable pour un achat',
-    'SELL': 'VENDRE - Le marché offre une configuration favorable pour une vente',
-    'HOLD': 'ATTENDRE - Le marché n\'offre pas de configuration clairement favorable'
+    'StraddleOptimal': 'SETUP OPTIMAL - Conditions idéales pour Straddle. Offset standard (10-15 pips), forte probabilité de breakout directionnel.',
+    'StraddleGood': 'SETUP CORRECT - Bon setup Straddle. Élargir légèrement l\'offset (15-20 pips) pour éviter les fausses mèches.',
+    'StraddleCautious': 'SETUP ACCEPTABLE - Setup moyen. Offset large recommandé (20-30 pips), surveillance accrue du bruit.',
+    'StraddleRisky': 'SETUP RISQUÉ - Conditions médiocres. Envisager de passer cet événement ou réduire drastiquement la taille.',
+    'NoTrade': 'NE PAS TRADER - Conditions inadaptées au Straddle (volatilité insuffisante ou trop de bruit).'
   }
   return tooltips[rec] || rec
 }
 
 function getRiskClass(risk: string): string {
   const map: { [key: string]: string } = {
-    'HIGH': 'high',
-    'MEDIUM': 'medium',
-    'LOW': 'low'
+    'Low': 'low',
+    'Medium': 'medium',
+    'High': 'high'
   }
   return map[risk] || ''
 }
 
 function getRiskTooltip(risk: string): string {
   const tooltips: { [key: string]: string } = {
-    'HIGH': 'Risque ÉLEVÉ - Volatilité > 15% ou conditions instables. À approcher avec prudence.',
-    'MEDIUM': 'Risque MOYEN - Volatilité 5-15% avec conditions acceptables. Gestion stricte du risque recommandée.',
-    'LOW': 'Risque BAS - Volatilité < 5% avec conditions stables. Favorise les positions plus agressives.'
+    'Low': 'MOUVEMENT DIRECTIONNEL - Volatilité 15-30% avec faible bruit. Idéal pour Straddle : mouvement franc et prévisible.',
+    'Medium': 'MOUVEMENT MODÉRÉ - Volatilité 5-15% avec bruit acceptable. Straddle possible mais offset à élargir.',
+    'High': 'MOUVEMENT ERRATIQUE - Soit trop calme (<5%) soit trop chaotique (>30%). Risque élevé de faux breakouts ou d\'absence de mouvement.'
   }
   return tooltips[risk] || risk
 }
@@ -446,9 +551,13 @@ function openAnalysisModal() {
 }
 
 const recommendationClass = computed(() => {
-  if (props.result?.recommendation === 'BUY') return 'buy'
-  if (props.result?.recommendation === 'SELL') return 'sell'
-  return 'hold'
+  const rec = props.result?.recommendation
+  if (rec === 'StraddleOptimal') return 'optimal'
+  if (rec === 'StraddleGood') return 'good'
+  if (rec === 'StraddleCautious') return 'cautious'
+  if (rec === 'StraddleRisky') return 'risky'
+  if (rec === 'NoTrade') return 'notrade'
+  return 'hold' // fallback
 })
 
 // Fonctions de scoring pour les métriques
@@ -463,27 +572,34 @@ function getMetricQuality(metric: string, value: number): string {
       return 'poor'
     
     case 'atr':
-      if (value > 0.001) return 'excellent'
-      if (value > 0.0005) return 'good'
-      if (value > 0.0001) return 'acceptable'
+    case 'range':
+      // ATR/Range normalisé en % du prix
+      const atrPercent = value < 1 ? value * 100 : (value / getEstimatedPrice()) * 100
+      if (atrPercent > 0.025) return 'excellent' // >0.025% (25 pips pour 100k)
+      if (atrPercent > 0.015) return 'good'
+      if (atrPercent > 0.010) return 'acceptable'
       return 'poor'
     
     case 'volatility':
-      if (value >= 0.05 && value <= 0.15) return 'excellent'
-      if ((value >= 0.03 && value < 0.05) || (value > 0.15 && value <= 0.25)) return 'good'
-      if ((value >= 0.01 && value < 0.03) || (value > 0.25 && value <= 0.35)) return 'acceptable'
+      // Volatilité déjà en décimal (0.19 = 19%)
+      if (value >= 0.30) return 'excellent' // >30%
+      if (value >= 0.15) return 'good'      // 15-30%
+      if (value >= 0.05) return 'acceptable' // 5-15%
       return 'poor'
     
     case 'bodyrange':
-      if (value > 50) return 'excellent'
-      if (value > 30) return 'good'
-      if (value > 10) return 'acceptable'
+      // Body Range en %
+      if (value > 45) return 'excellent'
+      if (value > 35) return 'good'
+      if (value > 15) return 'acceptable'
       return 'poor'
     
     case 'tickquality':
-      if (value > 0.001) return 'excellent'
-      if (value > 0.0005) return 'good'
-      if (value > 0.0001) return 'acceptable'
+      // Tick Quality normalisé en % du prix
+      const tickPercent = value < 1 ? value * 100 : (value / getEstimatedPrice()) * 100
+      if (tickPercent > 0.1) return 'excellent' // >0.1% (10 pips pour 100k)
+      if (tickPercent > 0.05) return 'good'
+      if (tickPercent > 0.01) return 'acceptable'
       return 'poor'
     
     case 'noiseratio':
@@ -493,21 +609,48 @@ function getMetricQuality(metric: string, value: number): string {
       return 'poor'
     
     case 'volumeimbalance':
-      const imbalanceScore = Math.abs(value - 1.0)
-      if (imbalanceScore < 0.2) return 'excellent'
-      if (imbalanceScore < 0.5) return 'good'
-      if (imbalanceScore < 1.5) return 'acceptable'
+      // Volume Imbalance : moyenne des écarts absolus (0 à +∞)
+      // 0.5 = 50% de variation moyenne
+      if (value > 0.5) return 'excellent'
+      if (value > 0.3) return 'good'
+      if (value > 0.1) return 'acceptable'
       return 'poor'
     
     case 'breakout':
-      if (value < 10) return 'good' // Range trading favorable
-      if (value >= 10 && value <= 30) return 'excellent'
-      if (value > 30 && value <= 50) return 'good'
-      return 'acceptable'
+      if (value >= 20) return 'excellent' // >20% breakouts
+      if (value >= 10) return 'good'
+      if (value >= 5) return 'acceptable'
+      return 'poor'
     
     default:
       return 'neutral'
   }
+}
+
+// Fonction helper pour estimer le prix moyen (pour normalisation)
+function getEstimatedPrice(): number {
+  if (!props.result?.hourly_stats || props.result.hourly_stats.length === 0) {
+    return 100000 // Valeur par défaut pour BTCUSD
+  }
+  // Utilise l'ATR moyen pour estimer l'ordre de grandeur du prix
+  const atr = props.result.global_metrics.mean_atr
+  if (atr > 1000) return 100000 // Crypto (BTCUSD ~100k)
+  if (atr > 10) return 10000    // Indices (SPX ~10k)
+  return 1.0                     // Forex (EURUSD ~1.0)
+}
+
+// Formatte l'ATR en % du prix
+function formatATR(atr: number): string {
+  const price = getEstimatedPrice()
+  const atrPercent = (atr / price) * 100
+  return `${atrPercent.toFixed(2)}%`
+}
+
+// Formatte le Tick Quality en % du prix
+function formatTickQuality(tick: number): string {
+  const price = getEstimatedPrice()
+  const tickPercent = (tick / price) * 100
+  return `${tickPercent.toFixed(2)}%`
 }
 
 function getColorClass(metric: string, value: number): string {
@@ -525,9 +668,15 @@ function getColorClass(metric: string, value: number): string {
 .badges { display: flex; gap: 10px; }
 .badge { padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.9em; color: white; cursor: help; transition: all 0.2s; border: 2px solid transparent; }
 .badge:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-.recommendation.buy { background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-color: #047857; }
-.recommendation.sell { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); border-color: #991b1b; }
-.recommendation.hold { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-color: #b45309; }
+
+/* Styles pour les recommandations Straddle */
+.recommendation.optimal { background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-color: #047857; }
+.recommendation.good { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-color: #1d4ed8; }
+.recommendation.cautious { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-color: #b45309; }
+.recommendation.risky { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); border-color: #c2410c; }
+.recommendation.notrade { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-color: #b91c1c; }
+
+/* Styles pour le niveau de risque (qualité du mouvement) */
 .badge.risk.low { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-color: #15803d; }
 .badge.risk.medium { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-color: #b45309; }
 .badge.risk.high { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-color: #b91c1c; }

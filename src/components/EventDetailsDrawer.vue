@@ -31,22 +31,14 @@
           <!-- Statistiques globales -->
           <div class="global-stats">
             <div class="stat-box">
-              <span class="stat-label">Total événements</span>
-              <span class="stat-value">{{ totalEventCount }}</span>
-            </div>
-            <div class="stat-box">
-              <span class="stat-label">HIGH</span>
-              <span class="stat-value high-count">{{ highCount }}</span>
-            </div>
-            <div class="stat-box">
-              <span class="stat-label">MEDIUM</span>
-              <span class="stat-value medium-count">{{ mediumCount }}</span>
+              <span class="stat-label">Total événements HIGH</span>
+              <span class="stat-value high-count">{{ totalEventCount }}</span>
             </div>
           </div>
         </div>
 
         <div v-else class="no-events">
-          <p>Aucun événement HIGH/MEDIUM pour cette heure</p>
+          <p>Aucun événement HIGH pour cette heure</p>
         </div>
       </div>
 
@@ -55,10 +47,6 @@
           <span class="legend-item">
             <span class="badge high">HIGH</span>
             Impact élevé
-          </span>
-          <span class="legend-item">
-            <span class="badge medium">MEDIUM</span>
-            Impact moyen
           </span>
         </div>
       </div>
@@ -109,21 +97,30 @@ interface EventSummaryItem {
   schedule: string
 }
 
+function normalizeImpact(impact: string): string {
+  const i = impact.toUpperCase().trim()
+  if (i === 'HIGH' || i === 'H') return 'HIGH'
+  if (i === 'MEDIUM' || i === 'M' || i === 'MED') return 'MEDIUM'
+  if (i === 'LOW' || i === 'L') return 'LOW'
+  return 'UNKNOWN'
+}
+
 const eventSummary = computed(() => {
   if (!props.allEvents) return []
 
-  // Grouper les événements par (nom + impact)
+  // Grouper les événements par (nom + impact normalisé)
   const grouped = new Map<string, { count: number; impact: string; firstTime: string }>()
 
   for (const evt of props.allEvents) {
-    const key = `${evt.event_name}|${evt.impact}`
-    const current = grouped.get(key) || { count: 0, impact: evt.impact, firstTime: evt.datetime }
+    const normImpact = normalizeImpact(evt.impact)
+    const key = `${evt.event_name}|${normImpact}`
+    const current = grouped.get(key) || { count: 0, impact: normImpact, firstTime: evt.datetime }
 
     current.count += 1
     grouped.set(key, current)
   }
 
-  // Convertir en array et trier : HIGH d'abord, puis par fréquence décroissante
+  // Convertir en array et trier : HIGH d'abord, puis MEDIUM, puis LOW, puis par fréquence
   return Array.from(grouped.entries())
     .map(([key, data]) => {
       const [eventName] = key.split('|')
@@ -140,30 +137,15 @@ const eventSummary = computed(() => {
         schedule,
       }
     })
+    .filter(e => e.impact === 'HIGH')
     .sort((a, b) => {
-      // HIGH avant MEDIUM
-      if (a.impact !== b.impact) {
-        return a.impact === 'HIGH' ? -1 : 1
-      }
-      // Même impact : par count décroissant
+      // Tri par count décroissant uniquement (puisque tout est HIGH)
       return b.count - a.count
     })
 })
 
 const totalEventCount = computed(() => {
-  // Compte le nombre total de PAIRES (nom + impact) distinctes
-  // = nombre de lignes dans la liste eventSummary
   return eventSummary.value.length
-})
-
-const highCount = computed(() => {
-  // Compte les paires HIGH distinctes dans eventSummary
-  return eventSummary.value.filter(e => e.impact === 'HIGH').length
-})
-
-const mediumCount = computed(() => {
-  // Compte les paires MEDIUM distinctes dans eventSummary
-  return eventSummary.value.filter(e => e.impact === 'MEDIUM').length
 })
 </script>
 
@@ -291,6 +273,15 @@ const mediumCount = computed(() => {
   background: rgba(201, 209, 43, 0.15);
 }
 
+.event-summary-card.low {
+  background: rgba(56, 139, 253, 0.1);
+  border-color: #388bfd;
+}
+
+.event-summary-card.low:hover {
+  background: rgba(56, 139, 253, 0.15);
+}
+
 .summary-header {
   display: flex;
   align-items: center;
@@ -315,6 +306,10 @@ const mediumCount = computed(() => {
 
 .event-impact-badge.medium {
   background: #c9d12d;
+}
+
+.event-impact-badge.low {
+  background: #388bfd;
 }
 
 .event-name {
@@ -401,6 +396,10 @@ const mediumCount = computed(() => {
   color: #c9d12d;
 }
 
+.stat-value.low-count {
+  color: #388bfd;
+}
+
 .no-events {
   padding: 40px 20px;
   text-align: center;
@@ -446,5 +445,9 @@ const mediumCount = computed(() => {
 
 .badge.medium {
   background: #c9d12d;
+}
+
+.badge.low {
+  background: #388bfd;
 }
 </style>

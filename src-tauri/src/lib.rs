@@ -4,6 +4,7 @@
 mod commands;
 mod db;
 mod models;
+mod schema;
 mod services;
 
 use commands::*;
@@ -85,7 +86,7 @@ pub fn run() {
     tracing::info!("✅ Table calendar_imports vérifiée/créée");
 
     let calendar_state = calendar_commands::CalendarState {
-        pool: Mutex::new(Some(calendar_pool)),
+        pool: Mutex::new(Some(calendar_pool.clone())),
     };
 
     tracing::info!("✅ CalendarState créé avec pool actif");
@@ -132,6 +133,10 @@ pub fn run() {
 
     tracing::info!("✅ CandleIndexState créé (vide, en attente d'initialisation)");
 
+    // Initialise le service d'archivage (utilise le pool calendrier)
+    let archive_service = services::ArchiveService::new(calendar_pool.clone());
+    tracing::info!("✅ ArchiveService créé");
+
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
@@ -139,6 +144,7 @@ pub fn run() {
         .manage(pair_state)
         .manage(candles_state)
         .manage(candle_index_state)
+        .manage(archive_service)
         .invoke_handler(tauri::generate_handler![
             // Volatility commands (Phase 1)
             ping,
@@ -197,6 +203,13 @@ pub fn run() {
             init_candle_index,
             load_pair_candles,
             get_candle_index_stats,
+            // Archive commands
+            save_archive,
+            list_archives,
+            get_archive,
+            delete_archive,
+            // Global Analysis (Phase IA)
+            analyze_all_archives,
         ]);
 
     tracing::info!("✅ Tauri Builder configuré");

@@ -20,7 +20,7 @@
         >
           <option value="">Choisir un événement</option>
           <option v-for="event in props.pastEvents" :key="`event-${event.name}`" :value="event.name">
-            {{ event.name }} ({{ event.count }} occurrences)
+            {{ getEventLabel(event.name) }} ({{ event.count }} occurrences)
           </option>
         </select>
       </div>
@@ -33,7 +33,7 @@
       <div class="event-header">
         <div class="event-title-with-selector">
           <h3>
-            {{ eventImpact.event_name }}
+            {{ getEventLabel(eventImpact.event_name) }}
             <span class="inline-info">| 🌍 {{ eventImpact.country }} | 💱 {{ eventImpact.currency }}</span>
           </h3>
           <!-- Dropdown pour changer d'événement -->
@@ -44,10 +44,11 @@
           >
             <option value="">Changer d'événement</option>
             <option v-for="event in props.pastEvents" :key="`event-${event.name}`" :value="event.name">
-              {{ event.name }}
+              {{ getEventLabel(event.name) }}
             </option>
           </select>
         </div>
+        <button class="btn-archive" @click="openArchiveModal">💾 Archiver</button>
       </div>
     </div>
 
@@ -93,12 +94,28 @@
       </ul>
     </div>
   </div>
+
+  <!-- Modale d'archivage -->
+  <ArchiveModal
+    :show="showArchiveModal"
+    archive-type="Corrélation événement/paire"
+    :period-start="archivePeriodStart"
+    :period-end="archivePeriodEnd"
+    :event-name="eventImpact?.event_name"
+    :event-name-fr="eventImpact?.event_name ? eventTranslations[eventImpact.event_name]?.fr : ''"
+    :event-flag="eventImpact?.event_name ? getEventFlag(eventImpact.event_name) : ''"
+    :data-json="archiveDataJson"
+    @close="showArchiveModal = false"
+    @saved="handleArchiveSaved"
+  />
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { useAnalysisStore } from '../stores/analysisStore'
+import { eventTranslations } from '../utils/eventTranslations'
+import ArchiveModal from './ArchiveModal.vue'
 
 // Types
 interface PastEvent {
@@ -236,6 +253,43 @@ function sortEventVolatility() {
 
   eventImpact.value.pair_impacts = sorted
 }
+
+function getEventLabel(eventName: string): string {
+  const translation = eventTranslations[eventName]
+  if (translation) {
+    return `${eventName} (${translation.fr}) ${translation.flag}`
+  }
+  return eventName
+}
+
+function getEventFlag(eventName: string): string {
+  return eventTranslations[eventName]?.flag || ''
+}
+
+// Variables pour l'archivage
+const showArchiveModal = ref(false)
+const archivePeriodStart = ref('')
+const archivePeriodEnd = ref('')
+const archiveDataJson = ref('')
+
+function openArchiveModal() {
+  if (!eventImpact.value) return
+  
+  archivePeriodStart.value = eventImpact.value.datetime
+  archivePeriodEnd.value = eventImpact.value.last_datetime
+  
+  archiveDataJson.value = JSON.stringify({
+    eventImpact: eventImpact.value,
+    selectedEvent: selectedEventId.value
+  })
+  
+  showArchiveModal.value = true
+}
+
+function handleArchiveSaved() {
+  console.log('Archive sauvegardée avec succès')
+  showArchiveModal.value = false
+}
 </script>
 
 <style scoped>
@@ -353,6 +407,23 @@ function sortEventVolatility() {
   align-items: flex-start;
   margin-bottom: 20px;
   gap: 15px;
+}
+
+.btn-archive {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-archive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 .event-title-with-selector {

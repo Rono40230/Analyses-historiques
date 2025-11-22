@@ -3,11 +3,41 @@
 
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
+use chrono::Datelike;
 
 use super::pair_correlation_helpers::{
     calculate_correlation_score, calculate_event_volatility_for_pair,
 };
 use crate::services::candle_index::CandleIndex;
+
+fn format_date_fr(date_str: &str) -> String {
+    // Format attendu dans la DB: YYYY-MM-DD HH:MM:SS
+    if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(date_str, "%Y-%m-%d %H:%M:%S") {
+        let day = dt.day();
+        let month = match dt.month() {
+            1 => "janvier", 2 => "février", 3 => "mars", 4 => "avril",
+            5 => "mai", 6 => "juin", 7 => "juillet", 8 => "août",
+            9 => "septembre", 10 => "octobre", 11 => "novembre", 12 => "décembre",
+            _ => "?",
+        };
+        let year = dt.year();
+        return format!("{} {} {}", day, month, year);
+    }
+    // Essai format ISO si le premier échoue
+    if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(date_str) {
+        let day = dt.day();
+        let month = match dt.month() {
+            1 => "janvier", 2 => "février", 3 => "mars", 4 => "avril",
+            5 => "mai", 6 => "juin", 7 => "juillet", 8 => "août",
+            9 => "septembre", 10 => "octobre", 11 => "novembre", 12 => "décembre",
+            _ => "?",
+        };
+        let year = dt.year();
+        return format!("{} {} {}", day, month, year);
+    }
+    
+    date_str.to_string()
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PairEventCorrelation {
@@ -27,6 +57,8 @@ pub struct PairEventCorrelation {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PairCorrelationResult {
     pub pair: String,
+    pub period_start: String,
+    pub period_end: String,
     pub events: Vec<PairEventCorrelation>,
 }
 
@@ -47,6 +79,32 @@ pub fn calculate_pair_event_correlation(
         .map_err(|e| format!("Failed to open volatility.db: {}", e))?;
     let conn_pairs =
         Connection::open(&pairs_db).map_err(|e| format!("Failed to open pairs.db: {}", e))?;
+
+    // 1. Récupérer la plage de dates des événements
+    let range_query = if let Some(cal_id) = calendar_id {
+        format!(
+            "SELECT MIN(event_time), MAX(event_time) 
+             FROM calendar_events 
+             WHERE calendar_import_id = {} 
+             AND impact IN ('HIGH', 'MEDIUM')",
+            cal_id
+        )
+    } else {
+        "SELECT MIN(event_time), MAX(event_time) 
+         FROM calendar_events 
+         WHERE impact IN ('HIGH', 'MEDIUM')"
+            .to_string()
+    };
+
+    let mut range_stmt = conn_vol.prepare(&range_query).map_err(|e| format!("Failed to prepare range query: {}", e))?;
+    let (start_str, end_str) = range_stmt.query_row([], |row| {
+        let start: Option<String> = row.get(0)?;
+        let end: Option<String> = row.get(1)?;
+        Ok((start, end))
+    }).unwrap_or((None, None));
+
+    let period_start = start_str.map(|s| format_date_fr(&s)).unwrap_or_else(|| "N/A".to_string());
+    let period_end = end_str.map(|s| format_date_fr(&s)).unwrap_or_else(|| "N/A".to_string());
 
     // Requête pour récupérer les événements regroupés
     // IMPORTANT: COUNT(DISTINCT event_time) déduplique les événements qui se produisent le même jour
@@ -138,6 +196,8 @@ pub fn calculate_pair_event_correlation(
 
     Ok(PairCorrelationResult {
         pair: symbol.to_string(),
+        period_start,
+        period_end,
         events,
     })
 }

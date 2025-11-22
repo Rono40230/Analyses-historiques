@@ -19,6 +19,7 @@
             <th>Body Range %</th>
             <th>Tick Quality</th>
             <th>Noise Ratio</th>
+            <th>Vol. Imbalance</th>
             <th>Breakouts %</th>
             <th>Événements</th>
           </tr>
@@ -26,9 +27,7 @@
         <tbody>
           <template v-for="stat in stats" :key="stat.hour">
             <!-- Ligne horaire normale -->
-            <tr 
-              :class="{ 'best-hour': isBestHour(stat.hour) }"
-            >
+            <tr>
               <td v-if="props.stats15min" class="expand-cell">
                 <button
                   v-if="getQuartersForHour(stat.hour).length > 0"
@@ -42,28 +41,29 @@
               </td>
               <td class="hour-cell">
                 {{ formatHour(stat.hour) }}
-                <span v-if="isBestHour(stat.hour)" class="star">⭐</span>
-                <span v-if="hasTop3SlicesInHour(stat.hour)" class="star-15min">⭐</span>
+                <span v-if="stat.hour == bestSliceHour" class="star">⭐</span>
               </td>
-              <td>{{ formatNumber(stat.atr_mean, 5) }}</td>
-              <td :class="{ 'range-threshold': stat.range_mean > 0.0025 }">
-                {{ formatNumber(stat.range_mean, 5) }}
-                <span v-if="stat.range_mean > 0.0025" class="badge-threshold">✅ >25pips</span>
+              <td>{{ formatATR(stat.atr_mean) }}</td>
+              <td>
+                {{ formatATR(stat.range_mean) }}
               </td>
-              <td>{{ (stat.volatility_mean * 100).toFixed(2) }}</td>
-              <td>{{ stat.body_range_mean.toFixed(1) }}</td>
-              <td>{{ formatNumber(stat.tick_quality_mean, 5) }}</td>
+              <td>{{ (stat.volatility_mean * 100).toFixed(2) }}%</td>
+              <td>
+                {{ Math.abs(stat.body_range_mean).toFixed(2) }}%
+                <span style="font-size: 0.8em; opacity: 0.7;">{{ stat.body_range_mean >= 0 ? '↗' : '↘' }}</span>
+              </td>
+              <td>{{ formatTickQuality(stat.tick_quality_mean) }}</td>
               <td>{{ stat.noise_ratio_mean.toFixed(2) }}</td>
-              <td>{{ stat.breakout_percentage.toFixed(1) }}</td>
+              <td>{{ (stat.volume_imbalance_mean * 100).toFixed(2) }}%</td>
+              <td>{{ stat.breakout_percentage.toFixed(2) }}%</td>
               <td class="events-cell">
                 <button
-                  v-if="stat.events && stat.events.length > 0"
+                  v-if="getDistinctEventCount(stat.events) > 0"
                   class="event-badge-btn"
                   :class="getEventBadgeClass(stat.events)"
                   @click="selectHour(stat.hour, stat.events)"
-                  :title="`${getDistinctEventCount(stat.events)} événement(s) distinct(s) - ${getDistinctHighCount(stat.events)} HIGH, ${getDistinctMediumCount(stat.events)} MEDIUM`"
+                  :title="`${getDistinctEventCount(stat.events)} événement(s) HIGH`"
                 >
-                  <span v-html="getEventIcon(stat.events)" style="display: inline-flex;"></span>
                   {{ getDistinctEventCount(stat.events) }}
                 </button>
                 <span v-else class="no-event">—</span>
@@ -83,6 +83,7 @@
                         <th>Body %</th>
                         <th>Quality</th>
                         <th>Noise</th>
+                        <th>Vol. Imb</th>
                         <th>Breakout %</th>
                         <th>Événements</th>
                       </tr>
@@ -93,21 +94,24 @@
                           <span v-if="isInTop3Slice(stat.hour, quarter.quarter)" class="top3-star">⭐ {{ getTop3SliceRank(stat.hour, quarter.quarter) }}</span>
                           {{ String(stat.hour).padStart(2, '0') }}:{{ String(quarter.quarter * 15).padStart(2, '0') }}-{{ String(stat.hour).padStart(2, '0') }}:{{ String(Math.min(quarter.quarter * 15 + 15, 60)).padStart(2, '0') }}
                         </td>
-                        <td>{{ formatNumber(quarter.atr_mean, 5) }}</td>
-                        <td>{{ (quarter.volatility_mean * 100).toFixed(2) }}</td>
-                        <td>{{ quarter.body_range_mean.toFixed(1) }}</td>
-                        <td>{{ formatNumber(quarter.tick_quality_mean, 5) }}</td>
+                        <td>{{ formatATR(quarter.atr_mean) }}</td>
+                        <td>{{ (quarter.volatility_mean * 100).toFixed(2) }}%</td>
+                        <td>
+                          {{ Math.abs(quarter.body_range_mean).toFixed(2) }}%
+                          <span style="font-size: 0.8em; opacity: 0.7;">{{ quarter.body_range_mean >= 0 ? '↗' : '↘' }}</span>
+                        </td>
+                        <td>{{ formatTickQuality(quarter.tick_quality_mean) }}</td>
                         <td>{{ quarter.noise_ratio_mean.toFixed(2) }}</td>
-                        <td>{{ quarter.breakout_percentage.toFixed(1) }}</td>
+                        <td>{{ (quarter.volume_imbalance_mean * 100).toFixed(2) }}%</td>
+                        <td>{{ quarter.breakout_percentage.toFixed(2) }}%</td>
                         <td class="events-cell">
                           <button
-                            v-if="quarter.events && quarter.events.length > 0"
+                            v-if="getDistinctEventCount(quarter.events) > 0"
                             class="event-badge-btn"
                             :class="getEventBadgeClass(quarter.events)"
                             @click="selectHour(stat.hour, quarter.events)"
                             style="font-size: 0.8em; padding: 2px 6px;"
                           >
-                            <span v-html="getEventIcon(quarter.events)" style="display: inline-flex;"></span>
                             {{ getDistinctEventCount(quarter.events) }}
                           </button>
                           <span v-else class="no-event">—</span>
@@ -134,7 +138,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import type { HourlyStats, EventInHour } from '../stores/volatility'
 import EventDetailsDrawer from './EventDetailsDrawer.vue'
 
@@ -142,7 +146,34 @@ const props = defineProps<{
   stats: HourlyStats[]
   bestHours: number[]
   stats15min?: any[]  // Stats 15-minutes optionnels
+  globalMetrics?: any // Pour normalisation (ATR, Tick Quality)
 }>()
+
+// Fonction helper pour estimer le prix moyen (pour normalisation)
+function getEstimatedPrice(): number {
+  if (!props.globalMetrics) {
+    return 100000 // Valeur par défaut
+  }
+  // Utilise l'ATR moyen pour estimer l'ordre de grandeur du prix
+  const atr = props.globalMetrics.mean_atr
+  if (atr > 1000) return 100000 // Crypto (BTCUSD ~100k)
+  if (atr > 10) return 10000    // Indices (SPX ~10k)
+  return 1.0                     // Forex (EURUSD ~1.0)
+}
+
+// Formatte l'ATR en % du prix
+function formatATR(atr: number): string {
+  const price = getEstimatedPrice()
+  const atrPercent = (atr / price) * 100
+  return `${atrPercent.toFixed(2)}%`
+}
+
+// Formatte le Tick Quality en % du prix
+function formatTickQuality(tick: number): string {
+  const price = getEstimatedPrice()
+  const tickPercent = (tick / price) * 100
+  return `${tickPercent.toFixed(2)}%`
+}
 
 // État du drawer
 const drawerOpen = ref(false)
@@ -153,6 +184,30 @@ const top3Slices = ref<any[]>([])
 
 // Calculer le TOP 3 au montage/changement des stats
 onMounted(() => {
+  console.log('📊 HourlyTable mounted. Stats received:', props.stats.length)
+  
+  if (props.stats.length > 0) {
+    // Inspecter la première heure et quelques autres pour voir la structure events
+    const sampleHours = [0, 8, 12, 16]
+    sampleHours.forEach(h => {
+      const stat = props.stats.find(s => s.hour === h)
+      if (stat) {
+        console.log(`🔍 Hour ${h} events:`, stat.events)
+        if (stat.events) {
+           console.log(`   - Count: ${stat.events.length}`)
+           if (stat.events.length > 0) {
+             console.log(`   - First event:`, stat.events[0])
+           }
+        } else {
+           console.log(`   - Events field is UNDEFINED or NULL`)
+        }
+      }
+    })
+    
+    // Compter le nombre total d'heures avec événements
+    const hoursWithEvents = props.stats.filter(s => s.events && s.events.length > 0).length
+    console.log(`📈 Total hours with events: ${hoursWithEvents} / ${props.stats.length}`)
+  }
   if (props.stats15min && props.stats15min.length > 0) {
     try {
       // Besoin de globalMetrics pour analyzeTop3Slices
@@ -182,6 +237,15 @@ function formatNumber(num: number, decimals: number): string {
   return num.toFixed(decimals)
 }
 
+
+
+const bestSliceHour = computed(() => {
+  if (top3Slices.value && top3Slices.value.length > 0) {
+    return top3Slices.value[0].hour
+  }
+  return null
+})
+
 function isBestHour(hour: number): boolean {
   return props.bestHours.includes(hour)
 }
@@ -196,57 +260,32 @@ function selectHour(hour: number, events: EventInHour[]) {
   drawerOpen.value = true
 }
 
-function getDistinctHighCount(events: EventInHour[]): number {
-  if (!events) return 0
-  // Compter les PAIRES (nom + HIGH) distinctes
-  const distinctHigh = new Set(
-    events.filter(e => e.impact === 'HIGH').map(e => `${e.event_name}|HIGH`)
-  )
-  return distinctHigh.size
+
+
+function normalizeImpact(impact: string): string {
+  const i = impact.toUpperCase().trim()
+  if (i === 'HIGH' || i === 'H') return 'HIGH'
+  if (i === 'MEDIUM' || i === 'M' || i === 'MED') return 'MEDIUM'
+  if (i === 'LOW' || i === 'L') return 'LOW'
+  return 'UNKNOWN'
 }
 
-function getDistinctMediumCount(events: EventInHour[]): number {
-  if (!events) return 0
-  // Compter les PAIRES (nom + MEDIUM) distinctes
-  const distinctMedium = new Set(
-    events.filter(e => e.impact === 'MEDIUM').map(e => `${e.event_name}|MEDIUM`)
-  )
-  return distinctMedium.size
-}
 
-function getEventIcon(events: EventInHour[]): string {
-  const highCount = getDistinctHighCount(events)
-  const mediumCount = getDistinctMediumCount(events)
-  const total = highCount + mediumCount
-  
-  if (total === 0) return '○'
-  
-  // Calculer la hauteur des barres en pourcentage
-  const maxCount = Math.max(highCount, mediumCount) || 1
-  const highHeight = (highCount / maxCount) * 10
-  const mediumHeight = (mediumCount / maxCount) * 10
-  
-  // Créer un histogramme SVG simple
-  const svg = `<svg width="20" height="12" viewBox="0 0 20 12" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
-    <!-- Barre HIGH (rouge) -->
-    <rect x="2" y="${12 - highHeight}" width="6" height="${highHeight}" fill="#ff6b6b" rx="1"/>
-    <!-- Barre MEDIUM (orange) -->
-    <rect x="12" y="${12 - mediumHeight}" width="6" height="${mediumHeight}" fill="#ffa94d" rx="1"/>
-  </svg>`
-  
-  return svg
-}
 
 
 function getEventBadgeClass(events: EventInHour[]): string {
-  const hasHigh = events.some(e => e.impact === 'HIGH')
-  return hasHigh ? 'high' : 'medium'
+  const hasHigh = events.some(e => normalizeImpact(e.impact) === 'HIGH')
+  return hasHigh ? 'high' : 'hidden-badge' // hidden-badge si pas de HIGH
 }
 
 function getDistinctEventCount(events: EventInHour[] | undefined): number {
   if (!events || events.length === 0) return 0
+  
+  // Filtrer pour ne garder que HIGH
+  const highEvents = events.filter(e => normalizeImpact(e.impact) === 'HIGH')
+  
   // Compter les PAIRES (nom + impact) distinctes
-  const distinctPairs = new Set(events.map(e => `${e.event_name}|${e.impact}`))
+  const distinctPairs = new Set(highEvents.map(e => `${e.event_name}|HIGH`))
   return distinctPairs.size
 }
 
