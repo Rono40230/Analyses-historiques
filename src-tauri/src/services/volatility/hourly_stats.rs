@@ -79,26 +79,28 @@ impl<'a> HourlyStatsCalculator<'a> {
         let body_ranges = calc.calculate_body_ranges();
         let shadow_ratios = calc.calculate_shadow_ratios();
         let tick_qualities = calc.calculate_tick_quality();
-        let volume_imbalances = calc.calculate_volume_imbalance(14).unwrap_or_default();
         let noise_ratios = calc.calculate_noise_ratio();
         let tr_dist = calc.calculate_true_range_distribution()?;
 
         // Calcule les moyennes
-        let atr_mean = mean(&atr_values);
+        let atr_mean = atr_values.last().copied().unwrap_or(0.0);  // Dernière valeur ATR lissée (Wilder's)
         let atr_max = max(&atr_values);
         let volatility_mean = mean(&volatility_values);
-        let range_mean =
-            owned_candles.iter().map(|c| c.high - c.low).sum::<f64>() / owned_candles.len() as f64;
+        // TÂCHE 3: Utiliser True Range au lieu de simple H-L
+        let range_mean = mean(&tr_dist.true_ranges);
         let body_range_mean = mean(&body_ranges);
         let shadow_ratio_mean = mean(&shadow_ratios);
         let tick_quality_mean = mean(&tick_qualities);
-        // FIX: Utiliser la valeur absolue pour que les variations +/- ne s'annulent pas
-        let volume_imbalance_mean = volume_imbalances.iter().map(|v| v.abs()).sum::<f64>() / volume_imbalances.len().max(1) as f64;
         let noise_ratio_mean = mean(&noise_ratios);
-
+        
+        // Calculate breakout percentage first
         let breakout_count = tr_dist.is_breakout.iter().filter(|&&b| b).count();
         let breakout_percentage =
             (breakout_count as f64 / tr_dist.is_breakout.len() as f64) * 100.0;
+        
+        // Direction Strength: Force directionnelle = (|directionalite| * cassures) / 100
+        // Note: body_range_mean can be negative (directional indicator), so use absolute value
+        let direction_strength = (body_range_mean.abs() * breakout_percentage) / 100.0;
 
         Ok(HourlyStats {
             hour,
@@ -110,7 +112,7 @@ impl<'a> HourlyStatsCalculator<'a> {
             body_range_mean,
             shadow_ratio_mean,
             tick_quality_mean,
-            volume_imbalance_mean,
+            volume_imbalance_mean: direction_strength, // Remplacé par direction_strength
             noise_ratio_mean,
             breakout_percentage,
             events: Vec::new(), // Sera rempli après par l'analyseur

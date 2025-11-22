@@ -1,6 +1,5 @@
 // models/global_analysis.rs - Structures pour l'analyse globale (IA Statistique)
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnalysisFilters {

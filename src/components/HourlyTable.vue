@@ -14,14 +14,13 @@
             <th v-if="props.stats15min" style="width: 30px;"></th>
             <th>Heure</th>
             <th>ATR Moyen</th>
-            <th>Range (H-L)</th>
-            <th>Volatilité %</th>
+            <th>True Range</th>
+            <th>Volatilite %</th>
             <th>Body Range %</th>
             <th>Tick Quality</th>
             <th>Noise Ratio</th>
-            <th>Vol. Imbalance</th>
             <th>Breakouts %</th>
-            <th>Événements</th>
+            <th>Evenements</th>
           </tr>
         </thead>
         <tbody>
@@ -54,7 +53,6 @@
               </td>
               <td>{{ formatTickQuality(stat.tick_quality_mean) }}</td>
               <td>{{ stat.noise_ratio_mean.toFixed(2) }}</td>
-              <td>{{ (stat.volume_imbalance_mean * 100).toFixed(2) }}%</td>
               <td>{{ stat.breakout_percentage.toFixed(2) }}%</td>
               <td class="events-cell">
                 <button
@@ -83,9 +81,8 @@
                         <th>Body %</th>
                         <th>Quality</th>
                         <th>Noise</th>
-                        <th>Vol. Imb</th>
                         <th>Breakout %</th>
-                        <th>Événements</th>
+                        <th>Evenements</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -102,7 +99,6 @@
                         </td>
                         <td>{{ formatTickQuality(quarter.tick_quality_mean) }}</td>
                         <td>{{ quarter.noise_ratio_mean.toFixed(2) }}</td>
-                        <td>{{ (quarter.volume_imbalance_mean * 100).toFixed(2) }}%</td>
                         <td>{{ quarter.breakout_percentage.toFixed(2) }}%</td>
                         <td class="events-cell">
                           <button
@@ -309,10 +305,9 @@ function getQuartersForHour(hour: number) {
 function calculateSliceScore(slice: any): number {
   // Même logique que straddleAnalysis.ts::calculateStraddleScore
   if (slice.candle_count === 0) return 0
-
   let score = 0
 
-  // RANGE (60 pts max)
+  // TRUE RANGE (60 pts max) - Includes gap detection
   if (slice.range_mean > 0.0025) {
     score += 60
   } else if (slice.range_mean > 0.0020) {

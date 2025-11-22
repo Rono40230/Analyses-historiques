@@ -5,7 +5,7 @@ use crate::models::{
 use crate::services::ArchiveService;
 use serde::Deserialize;
 use std::collections::HashMap;
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 
 pub struct GlobalAnalyzer {
     archive_service: ArchiveService,
@@ -489,7 +489,7 @@ impl GlobalAnalyzer {
         // Convertir en StraddleSuccessRate et calculer les métriques
         let mut straddle_rates: Vec<StraddleSuccessRate> = pair_stats
             .into_iter()
-            .map(|(pair, (volatilities, mut event_names))| {
+            .map(|(pair, (volatilities, event_names))| {
                 let total_events = volatilities.len();
                 
                 // Calculer la volatilité moyenne

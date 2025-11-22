@@ -161,15 +161,17 @@ export function detectGoldenCombos(
   }
 
   // COMBO 3: DIRECTIONNEL FORT
+  // Utilise direction_strength (body_range_mean * breakout_percentage / 100) comme proxy
+  // Direction Strength >= 20 = forte force directionnelle
   if (
     slice.body_range_mean > 45.0 &&
     slice.noise_ratio_mean < 2.0 &&
-    (slice.volume_imbalance_mean > 2.0 || slice.volume_imbalance_mean < 0.5)
+    slice.volume_imbalance_mean >= 20.0
   ) {
     combos.push({
       name: 'DIRECTIONNEL FORT',
       description:
-        'Signal très pur + Tendance marquée (Imbalance déséquilibré). Scalping directionnel optimal.',
+        'Signal très pur + Tendance marquée. Scalping directionnel optimal (Direction Strength élevée).',
       confidence: 'EXCELLENT',
       winRate: 0.78,
       avgGainR: 3.5
@@ -247,21 +249,21 @@ export function detectTraps(
     })
   }
 
-  // PIÈGE 3: INDÉCISION
+  // PIÈGE 3: INDÉCISION (REWORKED - anciennement basé sur Volume Imbalance)
+  // Nouvelle logique: Direction Strength très faible (body_range_mean < 15%) = pas d'avantage directionnel
   if (
-    slice.volume_imbalance_mean >= 0.8 &&
-    slice.volume_imbalance_mean <= 1.2 &&
+    slice.body_range_mean < 15.0 &&
     slice.volatility_mean < 10.0 &&
     slice.range_mean < 0.001
   ) {
     traps.push({
       name: 'INDÉCISION',
       description:
-        'Marché équilibré (Imbalance ≈1.0) + peu de volume. Pas d\'avantage directionnel pour straddle.',
+        'Marché indécis (faible directionnalité + peu de volatilité + range minuscule). Pas d\'avantage pour straddle.',
       severity: 'HAUTE',
-      metric: 'Imbalance',
-      value: slice.volume_imbalance_mean,
-      threshold: 0.9,
+      metric: 'BodyRange',
+      value: slice.body_range_mean,
+      threshold: 15.0,
       recommendation: 'Pas de trading directionnel agressif. Straddle non-optimal.'
     })
   }
@@ -604,8 +606,18 @@ export function calculateBidiParameters(
     stopLossExplanation = `Range serré (${rangeAvg.toFixed(0)}pts) → SL très lâche pour éviter fausses sorties`
   }
 
+  // TÂCHE 2: Adapter SL selon Noise Ratio (NOUVEAU)
+  // Plus il y a de bruit, plus le SL doit être large
+  // Formula: noiseFactor = max(0.6, min(0.9, 1.0 - (noise_ratio / 10.0)))
+  const noiseRatio = stats.noise_ratio_mean || 2.0
+  const noiseFactor = Math.max(0.6, Math.min(0.9, 1.0 - (noiseRatio / 10.0)))
+  
+  // Appliquer le facteur de bruit au pourcentage SL
+  const stopLossLevelPercentAdjusted = stopLossLevelPercent * noiseFactor
+  const noiseExplanation = `Noise Ratio ${noiseRatio.toFixed(1)}: SL ajusté de ${stopLossLevelPercent.toFixed(0)}% → ${stopLossLevelPercentAdjusted.toFixed(0)}% (factor ${noiseFactor.toFixed(2)})`
+
   // Calcul en points concrets
-  const stopLossPoints = Math.round((stopLossLevelPercent / 100) * atrMean)
+  const stopLossPoints = Math.round((stopLossLevelPercentAdjusted / 100) * atrMean)
 
   // ========================================
   // 3️⃣ ATR MULTIPLIER - Agressivité du trailing

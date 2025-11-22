@@ -72,10 +72,10 @@
                   <template #scoring>Calculé : (High-Low) moyenne sur 14 barres. Détermine largeur SL/TP. Plus ATR élevé = plus grande opportunité scalping.</template>
                 </MetricTooltip>
 
-                <!-- Range -->
-                <MetricTooltip title="Range">
+                <!-- True Range -->
+                <MetricTooltip title="True Range">
                 <div class="metric-item">
-                  <span class="metric-name">Range (H-L)</span>
+                  <span class="metric-name">True Range</span>
                   <div class="metric-values">
                     <span class="value15" :class="getMetricClass(analysis.slice.stats.range_mean, 0.0015, 0.0025)">
                       {{ formatNumber(analysis.slice.stats.range_mean, 5) }}
@@ -89,9 +89,9 @@
                     {{ getMetricStatusText(analysis.slice.stats.range_mean, 0.0025) }}
                   </span>
                 </div>
-                  <template #definition>Différence entre High et Low du créneau : mouvement total exploitable pour le straddle scalping.</template>
-                  <template #usage>Score &gt;0.0025 = Excellent (≥25 pips) | 0.0015-0.0025 = Bon (15-25 pips) | &lt;0.0015 = Faible.</template>
-                  <template #scoring>Range croissant = meilleur straddle setup. Formula: (High - Low) / Close. Minimum 15 pips recommandé pour scalping viable.</template>
+                  <template #definition>Max(High-Low, |High-Close[t-1]|, |Low-Close[t-1]|) : mouvement total exploitable incluant les gaps overnight et clôtures précédentes.</template>
+                  <template #usage>Score >2.5% = Excellent | 1.5-2.5% = Bon | <1.5% = Faible.</template>
+                  <template #scoring>True Range croissant = meilleur straddle setup. Capture les gaps contrairement au simple Range. Combine avec ATR pour détecter les vrais breakouts.</template>
                 </MetricTooltip>
 
                 <!-- Volatility -->
@@ -182,26 +182,31 @@
                   <template #scoring>Formula: (Total_wicks_range / Body_range). Bas = direction confirmée. Élevé = beaucoup de rejets = whipsaws.</template>
                 </MetricTooltip>
 
-                <!-- Imbalance -->
-                <MetricTooltip title="Volume Imbalance">
+                <!-- Direction Strength -->
+                <MetricTooltip title="Direction Strength">
                 <div class="metric-item">
-                  <span class="metric-name">Volume Imbalance</span>
+                  <span class="metric-name">Direction Strength</span>
                   <div class="metric-values">
-                    <span class="value15" :class="getImbalanceClass(analysis.slice.stats.volume_imbalance_mean)">
-                      {{ formatNumber(analysis.slice.stats.volume_imbalance_mean, 3) }}
+                    <span class="value15" :class="getDirectionStrengthClass(analysis.slice.stats.volume_imbalance_mean)">
+                      {{ formatNumber(analysis.slice.stats.volume_imbalance_mean * 100, 1) }}%
                     </span>
                     <span class="separator">|</span>
-                    <span class="valueglobal">{{ formatNumber(analysisData?.globalMetrics.mean_volume_imbalance ?? 0, 3) }}</span>
+                    <span class="valueglobal">{{ formatNumber((analysisData?.globalMetrics.mean_volume_imbalance ?? 0) * 100, 1) }}%</span>
                     <span class="separator">|</span>
-                    <span class="threshold">0.5-2.0</span>
+                    <span class="threshold">20%+ optimal</span>
                   </div>
-                  <span :class="['status', getImbalanceStatus(analysis.slice.stats.volume_imbalance_mean)]">
-                    {{ getImbalanceStatusText(analysis.slice.stats.volume_imbalance_mean) }}
+                  <span :class="['status', getDirectionStrengthStatus(analysis.slice.stats.volume_imbalance_mean)]">
+                    {{ getDirectionStrengthStatusText(analysis.slice.stats.volume_imbalance_mean) }}
                   </span>
                 </div>
-                  <template #definition>Ratio volume acheteurs / vendeurs : indique le déséquilibre directionnel et la force du mouvement.</template>
-                  <template #usage>Score 0.5-2.0 = Équilibré (bon pour straddle neutre) | &lt;0.5 ou &gt;2.0 = Très déséquilibré (directional bias fort).</template>
-                  <template #scoring>Formula: Buy_volume / Sell_volume. Ratio proche de 1.0 = indécision, bonne pour range-bound straddles.</template>
+                  <template #definition>Direction Strength = (|Body Range %| × Breakout %) / 100. Mesure puissance mouvement directionnel optimal Forex.</template>
+                  <template #usage>
+                    🟢 <strong>&gt;20%:</strong> Excellent directional<br>
+                    🔵 <strong>10-20%:</strong> Bon<br>
+                    🟠 <strong>5-10%:</strong> Moyen<br>
+                    🔴 <strong>&lt;5%:</strong> Faible direction.
+                  </template>
+                  <template #scoring>Combine directionnalite (corps de bougie) + cassures identifiees = proxy force direction optimal Forex Straddle.</template>
                 </MetricTooltip>
 
                 <!-- Breakout % -->
@@ -1048,7 +1053,7 @@ const getNoiseStatus = (value: number): string => {
 
 const getNoiseStatusText = (value: number): string => {
   if (value < 2.0) return '✅ Signal pur'
-  if (value < 3.0) return '🟡 Acceptable'
+  if (value < 3.0) return '🔵 Acceptable'
   return '❌ Chaotique'
 }
 
@@ -1067,9 +1072,33 @@ const getImbalanceStatus = (value: number): string => {
 
 const getImbalanceStatusText = (value: number): string => {
   const distance = Math.abs(value - 1.0)
-  if (distance > 1.0) return `✅ Tendance marquée`
-  if (distance > 0.5) return `🟡 Modérée`
-  return `❌ Équilibrée`
+  if (distance > 1.0) return `✅ Tendance marquee`
+  if (distance > 0.5) return `🔵 Moderee`
+  return `❌ Equilibree`
+}
+
+// Direction Strength helpers (replaces Volume Imbalance for Forex)
+const getDirectionStrengthClass = (value: number): string => {
+  const strengthPercent = value * 100
+  if (strengthPercent >= 20) return 'excellent'
+  if (strengthPercent >= 10) return 'good'
+  if (strengthPercent >= 5) return 'acceptable'
+  return 'poor'
+}
+
+const getDirectionStrengthStatus = (value: number): string => {
+  const strengthPercent = value * 100
+  if (strengthPercent >= 20) return 'ok'
+  if (strengthPercent >= 5) return 'warning'
+  return 'low'
+}
+
+const getDirectionStrengthStatusText = (value: number): string => {
+  const strengthPercent = value * 100
+  if (strengthPercent >= 20) return `✅ Forte direction`
+  if (strengthPercent >= 10) return `🔵 Bonne direction`
+  if (strengthPercent >= 5) return `🟠 Direction faible`
+  return `❌ Peu de direction`
 }
 
 const getScoreSeverity = (score: number): string => {
@@ -1098,8 +1127,8 @@ const getQualityScoreClass = (score: number): string => {
  */
 const getQualityRecommendation = (score: number): string => {
   if (score >= 7.0) return 'TRADE ✅'
-  if (score >= 5.0) return 'CAUTION 🟡'
-  if (score >= 3.0) return 'CAUTION 🟡'
+  if (score >= 5.0) return 'CAUTION 🔵'
+  if (score >= 3.0) return 'CAUTION 🔵'
   return 'AVOID ❌'
 }
 </script>
