@@ -703,11 +703,11 @@ function getConfidenceBarClass(score: number): string {
 .confidence-bar { height: 8px; background: #667eea; border-radius: 4px; margin-bottom: 8px; transition: background 0.3s ease; }
 
 /* Classes de couleur pour barre de confiance */
-.confidence-bar.confidence-excellent { background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); } /* 80+: Vert */
-.confidence-bar.confidence-good { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); box-shadow: 0 0 8px rgba(59, 130, 246, 0.5); } /* 65-79: Bleu */
-.confidence-bar.confidence-acceptable { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); box-shadow: 0 0 8px rgba(245, 158, 11, 0.5); } /* 50-64: Orange */
-.confidence-bar.confidence-risky { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); } /* 35-49: Rouge */
-.confidence-bar.confidence-poor { background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); box-shadow: 0 0 8px rgba(107, 114, 128, 0.5); } /* <35: Gris */
+.confidence-bar.confidence-excellent { background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important; box-shadow: 0 0 8px rgba(16, 185, 129, 0.5) !important; }
+.confidence-bar.confidence-good { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important; box-shadow: 0 0 8px rgba(59, 130, 246, 0.5) !important; }
+.confidence-bar.confidence-acceptable { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important; box-shadow: 0 0 8px rgba(245, 158, 11, 0.5) !important; }
+.confidence-bar.confidence-risky { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important; box-shadow: 0 0 8px rgba(239, 68, 68, 0.5) !important; }
+.confidence-bar.confidence-poor { background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%) !important; box-shadow: 0 0 8px rgba(107, 114, 128, 0.5) !important; }
 
 .confidence-text { color: #cbd5e0; font-size: 0.9em; }
 .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 30px; }
