@@ -88,9 +88,9 @@
                       </tr>
                     </thead>
                     <tbody>
-                      <tr v-for="quarter in getQuartersForHour(stat.hour)" :key="`${stat.hour}-${quarter.quarter}`" class="scalping-row" :class="{ 'top3-slice': isInTop3Slice(stat.hour, quarter.quarter) }">
+                      <tr v-for="quarter in getQuartersForHour(stat.hour)" :key="`${stat.hour}-${quarter.quarter}`" class="scalping-row" :class="{ 'top3-slice': isBestSliceInHour(stat.hour, quarter.quarter) }">
                         <td class="time-cell">
-                          <span v-if="isInTop3Slice(stat.hour, quarter.quarter)" class="top3-star">⭐ {{ getTop3SliceRank(stat.hour, quarter.quarter) }}</span>
+                          <span v-if="isBestSliceInHour(stat.hour, quarter.quarter)" class="top3-star">⭐</span>
                           {{ String(stat.hour).padStart(2, '0') }}:{{ String(quarter.quarter * 15).padStart(2, '0') }}-{{ String(stat.hour).padStart(2, '0') }}:{{ String(Math.min(quarter.quarter * 15 + 15, 60)).padStart(2, '0') }}
                         </td>
                         <td>{{ formatATR(quarter.atr_mean) }}</td>
@@ -350,6 +350,28 @@ function calculateSliceScore(slice: any): number {
 
 function isInTop3Slice(hour: number, quarter: number): boolean {
   return top3Slices.value.some(item => item.hour === hour && item.quarter === quarter)
+}
+
+// NEW: Retourner le MEILLEUR créneau 15min de chaque heure (pas les 3 globaux)
+function isBestSliceInHour(hour: number, quarter: number): boolean {
+  if (!props.stats15min) return false
+  
+  // Trouver tous les quarters de cette heure
+  const quartersInHour = props.stats15min.filter(stat => stat.hour === hour)
+  if (quartersInHour.length === 0) return false
+  
+  // Calculer le score pour chaque et garder le meilleur
+  const scoredQuarters = quartersInHour.map(q => ({
+    quarter: q.quarter,
+    score: calculateSliceScore(q)
+  }))
+  
+  const bestQuarter = scoredQuarters.reduce((prev, curr) => 
+    curr.score > prev.score ? curr : prev
+  )
+  
+  // Retourner true SEULEMENT si c'est le meilleur de cette heure
+  return bestQuarter.quarter === quarter
 }
 
 function getTop3SliceRank(hour: number, quarter: number): number {
