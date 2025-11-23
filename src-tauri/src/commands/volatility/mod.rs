@@ -2,6 +2,7 @@ mod analysis;
 mod stats;
 mod straddle_analysis;
 mod straddle_metrics;
+mod straddle_metrics_types;
 mod candles_loader;
 
 pub use analysis::{analyze_symbol, load_symbols, ping};
