@@ -1,135 +1,33 @@
-# 📋 TÂCHES - Optimisation Stratégie Straddle
+# 📋 TÂCHES RESTANTES - Optimisation Stratégie Straddle
 
-**Date**: 22 novembre 2025  
-**Objectif**: Implémenter les améliorations identifiées dans l'audit des métriques  
-**Priorité**: Critique → Haute → Moyenne → Basse
-
----
-
-## 🔴 PRIORITÉ CRITIQUE (Blockers pour production)
-
-### ❌ TÂCHE 1: Supprimer Volume Imbalance
-**Problème**: Métrique inutilisable en Forex (données volume acheteur/vendeur absentes)  
-**Impact**: 3 détections (Golden Combo #3, Trap #1, #3) ne fonctionnent jamais  
-**Fichiers à modifier**:
-- `src-tauri/src/services/volatility/hourly_stats.rs` - Retirer calcul
-- `src-tauri/src/services/volatility/stats_15min.rs` - Retirer calcul
-- `src-tauri/src/models/hourly_stats.rs` - Retirer champ `volume_imbalance_mean`
-- `src/utils/straddleAnalysis.ts` - Retirer conditions utilisant `volume_imbalance_mean`
-- `src/components/HourlyTable.vue` - Retirer colonne
-- `src/components/AnalysisPanel.vue` - Retirer affichage
-
-**Remplacement suggéré**:
-```typescript
-// Nouvelle métrique: Direction Strength
-const directionStrength = (slice.body_range_mean * slice.breakout_percentage) / 100;
-// Combine directionnalité + cassures = proxy de force directionnelle
-```
-
-**Estimation**: 2-3 heures  
-**Validation**: Vérifier que les Golden Combos et Traps fonctionnent sans Volume Imbalance
+**Date**: 23 novembre 2025  
+**Status**: TÂCHE 1-4 ✅ COMPLÉTÉES  
+**Objectif**: Implémenter les améliorations post-TÂCHE 4  
+**Priorité**: Haute → Moyenne → Basse
 
 ---
 
-### ⚠️ TÂCHE 2: Corriger le Calcul du Stop Loss
-**Problème**: SL actuel (`ATR × 0.75`) ignore le Noise Ratio → Stops déclenchés par fausses mèches  
-**Impact**: Perte de trades gagnants, frustration utilisateur  
-**Fichiers à modifier**:
-- `src/utils/straddleAnalysis.ts` - Fonction `calculateStopLoss()`
+## ✅ TÂCHES COMPLÉTÉES (À NE PAS REFAIRE)
 
-**Formule actuelle**:
-```typescript
-const stopLossPoints = Math.round(atrValue * 10000 * 0.75 * 10);
-```
+### ✅ TÂCHE 1: Supprimer Volume Imbalance
+**Status**: FAIT (commit cfac358)  
+**Remplacée par**: Direction Strength = (body_range_mean × breakout_percentage) / 100
 
-**Nouvelle formule**:
-```typescript
-// Adapter SL selon le niveau de bruit
-const noiseFactor = Math.max(0.6, Math.min(0.9, 1.0 - (slice.noise_ratio_mean / 10.0)));
-const stopLossPoints = Math.round(atrValue * 10000 * noiseFactor * 10);
+### ✅ TÂCHE 2: Corriger le Calcul du Stop Loss  
+**Status**: FAIT (commit cfac358)  
+**Implémentation**: SL adaptatif = ATR × noiseFactor, où noiseFactor = max(0.6, min(0.9, 1.0 - noise_ratio/10))
 
-// Exemples:
-// Noise = 1.5 → noiseFactor = 0.85 → SL = ATR × 0.85
-// Noise = 3.0 → noiseFactor = 0.70 → SL = ATR × 0.70
-// Noise = 5.0 → noiseFactor = 0.60 → SL = ATR × 0.60 (minimum)
-```
+### ✅ TÂCHE 3: Remplacer Range par True Range
+**Status**: FAIT (commit cfac358)  
+**Implémentation**: Range → True Range + ATR Wilder's Smoothing
 
-**Estimation**: 1 heure  
-**Validation**: Backtester avec données historiques, comparer win rate avant/après
-
----
-
-### 🔧 TÂCHE 3: Supprimer la Colonne "Range (H-L)" (Doublon)
-**Problème**: Identique à ATR, confus pour l'utilisateur  
-**Impact**: Encombrement interface, redondance  
-**Fichiers à modifier**:
-- `src/components/HourlyTable.vue` - Retirer colonne
-- `src-tauri/src/services/volatility/hourly_stats.rs` - Retirer calcul `range_mean` (ou garder pour score)
-- `src/components/AnalysisPanel.vue` - Vérifier si utilisé ailleurs
-
-**Alternative**: Remplacer par "True Range" (prend en compte close[t-1])
-```rust
-let true_range = candles
-    .windows(2)
-    .map(|pair| {
-        let prev = &pair[0];
-        let curr = &pair[1];
-        let hl = curr.high - curr.low;
-        let hc = (curr.high - prev.close).abs();
-        let lc = (curr.low - prev.close).abs();
-        hl.max(hc).max(lc)
-    })
-    .sum::<f64>() / (candles.len() - 1) as f64;
-```
-
-**Estimation**: 1 heure  
-**Validation**: Vérifier que le Score de Confiance fonctionne toujours
+### ✅ TÂCHE 4: Implémenter le Calcul Réel de Durée de Volatilité
+**Status**: FAIT (commits 9c508a7, e0551b2, 1010f4b)  
+**Implémentation**: ATR Wilder's EMA decay analysis + affichage UI (Peak, Half-Life, Trade Exp)
 
 ---
 
 ## 🟠 PRIORITÉ HAUTE (Améliorations importantes)
-
-### 📊 TÂCHE 4: Implémenter le Calcul Réel de Durée de Volatilité
-**Problème**: Durée actuelle = heuristique fixe, pas d'analyse réelle de décroissance  
-**Impact**: Paramètre "Trade Duration" peut être incorrect → Sortie trop tôt/tard  
-**Fichiers à modifier**:
-- `src-tauri/src/services/volatility_duration_analyzer.rs` - Réécrire logique
-
-**Algorithme suggéré**:
-```rust
-pub fn analyze_real_decay(stats: &Stats15Min, candles: &[Candle]) -> Result<VolatilityDuration> {
-    // 1. Identifier le pic de volatilité (ATR max)
-    let peak_atr = candles.iter().map(|c| c.high - c.low).max().unwrap();
-    let peak_index = candles.iter().position(|c| (c.high - c.low) == peak_atr).unwrap();
-    
-    // 2. Analyser les bougies APRÈS le pic
-    let post_peak_candles = &candles[peak_index..];
-    
-    // 3. Trouver quand ATR retourne à 50% du pic
-    let half_life_index = post_peak_candles
-        .iter()
-        .position(|c| (c.high - c.low) <= peak_atr * 0.5)
-        .unwrap_or(post_peak_candles.len());
-    
-    let half_life_minutes = half_life_index;
-    
-    // 4. Recommander durée = 1.5 × half_life
-    let recommended_duration = (half_life_minutes as f64 * 1.5) as u32;
-    
-    Ok(VolatilityDuration {
-        peak_duration_minutes: half_life_minutes as u32,
-        volatility_half_life_minutes: half_life_minutes as u32,
-        recommended_trade_expiration_minutes: recommended_duration,
-        confidence_score: 85.0,
-        sample_size: candles.len(),
-    })
-}
-```
-
-**Estimation**: 3-4 heures  
-**Validation**: Comparer durées calculées vs durées heuristiques, vérifier cohérence
-
----
 
 ### 🎯 TÂCHE 5: Ajouter Métriques Manquantes Critiques pour Straddle
 
@@ -417,12 +315,11 @@ function calculateTradeDuration(
 
 | Priorité | Tâches | Estimation Totale |
 |----------|--------|-------------------|
-| 🔴 **CRITIQUE** | 1, 2, 3 | 4-5 heures |
-| 🟠 **HAUTE** | 4, 5.1, 5.2, 5.3 | 11-14 heures |
+| 🟠 **HAUTE** | 5.1, 5.2, 5.3 | 8-10 heures |
 | 🟡 **MOYENNE** | 6, 7, 8 | 5-6 heures |
 | 🔵 **BASSE** | 9, 10, 11 | 8-9 heures |
 
-**TOTAL ESTIMÉ**: 28-34 heures de développement
+**TOTAL ESTIMÉ**: 21-25 heures de développement
 
 ---
 
@@ -433,35 +330,29 @@ Avant de considérer l'application "production-ready" :
 1. ✅ **Aucune métrique fictive** (Volume Imbalance supprimé)
 2. ✅ **Stop Loss adaptatif** (prend en compte Noise Ratio)
 3. ✅ **Durée calculée réellement** (pas d'heuristique)
-4. ✅ **Offset optimal calculé** (percentile 95 des mèches)
-5. ✅ **Win Rate affiché** (backtest réel)
-6. ✅ **Whipsaw détecté** (< 20% acceptable)
+4. ⏳ **Offset optimal calculé** (percentile 95 des mèches)
+5. ⏳ **Win Rate affiché** (backtest réel)
+6. ⏳ **Whipsaw détecté** (< 20% acceptable)
 7. ✅ **Interface claire** (pas de doublons)
-8. ✅ **Export JSON** (paramètres Bidi)
+8. ⏳ **Export JSON** (paramètres Bidi)
 
 ---
 
 ## 🚀 ORDRE D'EXÉCUTION RECOMMANDÉ
 
-### Sprint 1 (Critique - 1 jour)
-1. Supprimer Volume Imbalance
-2. Corriger calcul Stop Loss
-3. Supprimer colonne Range
+### Sprint 1 (Haute - 2-3 jours)
+- 5.1 Offset Optimal
+- 5.2 Win Rate Simulé
+- 5.3 Whipsaw Frequency
 
-### Sprint 2 (Haute - 2-3 jours)
-4. Implémenter durée réelle
-5. Ajouter Offset Optimal
-6. Ajouter Win Rate Simulé
-7. Ajouter Whipsaw Frequency
+### Sprint 2 (Moyenne - 1 jour)
+- 6 Fusionner Tick Quality
+- 7 Améliorer Trade Duration
+- 8 Enrichir Tooltips
 
-### Sprint 3 (Moyenne - 1 jour)
-8. Fusionner Tick Quality
-9. Améliorer Trade Duration
-10. Enrichir tooltips
+### Sprint 3 (Basse - 1-2 jours)
+- 9 Graphique décroissance
+- 10 Filtre événements
+- 11 Export JSON
 
-### Sprint 4 (Basse - 1-2 jours)
-11. Graphique décroissance
-12. Filtre événements
-13. Export JSON
-
-**TOTAL**: 5-7 jours de développement
+**TOTAL**: 4-6 jours de développement
