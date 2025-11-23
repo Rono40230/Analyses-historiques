@@ -209,6 +209,7 @@ pub fn run() {
             init_candle_index,
             load_pair_candles,
             get_candle_index_stats,
+            get_candles_for_hour, // NEW: Charger candles pour une heure (TÂCHE 5)
             // Archive commands
             save_archive,
             list_archives,

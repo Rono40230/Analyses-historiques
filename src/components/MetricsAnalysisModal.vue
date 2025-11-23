@@ -879,18 +879,18 @@ watch(
       try {
         const symbol = props.analysisResult.symbol || 'EURUSD'
         
-        // TODO: Charger les VRAIES 60 candles (1min) depuis la DB pour cette heure
-        // Pour l'instant, appel avec tableau vide pour tester la structure
-        const emptyCandles: any[] = []
+        // Récupérer la date et l'heure du meilleur slice
+        // TODO: Extraire date depuis props.analysisResult ou bestSlice
+        const today = new Date()
+        const dateStr = today.toISOString().split('T')[0] // Format: YYYY-MM-DD
+        const hour = bestSlice.slice?.hour || 0
+        
+        console.log(`📊 Chargement candles: ${symbol} ${dateStr} heure ${hour}`)
 
-        // Appeler la nouvelle command Tauri avec VRAIES données
-        await analyzeStraddleMetrics(
-          symbol,
-          0, // hour - TODO: récupérer depuis bestSlice
-          emptyCandles // TODO: Charger depuis DB
-        )
+        // Appeler la composable avec date/heure pour charger les VRAIES candles depuis DB
+        await analyzeStraddleMetrics(symbol, dateStr, hour)
 
-        console.log('✅ TÂCHE 5 Métriques calculées:')
+        console.log('✅ TÂCHE 5 Métriques calculées avec VRAIES données:')
         console.log('   - Offset:', offsetOptimal.value?.offset_pips, 'pips')
         console.log('   - Win Rate:', winRate.value?.win_rate_percentage, '%')
         console.log('   - Whipsaw:', whipsawAnalysis.value?.whipsaw_frequency_percentage, '%')

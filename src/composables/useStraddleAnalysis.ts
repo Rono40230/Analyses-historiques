@@ -41,21 +41,45 @@ export function useStraddleAnalysis() {
   const error = ref<string | null>(null)
 
   /**
+   * Charge les VRAIES candles d'une heure depuis la DB
+   */
+  const loadCandlesForHour = async (
+    symbol: string,
+    dateStr: string,
+    hour: number
+  ): Promise<any[]> => {
+    try {
+      const response = await invoke<any>('get_candles_for_hour', {
+        symbol,
+        date_str: dateStr,
+        hour,
+      })
+      console.log(`✅ Chargé ${response.candle_count} candles pour ${symbol} ${dateStr} heure ${hour}`)
+      return response.candles || []
+    } catch (err) {
+      console.warn('⚠️ Impossible de charger les candles:', err)
+      return []
+    }
+  }
+
+  /**
    * Analyse complète des métriques Straddle avec VRAIES données
-   * Appelle la command Tauri qui charge les candles du DB
+   * Appelle la command Tauri qui combine les 3 calculateurs
    */
   const analyzeStraddleMetrics = async (
     symbol: string,
-    hour: number,
-    candles: any[]
+    dateStr: string,
+    hour: number
   ) => {
     try {
       isLoading.value = true
       error.value = null
 
-      // Validation: si pas de candles, retourner des valeurs par défaut
+      // 1. Charger les VRAIES candles depuis la DB
+      const candles = await loadCandlesForHour(symbol, dateStr, hour)
+
       if (candles.length === 0) {
-        console.warn('⚠️ Pas de candles fournis - utilisation de valeurs par défaut')
+        console.warn('⚠️ Pas de candles trouvées - utilisation de valeurs par défaut')
         offsetOptimal.value = {
           offset_pips: 0,
           percentile_95_wicks: 0,
@@ -78,21 +102,19 @@ export function useStraddleAnalysis() {
         return null
       }
 
-      const result = await invoke<StraddleMetricsResponse>(
-        'analyze_straddle_metrics',
-        {
-          symbol,
-          hour,
-          candles,
-        }
-      )
+      // 2. Appeler la command Tauri avec les VRAIES candles
+      const result = await invoke<StraddleMetricsResponse>('analyze_straddle_metrics', {
+        symbol,
+        hour,
+        candles,
+      })
 
-      // Extraire chaque métrique
+      // 3. Extraire chaque métrique
       offsetOptimal.value = result.offset_optimal
       winRate.value = result.win_rate
       whipsawAnalysis.value = result.whipsaw
 
-      console.log('✅ TÂCHE 5 - Analyse Straddle complète:')
+      console.log('✅ TÂCHE 5 - Analyse Straddle COMPLÈTE avec VRAIES données:')
       console.log('   - Offset optimal:', offsetOptimal.value.offset_pips, 'pips')
       console.log('   - Win Rate:', winRate.value.win_rate_percentage.toFixed(1), '%')
       console.log('   - Whipsaw:', whipsawAnalysis.value.whipsaw_frequency_percentage.toFixed(1), '%')
@@ -125,6 +147,7 @@ export function useStraddleAnalysis() {
 
     // Méthodes
     analyzeStraddleMetrics,
+    loadCandlesForHour,
 
     // Computed
     winRateColor,
