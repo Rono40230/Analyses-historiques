@@ -51,7 +51,7 @@ export function useStraddleAnalysis() {
     try {
       const response = await invoke<any>('get_candles_for_hour', {
         symbol,
-        date_str: dateStr,
+        dateStr, // Tauri convertit automatiquement en camelCase
         hour,
       })
       console.log(`✅ Chargé ${response.candle_count} candles pour ${symbol} ${dateStr} heure ${hour}`)
