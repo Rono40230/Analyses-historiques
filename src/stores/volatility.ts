@@ -136,7 +136,7 @@ export const useVolatilityStore = defineStore('volatility', () => {
     selectedSymbol.value = symbol
     try {
       // Récupérer le calendar_id depuis localStorage si pas fourni
-      let cid = calendarId ?? parseInt(localStorage.getItem('activeCalendarId') || '0', 10)
+      const cid = calendarId ?? parseInt(localStorage.getItem('activeCalendarId') || '0', 10)
       
       // Valider que le calendrier est sélectionné
       if (!cid || cid <= 0) {
@@ -155,7 +155,7 @@ export const useVolatilityStore = defineStore('volatility', () => {
 
   async function getHourlyStats(symbol: string, hour: number, calendarId?: number | null) {
     try {
-      let cid = calendarId ?? parseInt(localStorage.getItem('activeCalendarId') || '0', 10)
+      const cid = calendarId ?? parseInt(localStorage.getItem('activeCalendarId') || '0', 10)
       
       // Valider que le calendrier est sélectionné
       if (!cid || cid <= 0) {

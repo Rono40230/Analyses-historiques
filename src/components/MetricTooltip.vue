@@ -1,26 +1,37 @@
 <template>
-  <div class="tooltip-wrapper" :data-direction="direction || 'bottom'">
+  <div
+    class="tooltip-wrapper"
+    :data-direction="direction || 'bottom'"
+  >
     <div 
       class="tooltip-trigger"
       @mouseenter="showTooltip = true"
       @mouseleave="showTooltip = false"
     >
-      <slot></slot>
+      <slot />
     </div>
     <transition name="tooltip-fade">
-      <div v-if="showTooltip" class="tooltip-popup">
+      <div
+        v-if="showTooltip"
+        class="tooltip-popup"
+      >
         <div class="tooltip-content">
           <div class="tooltip-header">
             <span class="tooltip-title">{{ title }}</span>
-            <button class="close-btn" @click="showTooltip = false">✕</button>
+            <button
+              class="close-btn"
+              @click="showTooltip = false"
+            >
+              ✕
+            </button>
           </div>
           <div class="tooltip-body">
-            <slot name="definition"></slot>
-            <slot name="usage"></slot>
-            <slot name="scoring"></slot>
+            <slot name="definition" />
+            <slot name="usage" />
+            <slot name="scoring" />
           </div>
         </div>
-        <div class="tooltip-arrow"></div>
+        <div class="tooltip-arrow" />
       </div>
     </transition>
   </div>

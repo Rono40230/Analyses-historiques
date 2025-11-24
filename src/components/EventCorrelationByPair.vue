@@ -1,12 +1,20 @@
 <template>
-  <div v-if="loading" class="loading">
-    <div class="spinner"></div>
+  <div
+    v-if="loading"
+    class="loading"
+  >
+    <div class="spinner" />
     <p>Analyse de la corrélation par paire...</p>
   </div>
 
   <!-- Message de bienvenue avec sélecteur de paire -->
-  <div v-if="!selectedPair && !loading" class="welcome">
-    <div class="welcome-icon">💱</div>
+  <div
+    v-if="!selectedPair && !loading"
+    class="welcome"
+  >
+    <div class="welcome-icon">
+      💱
+    </div>
     <h3>Analyse Rétrospective par Paire</h3>
     <div class="welcome-select-container">
       <label for="pair-select">Sélectionnez une paire :</label>
@@ -16,8 +24,14 @@
         class="welcome-symbol-select"
         @change="loadPairCorrelation"
       >
-        <option value="">Choisir une paire</option>
-        <option v-for="pair in availablePairs" :key="pair" :value="pair">
+        <option value="">
+          Choisir une paire
+        </option>
+        <option
+          v-for="pair in availablePairs"
+          :key="pair"
+          :value="pair"
+        >
           {{ pair }}
         </option>
       </select>
@@ -25,7 +39,10 @@
   </div>
 
   <!-- Résultats de corrélation par paire -->
-  <div v-if="pairCorrelation && !loading" class="pair-correlation-results">
+  <div
+    v-if="pairCorrelation && !loading"
+    class="pair-correlation-results"
+  >
     <!-- En-tête avec sélecteur INLINE -->
     <div class="pair-info-card">
       <div class="pair-header">
@@ -36,12 +53,24 @@
           class="inline-select"
           @change="loadPairCorrelation"
         >
-          <option value="">Changer de paire</option>
-          <option v-for="pair in availablePairs" :key="pair" :value="pair">
+          <option value="">
+            Changer de paire
+          </option>
+          <option
+            v-for="pair in availablePairs"
+            :key="pair"
+            :value="pair"
+          >
             {{ pair }}
           </option>
         </select>
-        <button v-if="!isArchiveMode" class="btn-archive" @click="openArchiveModal">💾 Archiver</button>
+        <button
+          v-if="!isArchiveMode"
+          class="btn-archive"
+          @click="openArchiveModal"
+        >
+          💾 Archiver
+        </button>
       </div>
     </div>
 
@@ -52,20 +81,35 @@
           <tr>
             <th>Rang</th>
             <th>Événement</th>
-            <th colspan="3" style="text-align: center;">
+            <th
+              colspan="3"
+              style="text-align: center;"
+            >
               <MetricTooltip title="Volatilité observée">
                 <span style="cursor: help; border-bottom: 1px dotted #58a6ff;">Volatilité observée (pips)</span>
                 <template #definition>
-                  <div class="tooltip-section-title">Définition</div>
-                  <div class="tooltip-section-text">Amplitude en pips (mouvements de prix) observée avant et après l'événement économique.</div>
+                  <div class="tooltip-section-title">
+                    Définition
+                  </div>
+                  <div class="tooltip-section-text">
+                    Amplitude en pips (mouvements de prix) observée avant et après l'événement économique.
+                  </div>
                 </template>
                 <template #usage>
-                  <div class="tooltip-section-title">Mesure</div>
-                  <div class="tooltip-section-text"><strong>-30mn:</strong> Volatilité durant les 30 minutes précédant l'événement | <strong>+30mn:</strong> Volatilité durant les 30 minutes suivant l'événement | <strong>1h total:</strong> Volatilité totale sur l'heure complète</div>
+                  <div class="tooltip-section-title">
+                    Mesure
+                  </div>
+                  <div class="tooltip-section-text">
+                    <strong>-30mn:</strong> Volatilité durant les 30 minutes précédant l'événement | <strong>+30mn:</strong> Volatilité durant les 30 minutes suivant l'événement | <strong>1h total:</strong> Volatilité totale sur l'heure complète
+                  </div>
                 </template>
                 <template #scoring>
-                  <div class="tooltip-section-title">Interprétation</div>
-                  <div class="tooltip-section-text">Plus élevé = Plus de mouvement. Permet d'identifier si l'événement a réellement provoqué une augmentation de la volatilité par rapport à la baseline.</div>
+                  <div class="tooltip-section-title">
+                    Interprétation
+                  </div>
+                  <div class="tooltip-section-text">
+                    Plus élevé = Plus de mouvement. Permet d'identifier si l'événement a réellement provoqué une augmentation de la volatilité par rapport à la baseline.
+                  </div>
                 </template>
               </MetricTooltip>
             </th>
@@ -73,42 +117,67 @@
               <MetricTooltip title="Score de Corrélation">
                 <span style="cursor: help; border-bottom: 1px dotted #58a6ff;">Score</span>
                 <template #definition>
-                  <div class="tooltip-section-title">Définition</div>
-                  <div class="tooltip-section-text">Score composite (0-100%) mesurant l'impact de l'événement sur la volatilité de la paire. Combine volatilité moyenne, changement d'impact et récurrence.</div>
+                  <div class="tooltip-section-title">
+                    Définition
+                  </div>
+                  <div class="tooltip-section-text">
+                    Score composite (0-100%) mesurant l'impact de l'événement sur la volatilité de la paire. Combine volatilité moyenne, changement d'impact et récurrence.
+                  </div>
                 </template>
                 <template #usage>
-                  <div class="tooltip-section-title">Composants du Score</div>
-                  <div class="tooltip-section-text"><strong>Volatilité (max 60%):</strong> Amplitude moyenne observée | <strong>Impact (max 25%):</strong> Changement avant/après l'événement | <strong>Récurrence (max 15%):</strong> Nombre d'occurrences historiques</div>
+                  <div class="tooltip-section-title">
+                    Composants du Score
+                  </div>
+                  <div class="tooltip-section-text">
+                    <strong>Volatilité (max 60%):</strong> Amplitude moyenne observée | <strong>Impact (max 25%):</strong> Changement avant/après l'événement | <strong>Récurrence (max 15%):</strong> Nombre d'occurrences historiques
+                  </div>
                 </template>
                 <template #scoring>
-                  <div class="tooltip-section-title">Interprétation</div>
-                  <div class="tooltip-section-text">🟢 <strong>75-100%:</strong> Impact TRÈS ÉLEVÉ - Événement extrêmement corrélé | 🟠 <strong>50-75%:</strong> Impact MOYEN - Corrélation notable | 🔴 <strong>&lt;50%:</strong> Impact FAIBLE - Corrélation mineure</div>
+                  <div class="tooltip-section-title">
+                    Interprétation
+                  </div>
+                  <div class="tooltip-section-text">
+                    🟢 <strong>75-100%:</strong> Impact TRÈS ÉLEVÉ - Événement extrêmement corrélé | 🟠 <strong>50-75%:</strong> Impact MOYEN - Corrélation notable | 🔴 <strong>&lt;50%:</strong> Impact FAIBLE - Corrélation mineure
+                  </div>
                 </template>
               </MetricTooltip>
             </th>
           </tr>
           <tr>
-            <th></th>
-            <th></th>
+            <th />
+            <th />
             <th>-30mn</th>
             <th>+30mn</th>
             <th>1h total</th>
-            <th></th>
+            <th />
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(event, index) in topEvents" :key="event.name" :class="{ 'top-event': index < 3 }">
+          <tr
+            v-for="(event, index) in topEvents"
+            :key="event.name"
+            :class="{ 'top-event': index < 3 }"
+          >
             <td>
               #{{ index + 1 }}
             </td>
             <td class="event-name">
               {{ event.name }}
             </td>
-            <td class="volatility">{{ event.volatility_before_fmt }}</td>
-            <td class="volatility">{{ event.volatility_after_fmt }}</td>
-            <td class="volatility-total">{{ event.volatility_total_fmt }}</td>
+            <td class="volatility">
+              {{ event.volatility_before_fmt }}
+            </td>
+            <td class="volatility">
+              {{ event.volatility_after_fmt }}
+            </td>
+            <td class="volatility-total">
+              {{ event.volatility_total_fmt }}
+            </td>
             <td class="correlation-score">
-              <span class="score-value" :class="getScoreClass(event.correlation_score)">
+              <span
+                class="score-value"
+                :class="getScoreClass(event.correlation_score)"
+              >
                 {{ event.correlation_score.toFixed(1) }}%
               </span>
             </td>
@@ -121,10 +190,16 @@
     <div class="observations-card">
       <h3>💡 Observations</h3>
       <ul>
-        <li v-if="observations.length > 0" v-for="(obs, index) in observations" :key="index">
+        <li
+          v-for="(obs, index) in observations"
+          v-if="observations.length > 0"
+          :key="index"
+        >
           {{ obs }}
         </li>
-        <li v-else>Données insuffisantes pour générer des observations.</li>
+        <li v-else>
+          Données insuffisantes pour générer des observations.
+        </li>
       </ul>
     </div>
   </div>
@@ -144,7 +219,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { useAnalysisStore } from '../stores/analysisStore'
 import MetricTooltip from './MetricTooltip.vue'

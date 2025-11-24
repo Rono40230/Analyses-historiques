@@ -4,9 +4,14 @@
       <div class="header-content">
         <div>
           <h1>🗄️ Archives</h1>
-          <p class="subtitle">Consultez vos analyses sauvegardées</p>
+          <p class="subtitle">
+            Consultez vos analyses sauvegardées
+          </p>
         </div>
-        <button class="ai-btn" @click="isGlobalAnalysisOpen = true">
+        <button
+          class="ai-btn"
+          @click="isGlobalAnalysisOpen = true"
+        >
           ✨ IAnalyse
         </button>
       </div>
@@ -17,34 +22,57 @@
       @close="isGlobalAnalysisOpen = false"
     />
 
-    <div v-if="archiveStore.loading" class="loading">
-      <div class="spinner"></div>
+    <div
+      v-if="archiveStore.loading"
+      class="loading"
+    >
+      <div class="spinner" />
       <p>Chargement des archives...</p>
     </div>
 
-    <div v-else-if="archiveStore.archives.length === 0" class="empty-state">
-      <div class="empty-icon">📭</div>
+    <div
+      v-else-if="archiveStore.archives.length === 0"
+      class="empty-state"
+    >
+      <div class="empty-icon">
+        📭
+      </div>
       <h3>Aucune archive</h3>
       <p>Vous n'avez pas encore archivé d'analyse.</p>
-      <p class="hint">Utilisez le bouton "💾 Archiver" dans vos analyses pour les sauvegarder ici.</p>
+      <p class="hint">
+        Utilisez le bouton "💾 Archiver" dans vos analyses pour les sauvegarder ici.
+      </p>
     </div>
 
-    <div v-else class="archives-grid">
+    <div
+      v-else
+      class="archives-grid"
+    >
       <div 
         v-for="archive in archiveStore.archives" 
         :key="archive.id" 
         class="archive-card"
       >
         <div class="archive-header">
-          <div class="archive-type-badge" :class="getTypeClass(archive.archive_type)">
+          <div
+            class="archive-type-badge"
+            :class="getTypeClass(archive.archive_type)"
+          >
             {{ archive.archive_type }}
           </div>
-          <button class="delete-btn" @click="confirmDelete(archive)" title="Supprimer">
+          <button
+            class="delete-btn"
+            title="Supprimer"
+            @click="confirmDelete(archive)"
+          >
             🗑️
           </button>
         </div>
 
-        <h3 class="archive-title" v-html="formatTitleHTML(archive.title)"></h3>
+        <h3
+          class="archive-title"
+          v-html="formatTitleHTML(archive.title)"
+        />
         
         <div class="archive-meta">
           <div class="meta-item">
@@ -55,17 +83,26 @@
             <span class="meta-label">🕒 Créé le:</span>
             <span class="meta-value">{{ formatDate(archive.created_at) }}</span>
           </div>
-          <div v-if="archive.comment" class="meta-item comment">
+          <div
+            v-if="archive.comment"
+            class="meta-item comment"
+          >
             <span class="meta-label">💬 Commentaire:</span>
             <span class="meta-value">{{ archive.comment }}</span>
           </div>
         </div>
 
         <div class="archive-actions">
-          <button class="btn-view" @click="viewArchive(archive)">
+          <button
+            class="btn-view"
+            @click="viewArchive(archive)"
+          >
             👁️ Voir
           </button>
-          <button class="btn-pdf" @click="exportPDF(archive)">
+          <button
+            class="btn-pdf"
+            @click="exportPDF(archive)"
+          >
             📄 PDF
           </button>
         </div>
@@ -76,34 +113,49 @@
     <!-- Modale de visualisation -->
     <MetricsAnalysisModal 
       v-if="showViewer && (selectedArchive?.archive_type === 'Volatilité brute' || selectedArchive?.archive_type === 'METRICS')"
-      :analysisResult="viewerData.analysisResult"
-      :isOpen="showViewer"
-      @close="closeViewer"
-      :isArchiveMode="true" 
+      :analysis-result="viewerData.analysisResult"
+      :is-open="showViewer"
+      :is-archive-mode="true"
+      @close="closeViewer" 
     />
 
-    <div v-else-if="showViewer" class="viewer-overlay" @click.self="closeViewer">
-      <div class="viewer-content" :class="{ 'viewer-large': selectedArchive?.archive_type === 'Heatmap' || selectedArchive?.archive_type === 'HEATMAP' }">
+    <div
+      v-else-if="showViewer"
+      class="viewer-overlay"
+      @click.self="closeViewer"
+    >
+      <div
+        class="viewer-content"
+        :class="{ 'viewer-large': selectedArchive?.archive_type === 'Heatmap' || selectedArchive?.archive_type === 'HEATMAP' }"
+      >
         <div class="viewer-header">
-           <h2>{{ selectedArchive?.title }}</h2>
-           <button class="close-btn" @click="closeViewer">✕</button>
+          <h2>{{ selectedArchive?.title }}</h2>
+          <button
+            class="close-btn"
+            @click="closeViewer"
+          >
+            ✕
+          </button>
         </div>
         <div class="viewer-body scrollable">
-           <EventCorrelationByPair
-             v-if="selectedArchive?.archive_type === 'Corrélation paire/événement' || selectedArchive?.archive_type === 'PAIR_IMPACT'"
-             :archiveData="viewerData.pairCorrelation"
-             :isArchiveMode="true"
-           />
+          <EventCorrelationByPair
+            v-if="selectedArchive?.archive_type === 'Corrélation paire/événement' || selectedArchive?.archive_type === 'PAIR_IMPACT'"
+            :archive-data="viewerData.pairCorrelation"
+            :is-archive-mode="true"
+          />
            
-           <EventCorrelationHeatmap
-             v-else-if="selectedArchive?.archive_type === 'Heatmap' || selectedArchive?.archive_type === 'HEATMAP'"
-             :archiveData="viewerData.heatmapData"
-             :isArchiveMode="true"
-           />
+          <EventCorrelationHeatmap
+            v-else-if="selectedArchive?.archive_type === 'Heatmap' || selectedArchive?.archive_type === 'HEATMAP'"
+            :archive-data="viewerData.heatmapData"
+            :is-archive-mode="true"
+          />
            
-           <div v-else class="unsupported-type">
-             Type d'archive non supporté pour la visualisation: {{ selectedArchive?.archive_type }}
-           </div>
+          <div
+            v-else
+            class="unsupported-type"
+          >
+            Type d'archive non supporté pour la visualisation: {{ selectedArchive?.archive_type }}
+          </div>
         </div>
       </div>
     </div>

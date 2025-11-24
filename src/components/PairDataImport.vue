@@ -1,7 +1,10 @@
 <template>
   <div class="pair-import">
     <!-- Bandeau d'informations -->
-    <div v-if="summary && summary.total_files > 0" class="import-info">
+    <div
+      v-if="summary && summary.total_files > 0"
+      class="import-info"
+    >
       <div class="info-item">
         <span class="info-label">💱 Paires en base :</span>
         <span class="info-value">{{ summary.total_pairs }}</span>
@@ -14,22 +17,34 @@
         <span class="info-label">📈 Lignes de données :</span>
         <span class="info-value">{{ summary.total_lines.toLocaleString() }}</span>
       </div>
-      <div class="info-item" v-if="summary.date_range_start && summary.date_range_end">
+      <div
+        v-if="summary.date_range_start && summary.date_range_end"
+        class="info-item"
+      >
         <span class="info-label">📆 Période couverte :</span>
         <span class="info-value">{{ summary.date_range_start }} → {{ summary.date_range_end }}</span>
       </div>
-      <div class="info-item" v-if="summary.last_import_date">
+      <div
+        v-if="summary.last_import_date"
+        class="info-item"
+      >
         <span class="info-label">🕒 Dernier import :</span>
         <span class="info-value">{{ summary.last_import_date }}</span>
       </div>
     </div>
     
-    <div v-else-if="!loadingInfo" class="import-info warning">
+    <div
+      v-else-if="!loadingInfo"
+      class="import-info warning"
+    >
       <span>⚠️ Aucune donnée de paire importée. Importez vos fichiers CSV pour commencer.</span>
     </div>
 
     <!-- Liste des fichiers CSV disponibles -->
-    <PairFilesList ref="filesListRef" @files-refreshed="loadSummary" />
+    <PairFilesList
+      ref="filesListRef"
+      @files-refreshed="loadSummary"
+    />
   </div>
 </template>
 

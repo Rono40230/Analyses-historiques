@@ -1,20 +1,49 @@
 <template>
   <div class="main-container">
     <div class="view-mode-selector">
-      <button class="mode-button" :class="{ active: viewMode === 'by-event' }" @click="viewMode = 'by-event'">📅 Par Événement</button>
-      <button class="mode-button" :class="{ active: viewMode === 'by-pair' }" @click="viewMode = 'by-pair'">💱 Par Paire</button>
-      <button class="mode-button" :class="{ active: viewMode === 'heatmap' }" @click="viewMode = 'heatmap'">🔥 Heatmap</button>
+      <button
+        class="mode-button"
+        :class="{ active: viewMode === 'by-event' }"
+        @click="viewMode = 'by-event'"
+      >
+        📅 Par Événement
+      </button>
+      <button
+        class="mode-button"
+        :class="{ active: viewMode === 'by-pair' }"
+        @click="viewMode = 'by-pair'"
+      >
+        💱 Par Paire
+      </button>
+      <button
+        class="mode-button"
+        :class="{ active: viewMode === 'heatmap' }"
+        @click="viewMode = 'heatmap'"
+      >
+        🔥 Heatmap
+      </button>
       
       <!-- Calendar file selector -->
       <CalendarFileSelector 
-        @file-selected="handleCalendarSelected"
         class="file-selector-right"
+        @file-selected="handleCalendarSelected"
       />
     </div>
     <div class="content-area">
-      <EventCorrelationByEvent v-if="viewMode === 'by-event'" :pastEvents="pastEvents" :calendarId="selectedCalendarId" />
-      <EventCorrelationByPair v-if="viewMode === 'by-pair'" :availablePairs="availablePairs" />
-      <EventCorrelationHeatmap v-if="viewMode === 'heatmap'" :calendarId="selectedCalendarId" :availablePairs="availablePairs" />
+      <EventCorrelationByEvent
+        v-if="viewMode === 'by-event'"
+        :past-events="pastEvents"
+        :calendar-id="selectedCalendarId"
+      />
+      <EventCorrelationByPair
+        v-if="viewMode === 'by-pair'"
+        :available-pairs="availablePairs"
+      />
+      <EventCorrelationHeatmap
+        v-if="viewMode === 'heatmap'"
+        :calendar-id="selectedCalendarId"
+        :available-pairs="availablePairs"
+      />
     </div>
   </div>
 </template>

@@ -4,11 +4,13 @@
     <select 
       id="symbol-select"
       v-model="selectedSymbol" 
-      @change="onSymbolChange"
       :disabled="loading"
       class="symbol-select"
+      @change="onSymbolChange"
     >
-      <option value="">-- Choisir un symbole --</option>
+      <option value="">
+        -- Choisir un symbole --
+      </option>
       <option 
         v-for="symbol in symbols" 
         :key="symbol.symbol" 

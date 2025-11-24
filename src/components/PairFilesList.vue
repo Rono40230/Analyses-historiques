@@ -5,29 +5,51 @@
     </div>
 
     <!-- Import en cours : sablier tournant -->
-    <div v-if="importing" class="importing-overlay">
-      <div class="hourglass">⏳</div>
-      <p class="importing-text">Import en cours...</p>
+    <div
+      v-if="importing"
+      class="importing-overlay"
+    >
+      <div class="hourglass">
+        ⏳
+      </div>
+      <p class="importing-text">
+        Import en cours...
+      </p>
     </div>
 
     <!-- Message d'erreur uniquement -->
-    <div v-if="importError" class="error-message">
+    <div
+      v-if="importError"
+      class="error-message"
+    >
       ❌ {{ importError }}
     </div>
 
-    <div v-if="loading" class="loading-indicator">
+    <div
+      v-if="loading"
+      class="loading-indicator"
+    >
       <span>⏳ Chargement...</span>
     </div>
 
-    <div v-else-if="error" class="error-message">
+    <div
+      v-else-if="error"
+      class="error-message"
+    >
       ❌ {{ error }}
     </div>
 
-    <div v-else-if="pairs.length === 0" class="no-files-message">
+    <div
+      v-else-if="pairs.length === 0"
+      class="no-files-message"
+    >
       📂 Aucune donnée de paire importée. Importez vos fichiers CSV pour commencer.
     </div>
 
-    <div v-else class="files-table-container">
+    <div
+      v-else
+      class="files-table-container"
+    >
       <table class="files-table">
         <thead>
           <tr>
@@ -40,18 +62,28 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="pair in pairs" :key="`${pair.symbol}-${pair.timeframe}`">
+          <tr
+            v-for="pair in pairs"
+            :key="`${pair.symbol}-${pair.timeframe}`"
+          >
             <td>
               <span class="badge badge-pair">{{ pair.symbol }}</span>
             </td>
             <td>
               <span class="badge badge-timeframe">{{ pair.timeframe }}</span>
             </td>
-            <td class="text-right">{{ pair.row_count.toLocaleString() }}</td>
+            <td class="text-right">
+              {{ pair.row_count.toLocaleString() }}
+            </td>
             <td>{{ formatDate(pair.last_updated) }}</td>
-            <td class="filename-small">{{ pair.last_imported_file }}</td>
+            <td class="filename-small">
+              {{ pair.last_imported_file }}
+            </td>
             <td class="text-center">
-              <span class="quality-score" :class="`quality-${qualityLevel(pair.quality_score)}`">
+              <span
+                class="quality-score"
+                :class="`quality-${qualityLevel(pair.quality_score)}`"
+              >
                 ★ {{ (pair.quality_score * 100).toFixed(0) }}%
               </span>
             </td>

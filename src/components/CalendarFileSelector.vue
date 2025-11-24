@@ -4,11 +4,16 @@
     <select 
       id="calendar-select" 
       v-model="selectedFile" 
-      @change="handleFileChange"
       class="calendar-dropdown"
       :disabled="loading || files.length === 0"
+      @change="handleFileChange"
     >
-      <option v-if="files.length === 0" value="">Aucun fichier disponible</option>
+      <option
+        v-if="files.length === 0"
+        value=""
+      >
+        Aucun fichier disponible
+      </option>
       <option 
         v-for="file in files" 
         :key="file.path" 
@@ -21,7 +26,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 
 interface CalendarFileInfo {

@@ -3,34 +3,71 @@
     <div class="sections-container">
       <section class="import-section">
         <h3>📅 Calendriers Économique</h3>
-        <div v-if="calendarsMetadata.length > 0" class="info-box">
+        <div
+          v-if="calendarsMetadata.length > 0"
+          class="info-box"
+        >
           <div>Calendriers: {{ calendarsMetadata.length }}</div>
           <div>Événements: {{ calendarsMetadata.reduce((s, c) => s + c.event_count, 0).toLocaleString() }}</div>
         </div>
-        <div v-else class="info-box warning">Aucun calendrier importé.</div>
-        <div v-if="calendarsMetadata.length > 0" class="table-container">
+        <div
+          v-else
+          class="info-box warning"
+        >
+          Aucun calendrier importé.
+        </div>
+        <div
+          v-if="calendarsMetadata.length > 0"
+          class="table-container"
+        >
           <table class="data-table">
             <thead>
               <tr><th>Nom</th><th>Événements</th><th>Période</th><th>Actions</th></tr>
             </thead>
             <tbody>
-              <tr v-for="cal in calendarsMetadata" :key="cal.id" :class="{ 'active-row': isActiveCalendar(cal.id) }">
+              <tr
+                v-for="cal in calendarsMetadata"
+                :key="cal.id"
+                :class="{ 'active-row': isActiveCalendar(cal.id) }"
+              >
                 <td>
-                  <span v-if="isActiveCalendar(cal.id)" class="active-badge">✅ Actif</span>
+                  <span
+                    v-if="isActiveCalendar(cal.id)"
+                    class="active-badge"
+                  >✅ Actif</span>
                   <strong>{{ cal.name }}</strong>
                 </td>
                 <td>{{ cal.event_count.toLocaleString() }}</td>
                 <td>{{ formatCalendarPeriod(cal) }}</td>
                 <td class="actions-cell">
-                  <button v-if="!isActiveCalendar(cal.id)" @click="setActiveCalendar(cal.id)" class="btn-activate" title="Utiliser ce calendrier pour l'analyse">Activer</button>
-                  <button @click="deleteCalendar(cal.id)" class="btn-delete">🗑️ Supprimer</button>
+                  <button
+                    v-if="!isActiveCalendar(cal.id)"
+                    class="btn-activate"
+                    title="Utiliser ce calendrier pour l'analyse"
+                    @click="setActiveCalendar(cal.id)"
+                  >
+                    Activer
+                  </button>
+                  <button
+                    class="btn-delete"
+                    @click="deleteCalendar(cal.id)"
+                  >
+                    🗑️ Supprimer
+                  </button>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
-        <button @click="importCalendars" class="btn-import" :disabled="loadingCalendars">
-          <span v-if="loadingCalendars" class="spinner">⏳</span>
+        <button
+          class="btn-import"
+          :disabled="loadingCalendars"
+          @click="importCalendars"
+        >
+          <span
+            v-if="loadingCalendars"
+            class="spinner"
+          >⏳</span>
           <span v-else>📥</span>
           Importer calendrier
         </button>
@@ -38,41 +75,83 @@
 
       <section class="import-section">
         <h3>💱 Paires de Trading</h3>
-        <div v-if="pairsMetadata.length > 0" class="info-box">
+        <div
+          v-if="pairsMetadata.length > 0"
+          class="info-box"
+        >
           <div>Paires: {{ pairsMetadata.length }}</div>
           <div>Bougies: {{ pairsMetadata.reduce((s, p) => s + p.candle_count, 0).toLocaleString() }}</div>
         </div>
-        <div v-else class="info-box warning">Aucune paire importée.</div>
-        <div v-if="pairsMetadata.length > 0" class="table-container">
+        <div
+          v-else
+          class="info-box warning"
+        >
+          Aucune paire importée.
+        </div>
+        <div
+          v-if="pairsMetadata.length > 0"
+          class="table-container"
+        >
           <table class="data-table">
             <thead>
               <tr><th>Paire</th><th>Bougies</th><th>Période</th><th>Actions</th></tr>
             </thead>
             <tbody>
-              <tr v-for="pair in pairsMetadata" :key="pair.symbol">
+              <tr
+                v-for="pair in pairsMetadata"
+                :key="pair.symbol"
+              >
                 <td><strong>{{ pair.symbol }}</strong></td>
                 <td>{{ pair.candle_count.toLocaleString() }}</td>
                 <td>{{ formatPeriod(pair) }}</td>
-                <td><button @click="deletePair(pair.symbol)" class="btn-delete">🗑️ Supprimer</button></td>
+                <td>
+                  <button
+                    class="btn-delete"
+                    @click="deletePair(pair.symbol)"
+                  >
+                    🗑️ Supprimer
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
-        <button @click="importPairs" class="btn-import" :disabled="loadingPairs">
-          <span v-if="loadingPairs" class="spinner">⏳</span>
+        <button
+          class="btn-import"
+          :disabled="loadingPairs"
+          @click="importPairs"
+        >
+          <span
+            v-if="loadingPairs"
+            class="spinner"
+          >⏳</span>
           <span v-else>📥</span>
           Importer paires
         </button>
       </section>
     </div>
 
-    <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="showDeleteConfirm = false">
+    <div
+      v-if="showDeleteConfirm"
+      class="modal-overlay"
+      @click.self="showDeleteConfirm = false"
+    >
       <div class="modal">
         <h3>Confirmation</h3>
         <p>{{ deleteMessage }}</p>
         <div class="modal-buttons">
-          <button @click="confirmDelete" class="btn-confirm">✅ Confirmer</button>
-          <button @click="showDeleteConfirm = false" class="btn-cancel">❌ Annuler</button>
+          <button
+            class="btn-confirm"
+            @click="confirmDelete"
+          >
+            ✅ Confirmer
+          </button>
+          <button
+            class="btn-cancel"
+            @click="showDeleteConfirm = false"
+          >
+            ❌ Annuler
+          </button>
         </div>
       </div>
     </div>

@@ -1,19 +1,41 @@
 <template>
-  <div v-if="isOpen" class="modal-overlay" @click.self="close">
+  <div
+    v-if="isOpen"
+    class="modal-overlay"
+    @click.self="close"
+  >
     <div class="modal-content">
       <div class="modal-header">
         <h2>✨ IAnalyse Statistique</h2>
-        <button class="close-button" @click="$emit('close')">×</button>
+        <button
+          class="close-button"
+          @click="$emit('close')"
+        >
+          ×
+        </button>
       </div>
 
       <!-- Barre de Filtres -->
-      <div class="filters-bar glass" :class="{ disabled: loading }">
+      <div
+        class="filters-bar glass"
+        :class="{ disabled: loading }"
+      >
         <div class="filter-group">
           <label>Période :</label>
           <div class="date-inputs">
-            <input type="date" v-model="startDate" placeholder="Début" class="date-input">
+            <input
+              v-model="startDate"
+              type="date"
+              placeholder="Début"
+              class="date-input"
+            >
             <span class="separator">à</span>
-            <input type="date" v-model="endDate" placeholder="Fin" class="date-input">
+            <input
+              v-model="endDate"
+              type="date"
+              placeholder="Fin"
+              class="date-input"
+            >
           </div>
         </div>
         
@@ -33,7 +55,10 @@
         </div>
         
         <div class="filter-actions">
-          <button class="apply-button" @click="runAnalysis(false)">
+          <button
+            class="apply-button"
+            @click="runAnalysis(false)"
+          >
             Appliquer les filtres
           </button>
         </div>
@@ -41,40 +66,65 @@
 
       <div class="modal-body">
         <!-- ÉTAT 1 : CHARGEMENT (Animation Wow) -->
-        <div v-if="loading" class="loading-container">
+        <div
+          v-if="loading"
+          class="loading-container"
+        >
           <div class="ai-brain">
-            <div class="brain-pulse"></div>
-            <div class="brain-core">🧠</div>
+            <div class="brain-pulse" />
+            <div class="brain-core">
+              🧠
+            </div>
           </div>
-          <h3 class="loading-title">{{ loadingStep }}</h3>
+          <h3 class="loading-title">
+            {{ loadingStep }}
+          </h3>
           <div class="progress-bar">
-            <div class="progress-fill" :style="{ width: progress + '%' }"></div>
+            <div
+              class="progress-fill"
+              :style="{ width: progress + '%' }"
+            />
           </div>
           <div class="loading-log">
-            <p v-for="(log, index) in logs" :key="index" class="log-item">{{ log }}</p>
+            <p
+              v-for="(log, index) in logs"
+              :key="index"
+              class="log-item"
+            >
+              {{ log }}
+            </p>
           </div>
         </div>
 
         <!-- ÉTAT 2 : RÉSULTATS (Dashboard) -->
-        <div v-else-if="result" class="results-container">
+        <div
+          v-else-if="result"
+          class="results-container"
+        >
           <!-- En-tête Stats Globales -->
           <div class="global-stats-grid">
             <MetricTooltip title="Analyses Scannées">
               <div class="stat-card glass">
-                <div class="stat-icon">📊</div>
+                <div class="stat-icon">
+                  📊
+                </div>
                 <div class="stat-info">
                   <span class="stat-label">Analyses Scannées</span>
                   <span class="stat-value">{{ result.total_analyses }}</span>
                 </div>
               </div>
               <template #definition>
-                <div class="tooltip-section-title">📖 Définition</div>
+                <div class="tooltip-section-title">
+                  📖 Définition
+                </div>
                 <div class="tooltip-section-text">
                   Nombre total d'archives de type "Volatilité brute" trouvées et analysées dans votre base de données.
                 </div>
               </template>
               <template #usage>
-                <div class="tooltip-section-title">💡 Interprétation</div>
+                <div class="tooltip-section-title">
+                  💡 Interprétation
+                </div>
                 <div class="tooltip-section-text">
                   Plus ce nombre est élevé, plus les statistiques de l'IA sont fiables. Avec moins de 5 analyses, les résultats peuvent être biaisés.
                 </div>
@@ -83,20 +133,26 @@
 
             <MetricTooltip title="Confiance Moyenne">
               <div class="stat-card glass">
-                <div class="stat-icon">🎯</div>
+                <div class="stat-icon">
+                  🎯
+                </div>
                 <div class="stat-info">
                   <span class="stat-label">Confiance Moyenne</span>
                   <span class="stat-value highlight">{{ result.global_stats.average_confidence.toFixed(1) }}/100</span>
                 </div>
               </div>
               <template #definition>
-                <div class="tooltip-section-title">📖 Définition</div>
+                <div class="tooltip-section-title">
+                  📖 Définition
+                </div>
                 <div class="tooltip-section-text">
                   Moyenne des scores de confiance de toutes vos analyses archivées. Ce score combine volatilité, qualité des ticks et fiabilité des signaux.
                 </div>
               </template>
               <template #scoring>
-                <div class="tooltip-section-title">📊 Échelle de Confiance</div>
+                <div class="tooltip-section-title">
+                  📊 Échelle de Confiance
+                </div>
                 <div class="tooltip-section-text">
                   • <strong>80-100</strong> : Scalp Agressif ✅<br>
                   • <strong>65-79</strong> : Scalp Normal 🟢<br>
@@ -109,20 +165,26 @@
 
             <MetricTooltip title="Volatilité Moyenne">
               <div class="stat-card glass">
-                <div class="stat-icon">📈</div>
+                <div class="stat-icon">
+                  📈
+                </div>
                 <div class="stat-info">
                   <span class="stat-label">Volatilité Moyenne</span>
                   <span class="stat-value">{{ (result.global_stats.average_volatility * 100).toFixed(2) }}%</span>
                 </div>
               </div>
               <template #definition>
-                <div class="tooltip-section-title">📖 Définition</div>
+                <div class="tooltip-section-title">
+                  📖 Définition
+                </div>
                 <div class="tooltip-section-text">
                   Mesure l'amplitude moyenne des mouvements de prix sur toutes vos paires analysées. Calculée via l'ATR (Average True Range) normalisé.
                 </div>
               </template>
               <template #usage>
-                <div class="tooltip-section-title">💡 Interprétation</div>
+                <div class="tooltip-section-title">
+                  💡 Interprétation
+                </div>
                 <div class="tooltip-section-text">
                   • <strong>\u003c 10%</strong> : Marché calme, peu d'opportunités<br>
                   • <strong>10-25%</strong> : Volatilité idéale pour le scalping<br>
@@ -137,8 +199,15 @@
             <div class="dashboard-column">
               <h3>🏆 Top Paires Performantes</h3>
               <div class="pairs-list">
-                <div v-for="(pair, index) in result.best_pairs.slice(0, 5)" :key="pair.symbol" class="pair-item glass" :class="'rank-' + (index + 1)">
-                  <div class="pair-rank">#{{ index + 1 }}</div>
+                <div
+                  v-for="(pair, index) in result.best_pairs.slice(0, 5)"
+                  :key="pair.symbol"
+                  class="pair-item glass"
+                  :class="'rank-' + (index + 1)"
+                >
+                  <div class="pair-rank">
+                    #{{ index + 1 }}
+                  </div>
                   <div class="pair-info">
                     <span class="pair-symbol">{{ pair.symbol }}</span>
                     <span class="pair-details">{{ pair.analysis_count }} analyses</span>
@@ -155,12 +224,24 @@
             <div class="dashboard-column">
               <h3>⏰ Golden Hours (Heures en Or)</h3>
               <div class="hours-chart">
-                <div v-for="hour in sortedGoldenHours" :key="hour.hour" class="hour-bar-container">
-                  <div class="hour-label">{{ hour.hour }}h</div>
-                  <div class="hour-bar-wrapper">
-                    <div class="hour-bar" :style="{ width: hour.reliability + '%' }" :class="getHourClass(hour.reliability)"></div>
+                <div
+                  v-for="hour in sortedGoldenHours"
+                  :key="hour.hour"
+                  class="hour-bar-container"
+                >
+                  <div class="hour-label">
+                    {{ hour.hour }}h
                   </div>
-                  <div class="hour-value">{{ hour.reliability.toFixed(0) }}%</div>
+                  <div class="hour-bar-wrapper">
+                    <div
+                      class="hour-bar"
+                      :style="{ width: hour.reliability + '%' }"
+                      :class="getHourClass(hour.reliability)"
+                    />
+                  </div>
+                  <div class="hour-value">
+                    {{ hour.reliability.toFixed(0) }}%
+                  </div>
                 </div>
               </div>
               <div class="insight-box glass">
@@ -175,18 +256,33 @@
           </div>
 
           <!-- Section Événements Tradables (pleine largeur) -->
-          <div v-if="result.tradable_events && result.tradable_events.length > 0" class="events-section">
+          <div
+            v-if="result.tradable_events && result.tradable_events.length > 0"
+            class="events-section"
+          >
             <h3>🎯 Types d'Événements les Plus Tradables (Stratégie Straddle)</h3>
             <div class="events-grid">
-              <div v-for="(event, index) in result.tradable_events.slice(0, 5)" :key="event.event_name" class="event-card glass" :class="'event-rank-' + (index + 1)">
+              <div
+                v-for="(event, index) in result.tradable_events.slice(0, 5)"
+                :key="event.event_name"
+                class="event-card glass"
+                :class="'event-rank-' + (index + 1)"
+              >
                 <div class="event-header">
-                  <div class="event-rank">#{{ index + 1 }}</div>
-                  <div class="event-name">{{ event.event_name }}</div>
+                  <div class="event-rank">
+                    #{{ index + 1 }}
+                  </div>
+                  <div class="event-name">
+                    {{ event.event_name }}
+                  </div>
                 </div>
                 <div class="event-metrics">
                   <div class="event-metric">
                     <span class="metric-label">Score Tradabilité</span>
-                    <span class="metric-value score" :class="getScoreClass(event.tradability_score)">
+                    <span
+                      class="metric-value score"
+                      :class="getScoreClass(event.tradability_score)"
+                    >
                       {{ event.tradability_score.toFixed(0) }}/100
                     </span>
                   </div>
@@ -214,22 +310,44 @@
               </p>
             </div>
           </div>
-          <div v-else class="events-placeholder glass">
-            <div class="placeholder-icon">🎯</div>
+          <div
+            v-else
+            class="events-placeholder glass"
+          >
+            <div class="placeholder-icon">
+              🎯
+            </div>
             <h4>Types d'Événements Tradables</h4>
             <p>Cette analyse nécessite des archives de type "Corrélation événement/paire".</p>
-            <p class="hint">Créez des analyses de corrélation pour débloquer cette fonctionnalité.</p>
+            <p class="hint">
+              Créez des analyses de corrélation pour débloquer cette fonctionnalité.
+            </p>
           </div>
 
           <!-- Section Taux de Réussite Straddle (pleine largeur) -->
-          <div v-if="result.pair_straddle_rates && result.pair_straddle_rates.length > 0" class="straddle-section">
+          <div
+            v-if="result.pair_straddle_rates && result.pair_straddle_rates.length > 0"
+            class="straddle-section"
+          >
             <h3>📊 Taux de Réussite du Straddle par Paire</h3>
             <div class="straddle-grid">
-              <div v-for="(rate, index) in result.pair_straddle_rates.slice(0, 6)" :key="rate.pair" class="straddle-card glass" :class="'straddle-rank-' + (index + 1)">
+              <div
+                v-for="(rate, index) in result.pair_straddle_rates.slice(0, 6)"
+                :key="rate.pair"
+                class="straddle-card glass"
+                :class="'straddle-rank-' + (index + 1)"
+              >
                 <div class="straddle-header">
-                  <div class="straddle-rank">#{{ index + 1 }}</div>
-                  <div class="straddle-pair">{{ rate.pair }}</div>
-                  <div class="straddle-main-score" :class="getScoreClass(rate.straddle_score)">
+                  <div class="straddle-rank">
+                    #{{ index + 1 }}
+                  </div>
+                  <div class="straddle-pair">
+                    {{ rate.pair }}
+                  </div>
+                  <div
+                    class="straddle-main-score"
+                    :class="getScoreClass(rate.straddle_score)"
+                  >
                     {{ rate.straddle_score.toFixed(0) }}
                   </div>
                 </div>
@@ -237,14 +355,20 @@
                   <div class="straddle-metric">
                     <span class="metric-label">Directional Move</span>
                     <div class="metric-bar-container">
-                      <div class="metric-bar directional" :style="{ width: rate.directional_move_rate + '%' }"></div>
+                      <div
+                        class="metric-bar directional"
+                        :style="{ width: rate.directional_move_rate + '%' }"
+                      />
                       <span class="metric-bar-value">{{ rate.directional_move_rate.toFixed(0) }}%</span>
                     </div>
                   </div>
                   <div class="straddle-metric">
                     <span class="metric-label">Whipsaw Rate</span>
                     <div class="metric-bar-container">
-                      <div class="metric-bar whipsaw" :style="{ width: rate.whipsaw_rate + '%' }"></div>
+                      <div
+                        class="metric-bar whipsaw"
+                        :style="{ width: rate.whipsaw_rate + '%' }"
+                      />
                       <span class="metric-bar-value">{{ rate.whipsaw_rate.toFixed(0) }}%</span>
                     </div>
                   </div>
@@ -260,7 +384,12 @@
                 <div class="straddle-events">
                   <span class="events-label">Top événements:</span>
                   <ul class="events-list">
-                    <li v-for="event in rate.top_events" :key="event">{{ event }}</li>
+                    <li
+                      v-for="event in rate.top_events"
+                      :key="event"
+                    >
+                      {{ event }}
+                    </li>
                   </ul>
                 </div>
               </div>
@@ -275,33 +404,60 @@
               </p>
             </div>
           </div>
-          <div v-else class="straddle-placeholder glass">
-            <div class="placeholder-icon">📊</div>
+          <div
+            v-else
+            class="straddle-placeholder glass"
+          >
+            <div class="placeholder-icon">
+              📊
+            </div>
             <h4>Taux de Réussite du Straddle par Paire</h4>
             <p>Cette analyse nécessite des archives de type "Corrélation paire/événement".</p>
-            <p class="hint">Créez des analyses de corrélation pour débloquer cette fonctionnalité.</p>
+            <p class="hint">
+              Créez des analyses de corrélation pour débloquer cette fonctionnalité.
+            </p>
           </div>
 
           <!-- Section Fenêtres Temporelles Optimales (pleine largeur) -->
-          <div v-if="result.optimal_time_windows && result.optimal_time_windows.length > 0" class="timing-section">
+          <div
+            v-if="result.optimal_time_windows && result.optimal_time_windows.length > 0"
+            class="timing-section"
+          >
             <h3>⏱️ Fenêtres Temporelles Optimales Post-Événement</h3>
             <div class="timing-grid">
-              <div v-for="(window, index) in result.optimal_time_windows.slice(0, 6)" :key="window.event_type" class="timing-card glass" :class="'timing-rank-' + (index + 1)">
+              <div
+                v-for="(window, index) in result.optimal_time_windows.slice(0, 6)"
+                :key="window.event_type"
+                class="timing-card glass"
+                :class="'timing-rank-' + (index + 1)"
+              >
                 <div class="timing-header">
-                  <div class="timing-rank">#{{ index + 1 }}</div>
+                  <div class="timing-rank">
+                    #{{ index + 1 }}
+                  </div>
                   <div class="timing-event">
-                    <div class="event-name-original">{{ window.event_type }}</div>
-                    <div class="event-name-translation" v-if="translateEventName(window.event_type) !== window.event_type">
+                    <div class="event-name-original">
+                      {{ window.event_type }}
+                    </div>
+                    <div
+                      v-if="translateEventName(window.event_type) !== window.event_type"
+                      class="event-name-translation"
+                    >
                       ({{ translateEventName(window.event_type) }})
                     </div>
                   </div>
-                  <div class="timing-consistency" :class="getScoreClass(window.consistency_score)">
+                  <div
+                    class="timing-consistency"
+                    :class="getScoreClass(window.consistency_score)"
+                  >
                     {{ window.consistency_score.toFixed(0) }}%
                   </div>
                 </div>
                 <div class="timing-metrics">
                   <div class="timing-metric">
-                    <div class="metric-icon">🎯</div>
+                    <div class="metric-icon">
+                      🎯
+                    </div>
                     <div class="metric-content">
                       <span class="metric-label">Peak Time</span>
                       <span class="metric-value">{{ window.avg_peak_time_minutes.toFixed(0) }} min</span>
@@ -309,7 +465,9 @@
                     </div>
                   </div>
                   <div class="timing-metric">
-                    <div class="metric-icon">🚪</div>
+                    <div class="metric-icon">
+                      🚪
+                    </div>
                     <div class="metric-content">
                       <span class="metric-label">Entry Window</span>
                       <span class="metric-value">{{ window.avg_entry_window_minutes.toFixed(0) }} min avant</span>
@@ -317,7 +475,9 @@
                     </div>
                   </div>
                   <div class="timing-metric">
-                    <div class="metric-icon">⏳</div>
+                    <div class="metric-icon">
+                      ⏳
+                    </div>
                     <div class="metric-content">
                       <span class="metric-label">Return to Normal</span>
                       <span class="metric-value">{{ window.avg_return_to_normal_minutes.toFixed(0) }} min</span>
@@ -342,20 +502,37 @@
               </p>
             </div>
           </div>
-          <div v-else class="timing-placeholder glass">
-            <div class="placeholder-icon">⏱️</div>
+          <div
+            v-else
+            class="timing-placeholder glass"
+          >
+            <div class="placeholder-icon">
+              ⏱️
+            </div>
             <h4>Fenêtres Temporelles Optimales</h4>
             <p>Cette analyse nécessite des archives de type "Corrélation paire/événement".</p>
-            <p class="hint">Créez des analyses de corrélation pour débloquer cette fonctionnalité.</p>
+            <p class="hint">
+              Créez des analyses de corrélation pour débloquer cette fonctionnalité.
+            </p>
           </div>
         </div>
 
         <!-- ÉTAT 3 : ERREUR -->
-        <div v-else-if="error" class="error-container">
-          <div class="error-icon">❌</div>
+        <div
+          v-else-if="error"
+          class="error-container"
+        >
+          <div class="error-icon">
+            ❌
+          </div>
           <h3>Oups, une erreur est survenue</h3>
           <p>{{ error }}</p>
-          <button class="retry-btn" @click="runAnalysis()">Réessayer</button>
+          <button
+            class="retry-btn"
+            @click="runAnalysis()"
+          >
+            Réessayer
+          </button>
         </div>
       </div>
     </div>

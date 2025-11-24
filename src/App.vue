@@ -78,7 +78,7 @@ function switchTab(tab: 'volatility' | 'calendar' | 'correlation' | 'archives') 
       >
         🗄️ Archives
       </button>
-      <div class="tab-spacer"></div>
+      <div class="tab-spacer" />
       <button 
         class="tab-button" 
         :class="{ active: activeTab === 'calendar' }"
@@ -92,28 +92,41 @@ function switchTab(tab: 'volatility' | 'calendar' | 'correlation' | 'archives') 
       <template v-if="activeTab === 'volatility'">
         <div class="main-container">
           <div class="content-area">
-            <div v-if="loading" class="loading">
-              <div class="spinner"></div>
+            <div
+              v-if="loading"
+              class="loading"
+            >
+              <div class="spinner" />
               <p>Analyse en cours...</p>
             </div>
 
-            <div v-if="error" class="error">
+            <div
+              v-if="error"
+              class="error"
+            >
               <h3>❌ Erreur</h3>
               <p>{{ error }}</p>
             </div>
 
-            <div v-if="!loading && !analysisResult && !error" class="welcome">
-              <div class="welcome-icon">📊</div>
+            <div
+              v-if="!loading && !analysisResult && !error"
+              class="welcome"
+            >
+              <div class="welcome-icon">
+                📊
+              </div>
               <h3>Sélectionnez un symbole pour commencer</h3>
               <div class="welcome-select-container">
                 <select 
                   id="volatility-symbol-select"
                   v-model="selectedSymbolLocal" 
-                  @change="handleSymbolChange"
                   :disabled="loading"
                   class="welcome-symbol-select"
+                  @change="handleSymbolChange"
                 >
-                  <option value="">Choisir un symbole</option>
+                  <option value="">
+                    Choisir un symbole
+                  </option>
                   <option 
                     v-for="symbol in store.symbols" 
                     :key="symbol.symbol" 
@@ -129,7 +142,7 @@ function switchTab(tab: 'volatility' | 'calendar' | 'correlation' | 'archives') 
               <AnalysisPanel 
                 :result="analysisResult" 
                 :symbols="store.symbols"
-                @symbolSelected="handleSymbolSelected"
+                @symbol-selected="handleSymbolSelected"
               />
               <HourlyTable 
                 :stats="analysisResult.hourly_stats" 

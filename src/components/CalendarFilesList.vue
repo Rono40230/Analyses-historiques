@@ -2,35 +2,61 @@
   <div class="files-list-section">
     <div class="section-header">
       <h4>📁 Fichiers disponibles</h4>
-      <button @click="handleImportClick" class="btn-import-header" :disabled="importing">
+      <button
+        class="btn-import-header"
+        :disabled="importing"
+        @click="handleImportClick"
+      >
         📅 Importer votre calendrier
       </button>
     </div>
 
     <!-- Import en cours : sablier tournant -->
-    <div v-if="importing" class="importing-overlay">
-      <div class="hourglass">⏳</div>
-      <p class="importing-text">Import en cours...</p>
+    <div
+      v-if="importing"
+      class="importing-overlay"
+    >
+      <div class="hourglass">
+        ⏳
+      </div>
+      <p class="importing-text">
+        Import en cours...
+      </p>
     </div>
 
     <!-- Message d'erreur uniquement -->
-    <div v-if="importError" class="error-message">
+    <div
+      v-if="importError"
+      class="error-message"
+    >
       ❌ {{ importError }}
     </div>
 
-    <div v-if="loading" class="loading-indicator">
+    <div
+      v-if="loading"
+      class="loading-indicator"
+    >
       <span>⏳ Chargement...</span>
     </div>
 
-    <div v-else-if="error" class="error-message">
+    <div
+      v-else-if="error"
+      class="error-message"
+    >
       ❌ {{ error }}
     </div>
 
-    <div v-else-if="files.length === 0" class="no-files-message">
+    <div
+      v-else-if="files.length === 0"
+      class="no-files-message"
+    >
       📂 Aucun fichier disponible
     </div>
 
-    <div v-else class="files-table-container">
+    <div
+      v-else
+      class="files-table-container"
+    >
       <table class="files-table">
         <thead>
           <tr>
@@ -39,11 +65,16 @@
             <th>Événements</th>
             <th>Créé le</th>
             <th>Modifié le</th>
-            <th class="actions-col">Actions</th>
+            <th class="actions-col">
+              Actions
+            </th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="file in files" :key="file.path">
+          <tr
+            v-for="file in files"
+            :key="file.path"
+          >
             <td>
               <div class="filename-content">
                 <span class="file-icon">📄</span>
@@ -55,7 +86,11 @@
             <td>{{ file.created }}</td>
             <td>{{ file.modified }}</td>
             <td class="actions-col">
-              <button @click="deleteFile(file.path)" class="btn-delete" title="Supprimer ce fichier">
+              <button
+                class="btn-delete"
+                title="Supprimer ce fichier"
+                @click="deleteFile(file.path)"
+              >
                 🗑️
               </button>
             </td>

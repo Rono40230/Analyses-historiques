@@ -1,13 +1,28 @@
 <template>
-  <div v-if="isOpen" class="drawer-overlay" @click="close">
-    <div class="drawer-container" @click.stop>
+  <div
+    v-if="isOpen"
+    class="drawer-overlay"
+    @click="close"
+  >
+    <div
+      class="drawer-container"
+      @click.stop
+    >
       <div class="drawer-header">
         <h2>Événements {{ formatHour(selectedHour) }} (Heure de Paris)</h2>
-        <button class="close-btn" @click="close">✕</button>
+        <button
+          class="close-btn"
+          @click="close"
+        >
+          ✕
+        </button>
       </div>
 
       <div class="drawer-content">
-        <div v-if="eventSummary.length > 0" class="events-summary">
+        <div
+          v-if="eventSummary.length > 0"
+          class="events-summary"
+        >
           <!-- Résumé des événements par type -->
           <div
             v-for="(item, idx) in eventSummary"
@@ -16,7 +31,10 @@
             :class="item.impact.toLowerCase()"
           >
             <div class="summary-header">
-              <span class="event-impact-badge" :class="item.impact.toLowerCase()">
+              <span
+                class="event-impact-badge"
+                :class="item.impact.toLowerCase()"
+              >
                 {{ item.impact }}
               </span>
               <span class="event-name">{{ item.eventName }} <span class="event-name-fr">({{ item.eventNameFr }})</span></span>
@@ -37,7 +55,10 @@
           </div>
         </div>
 
-        <div v-else class="no-events">
+        <div
+          v-else
+          class="no-events"
+        >
           <p>Aucun événement HIGH pour cette heure</p>
         </div>
       </div>

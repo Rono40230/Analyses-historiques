@@ -1,5 +1,9 @@
 <template>
-  <div v-if="isOpen" class="modal-overlay" @click.self="close">
+  <div
+    v-if="isOpen"
+    class="modal-overlay"
+    @click.self="close"
+  >
     <div class="modal-content">
       <!-- En-tête -->
       <div class="modal-header">
@@ -7,23 +11,47 @@
           <span class="icon">🎯</span>
           <h2>Métriques du meilleur moment pour trader</h2>
         </div>
-        <button class="close-btn" @click="close">✕</button>
+        <button
+          class="close-btn"
+          @click="close"
+        >
+          ✕
+        </button>
       </div>
 
       <!-- Meilleur Moment -->
       <div class="modal-section">
-        <div v-if="sliceAnalyses && sliceAnalyses.length > 0" class="slices-container">
+        <div
+          v-if="sliceAnalyses && sliceAnalyses.length > 0"
+          class="slices-container"
+        >
           <!-- Affiche seulement le meilleur moment (rank 1) -->
-          <div v-for="analysis in sliceAnalyses.filter(a => a.rank === 1)" :key="`slice-${analysis.rank}`" class="slice-card" :class="getRankClass(analysis.rank)">
+          <div
+            v-for="analysis in sliceAnalyses.filter(a => a.rank === 1)"
+            :key="`slice-${analysis.rank}`"
+            class="slice-card"
+            :class="getRankClass(analysis.rank)"
+          >
             <!-- Rang + Heure + Recommandation -->
-            <div class="slice-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px;">
+            <div
+              class="slice-header"
+              style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px;"
+            >
               <div style="display: flex; gap: 12px; align-items: flex-start;">
-                <div class="rank-badge" :class="`rank-${analysis.rank}`">
+                <div
+                  class="rank-badge"
+                  :class="`rank-${analysis.rank}`"
+                >
                   <span class="rank-medal">⭐</span>
                 </div>
                 <div class="slice-time">
-                  <div class="time">{{ analysis.slice.startTime }}</div>
-                  <div class="score" :class="`score-${getScoreSeverity(analysis.slice.straddleScore)}`">
+                  <div class="time">
+                    {{ analysis.slice.startTime }}
+                  </div>
+                  <div
+                    class="score"
+                    :class="`score-${getScoreSeverity(analysis.slice.straddleScore)}`"
+                  >
                     Score: {{ analysis.slice.straddleScore.toFixed(0) }}/100
                   </div>
                 </div>
@@ -31,7 +59,9 @@
 
               <!-- Recommandation inline -->
               <div style="flex: 1; padding: 12px 16px; background: rgba(78, 205, 196, 0.1); border: 1px solid rgba(78, 205, 196, 0.3); border-radius: 6px; font-size: 12px;">
-                <div style="color: #4ecdc4; margin-bottom: 6px; font-weight: bold;">🎯 RECOMMANDATION</div>
+                <div style="color: #4ecdc4; margin-bottom: 6px; font-weight: bold;">
+                  🎯 RECOMMANDATION
+                </div>
                 <div style="color: #e0e0e0; line-height: 1.5;">
                   <span v-if="analysis.slice.straddleScore >= 75 && (!volatilityDuration || volatilityDuration.confidence_score >= 50)">
                     ✅ <strong>EXCELLENTES</strong> ({{ analysis.slice.straddleScore.toFixed(0) }}/100) - Straddle optimal. Position size: <strong>75-100%</strong>.
@@ -52,183 +82,253 @@
               <div class="metrics-grid">
                 <!-- ATR -->
                 <MetricTooltip title="ATR Moyen">
-                <div class="metric-item">
-                  <span class="metric-name">ATR Moyen</span>
-                  <div class="metric-values">
-                    <span class="value15" :class="getMetricClass(analysis.slice.stats.atr_mean, 0.001, 0.002)">
-                      {{ formatNumber(analysis.slice.stats.atr_mean, 5) }}
+                  <div class="metric-item">
+                    <span class="metric-name">ATR Moyen</span>
+                    <div class="metric-values">
+                      <span
+                        class="value15"
+                        :class="getMetricClass(analysis.slice.stats.atr_mean, 0.001, 0.002)"
+                      >
+                        {{ formatNumber(analysis.slice.stats.atr_mean, 5) }}
+                      </span>
+                      <span class="separator">|</span>
+                      <span class="valueglobal">{{ formatNumber(analysisData?.globalMetrics.mean_atr ?? 0, 5) }}</span>
+                      <span class="separator">|</span>
+                      <span class="threshold">>0.001</span>
+                    </div>
+                    <span :class="['status', getMetricStatus(analysis.slice.stats.atr_mean, 0.001)]">
+                      {{ getMetricStatusText(analysis.slice.stats.atr_mean, 0.001) }}
                     </span>
-                    <span class="separator">|</span>
-                    <span class="valueglobal">{{ formatNumber(analysisData?.globalMetrics.mean_atr ?? 0, 5) }}</span>
-                    <span class="separator">|</span>
-                    <span class="threshold">>0.001</span>
                   </div>
-                  <span :class="['status', getMetricStatus(analysis.slice.stats.atr_mean, 0.001)]">
-                    {{ getMetricStatusText(analysis.slice.stats.atr_mean, 0.001) }}
-                  </span>
-                </div>
-                  <template #definition>Average True Range sur 14 périodes : mesure de volatilité moyenne du créneau horaire.</template>
-                  <template #usage>Score &gt;0.002 = Excellent (forte volatilité) | 0.001-0.002 = Bon | &lt;0.001 = Mauvais (peu volatil).</template>
-                  <template #scoring>Calculé : (High-Low) moyenne sur 14 barres. Détermine largeur SL/TP. Plus ATR élevé = plus grande opportunité scalping.</template>
+                  <template #definition>
+                    Average True Range sur 14 périodes : mesure de volatilité moyenne du créneau horaire.
+                  </template>
+                  <template #usage>
+                    Score &gt;0.002 = Excellent (forte volatilité) | 0.001-0.002 = Bon | &lt;0.001 = Mauvais (peu volatil).
+                  </template>
+                  <template #scoring>
+                    Calculé : (High-Low) moyenne sur 14 barres. Détermine largeur SL/TP. Plus ATR élevé = plus grande opportunité scalping.
+                  </template>
                 </MetricTooltip>
 
                 <!-- True Range -->
                 <MetricTooltip title="True Range">
-                <div class="metric-item">
-                  <span class="metric-name">True Range</span>
-                  <div class="metric-values">
-                    <span class="value15" :class="getMetricClass(analysis.slice.stats.range_mean, 0.0015, 0.0025)">
-                      {{ formatNumber(analysis.slice.stats.range_mean, 5) }}
+                  <div class="metric-item">
+                    <span class="metric-name">True Range</span>
+                    <div class="metric-values">
+                      <span
+                        class="value15"
+                        :class="getMetricClass(analysis.slice.stats.range_mean, 0.0015, 0.0025)"
+                      >
+                        {{ formatNumber(analysis.slice.stats.range_mean, 5) }}
+                      </span>
+                      <span class="separator">|</span>
+                      <span class="valueglobal">{{ formatNumber(analysisData?.globalMetrics.mean_range ?? 0, 5) }}</span>
+                      <span class="separator">|</span>
+                      <span class="threshold">>0.0025</span>
+                    </div>
+                    <span :class="['status', getMetricStatus(analysis.slice.stats.range_mean, 0.0025)]">
+                      {{ getMetricStatusText(analysis.slice.stats.range_mean, 0.0025) }}
                     </span>
-                    <span class="separator">|</span>
-                    <span class="valueglobal">{{ formatNumber(analysisData?.globalMetrics.mean_range ?? 0, 5) }}</span>
-                    <span class="separator">|</span>
-                    <span class="threshold">>0.0025</span>
                   </div>
-                  <span :class="['status', getMetricStatus(analysis.slice.stats.range_mean, 0.0025)]">
-                    {{ getMetricStatusText(analysis.slice.stats.range_mean, 0.0025) }}
-                  </span>
-                </div>
-                  <template #definition>Max(High-Low, |High-Close[t-1]|, |Low-Close[t-1]|) : mouvement total exploitable incluant les gaps overnight et clôtures précédentes.</template>
-                  <template #usage>Score >2.5% = Excellent | 1.5-2.5% = Bon | <1.5% = Faible.</template>
-                  <template #scoring>True Range croissant = meilleur straddle setup. Capture les gaps contrairement au simple Range. Combine avec ATR pour détecter les vrais breakouts.</template>
+                  <template #definition>
+                    Max(High-Low, |High-Close[t-1]|, |Low-Close[t-1]|) : mouvement total exploitable incluant les gaps overnight et clôtures précédentes.
+                  </template>
+                  <template #usage>
+                    Score >2.5% = Excellent | 1.5-2.5% = Bon | <1.5% = Faible.
+                  </template>
+                  <template #scoring>
+                    True Range croissant = meilleur straddle setup. Capture les gaps contrairement au simple Range. Combine avec ATR pour détecter les vrais breakouts.
+                  </template>
                 </MetricTooltip>
 
                 <!-- Volatility -->
                 <MetricTooltip title="Volatilité">
-                <div class="metric-item">
-                  <span class="metric-name">Volatilité %</span>
-                  <div class="metric-values">
-                    <span class="value15" :class="getMetricClass(analysis.slice.stats.volatility_mean * 100, 15, 30)">
-                      {{ formatNumber(analysis.slice.stats.volatility_mean * 100, 1) }}%
+                  <div class="metric-item">
+                    <span class="metric-name">Volatilité %</span>
+                    <div class="metric-values">
+                      <span
+                        class="value15"
+                        :class="getMetricClass(analysis.slice.stats.volatility_mean * 100, 15, 30)"
+                      >
+                        {{ formatNumber(analysis.slice.stats.volatility_mean * 100, 1) }}%
+                      </span>
+                      <span class="separator">|</span>
+                      <span class="valueglobal">{{ formatNumber((analysisData?.globalMetrics.mean_volatility ?? 0) * 100, 1) }}%</span>
+                      <span class="separator">|</span>
+                      <span class="threshold">>15%</span>
+                    </div>
+                    <span :class="['status', getMetricStatus(analysis.slice.stats.volatility_mean * 100, 15)]">
+                      {{ getMetricStatusText(analysis.slice.stats.volatility_mean * 100, 15) }}
                     </span>
-                    <span class="separator">|</span>
-                    <span class="valueglobal">{{ formatNumber((analysisData?.globalMetrics.mean_volatility ?? 0) * 100, 1) }}%</span>
-                    <span class="separator">|</span>
-                    <span class="threshold">>15%</span>
                   </div>
-                  <span :class="['status', getMetricStatus(analysis.slice.stats.volatility_mean * 100, 15)]">
-                    {{ getMetricStatusText(analysis.slice.stats.volatility_mean * 100, 15) }}
-                  </span>
-                </div>
-                  <template #definition>Ratio ATR / Close exprimé en pourcentage : mesure la volatilité relative à la source du mouvement.</template>
-                  <template #usage>Score &gt;30% = Exceptionnellement volatil | 15-30% = Bon | &lt;15% = Faible. Créneau sans volatilité = pas de setup.</template>
-                  <template #scoring>Formula: (ATR / Close) × 100. Ratio volatilité actuelle / volatilité globale ajuste les positions dynamiquement.</template>
+                  <template #definition>
+                    Ratio ATR / Close exprimé en pourcentage : mesure la volatilité relative à la source du mouvement.
+                  </template>
+                  <template #usage>
+                    Score &gt;30% = Exceptionnellement volatil | 15-30% = Bon | &lt;15% = Faible. Créneau sans volatilité = pas de setup.
+                  </template>
+                  <template #scoring>
+                    Formula: (ATR / Close) × 100. Ratio volatilité actuelle / volatilité globale ajuste les positions dynamiquement.
+                  </template>
                 </MetricTooltip>
 
                 <!-- BodyRange -->
                 <MetricTooltip title="Body Range">
-                <div class="metric-item">
-                  <span class="metric-name">Body Range %</span>
-                  <div class="metric-values">
-                    <span class="value15" :class="getMetricClass(analysis.slice.stats.body_range_mean, 25, 45)">
-                      {{ formatNumber(analysis.slice.stats.body_range_mean, 1) }}%
+                  <div class="metric-item">
+                    <span class="metric-name">Body Range %</span>
+                    <div class="metric-values">
+                      <span
+                        class="value15"
+                        :class="getMetricClass(analysis.slice.stats.body_range_mean, 25, 45)"
+                      >
+                        {{ formatNumber(analysis.slice.stats.body_range_mean, 1) }}%
+                      </span>
+                      <span class="separator">|</span>
+                      <span class="valueglobal">{{ formatNumber(analysisData?.globalMetrics.mean_body_range ?? 0, 1) }}%</span>
+                      <span class="separator">|</span>
+                      <span class="threshold">>45%</span>
+                    </div>
+                    <span :class="['status', getMetricStatus(analysis.slice.stats.body_range_mean, 45)]">
+                      {{ getMetricStatusText(analysis.slice.stats.body_range_mean, 45) }}
                     </span>
-                    <span class="separator">|</span>
-                    <span class="valueglobal">{{ formatNumber(analysisData?.globalMetrics.mean_body_range ?? 0, 1) }}%</span>
-                    <span class="separator">|</span>
-                    <span class="threshold">>45%</span>
                   </div>
-                  <span :class="['status', getMetricStatus(analysis.slice.stats.body_range_mean, 45)]">
-                    {{ getMetricStatusText(analysis.slice.stats.body_range_mean, 45) }}
-                  </span>
-                </div>
-                  <template #definition>Pourcentage du range représenté par le body (Close-Open) : pureté du signal sans bruit des wicks.</template>
-                  <template #usage>Score &gt;45% = Signal Très Pur (peu de bruit) | 25-45% = Acceptable | &lt;25% = Bruité (wicks dominants).</template>
-                  <template #scoring>Formula: (|Close - Open| / (High - Low)) × 100. Corps fort = pression directionnelle claire, moins de faux mouvements.</template>
+                  <template #definition>
+                    Pourcentage du range représenté par le body (Close-Open) : pureté du signal sans bruit des wicks.
+                  </template>
+                  <template #usage>
+                    Score &gt;45% = Signal Très Pur (peu de bruit) | 25-45% = Acceptable | &lt;25% = Bruité (wicks dominants).
+                  </template>
+                  <template #scoring>
+                    Formula: (|Close - Open| / (High - Low)) × 100. Corps fort = pression directionnelle claire, moins de faux mouvements.
+                  </template>
                 </MetricTooltip>
 
                 <!-- TickQuality -->
                 <MetricTooltip title="Tick Quality">
-                <div class="metric-item">
-                  <span class="metric-name">Tick Quality</span>
-                  <div class="metric-values">
-                    <span class="value15" :class="getMetricClass(analysis.slice.stats.tick_quality_mean, 0.0005, 0.001)">
-                      {{ formatNumber(analysis.slice.stats.tick_quality_mean, 5) }}
+                  <div class="metric-item">
+                    <span class="metric-name">Tick Quality</span>
+                    <div class="metric-values">
+                      <span
+                        class="value15"
+                        :class="getMetricClass(analysis.slice.stats.tick_quality_mean, 0.0005, 0.001)"
+                      >
+                        {{ formatNumber(analysis.slice.stats.tick_quality_mean, 5) }}
+                      </span>
+                      <span class="separator">|</span>
+                      <span class="valueglobal">{{ formatNumber(analysisData?.globalMetrics.mean_tick_quality ?? 0, 5) }}</span>
+                      <span class="separator">|</span>
+                      <span class="threshold">>0.001</span>
+                    </div>
+                    <span :class="['status', getMetricStatus(analysis.slice.stats.tick_quality_mean, 0.001)]">
+                      {{ getMetricStatusText(analysis.slice.stats.tick_quality_mean, 0.001) }}
                     </span>
-                    <span class="separator">|</span>
-                    <span class="valueglobal">{{ formatNumber(analysisData?.globalMetrics.mean_tick_quality ?? 0, 5) }}</span>
-                    <span class="separator">|</span>
-                    <span class="threshold">>0.001</span>
                   </div>
-                  <span :class="['status', getMetricStatus(analysis.slice.stats.tick_quality_mean, 0.001)]">
-                    {{ getMetricStatusText(analysis.slice.stats.tick_quality_mean, 0.001) }}
-                  </span>
-                </div>
-                  <template #definition>Mesure la douceur du pricing : variance des ticks. Élevé = mouvements chaotiques, faible = trend smooth.</template>
-                  <template #usage>Score &gt;0.001 = Excellent (mouvements lisses et directionnels) | &lt;0.0005 = Mauvais (bruit, whipsaws)</template>
-                  <template #scoring>Formula: Standard deviation des mouvements de tick. Détermine la qualité du signal pour entrée/scalp clean.</template>
+                  <template #definition>
+                    Mesure la douceur du pricing : variance des ticks. Élevé = mouvements chaotiques, faible = trend smooth.
+                  </template>
+                  <template #usage>
+                    Score &gt;0.001 = Excellent (mouvements lisses et directionnels) | &lt;0.0005 = Mauvais (bruit, whipsaws)
+                  </template>
+                  <template #scoring>
+                    Formula: Standard deviation des mouvements de tick. Détermine la qualité du signal pour entrée/scalp clean.
+                  </template>
                 </MetricTooltip>
 
                 <!-- NoiseRatio -->
                 <MetricTooltip title="Noise Ratio">
-                <div class="metric-item">
-                  <span class="metric-name">Noise Ratio</span>
-                  <div class="metric-values">
-                    <span class="value15" :class="getMetricClass(2.5 - analysis.slice.stats.noise_ratio_mean, 0, 1.5)">
-                      {{ formatNumber(analysis.slice.stats.noise_ratio_mean, 2) }}
+                  <div class="metric-item">
+                    <span class="metric-name">Noise Ratio</span>
+                    <div class="metric-values">
+                      <span
+                        class="value15"
+                        :class="getMetricClass(2.5 - analysis.slice.stats.noise_ratio_mean, 0, 1.5)"
+                      >
+                        {{ formatNumber(analysis.slice.stats.noise_ratio_mean, 2) }}
+                      </span>
+                      <span class="separator">|</span>
+                      <span class="valueglobal">{{ formatNumber(analysisData?.globalMetrics.mean_noise_ratio ?? 0, 2) }}</span>
+                      <span class="separator">|</span>
+                      <span class="threshold"><2.0</span>
+                    </div>
+                    <span :class="['status', getNoiseStatus(analysis.slice.stats.noise_ratio_mean)]">
+                      {{ getNoiseStatusText(analysis.slice.stats.noise_ratio_mean) }}
                     </span>
-                    <span class="separator">|</span>
-                    <span class="valueglobal">{{ formatNumber(analysisData?.globalMetrics.mean_noise_ratio ?? 0, 2) }}</span>
-                    <span class="separator">|</span>
-                    <span class="threshold"><2.0</span>
                   </div>
-                  <span :class="['status', getNoiseStatus(analysis.slice.stats.noise_ratio_mean)]">
-                    {{ getNoiseStatusText(analysis.slice.stats.noise_ratio_mean) }}
-                  </span>
-                </div>
-                  <template #definition>Ratio wicks/body : mesure le "bruit" vs la vraie direction. Bas = signal pur, haut = beaucoup de fausses cassures.</template>
-                  <template #usage>Score &lt;2.0 = Signal Excellent (peu de bruit) | 2.0-2.5 = Acceptable | &gt;2.5 = Très Bruité (éviter).</template>
-                  <template #scoring>Formula: (Total_wicks_range / Body_range). Bas = direction confirmée. Élevé = beaucoup de rejets = whipsaws.</template>
+                  <template #definition>
+                    Ratio wicks/body : mesure le "bruit" vs la vraie direction. Bas = signal pur, haut = beaucoup de fausses cassures.
+                  </template>
+                  <template #usage>
+                    Score &lt;2.0 = Signal Excellent (peu de bruit) | 2.0-2.5 = Acceptable | &gt;2.5 = Très Bruité (éviter).
+                  </template>
+                  <template #scoring>
+                    Formula: (Total_wicks_range / Body_range). Bas = direction confirmée. Élevé = beaucoup de rejets = whipsaws.
+                  </template>
                 </MetricTooltip>
 
                 <!-- Direction Strength -->
                 <MetricTooltip title="Direction Strength">
-                <div class="metric-item">
-                  <span class="metric-name">Direction Strength</span>
-                  <div class="metric-values">
-                    <span class="value15" :class="getDirectionStrengthClass(analysis.slice.stats.volume_imbalance_mean)">
-                      {{ formatNumber(analysis.slice.stats.volume_imbalance_mean * 100, 1) }}%
+                  <div class="metric-item">
+                    <span class="metric-name">Direction Strength</span>
+                    <div class="metric-values">
+                      <span
+                        class="value15"
+                        :class="getDirectionStrengthClass(analysis.slice.stats.volume_imbalance_mean)"
+                      >
+                        {{ formatNumber(analysis.slice.stats.volume_imbalance_mean * 100, 1) }}%
+                      </span>
+                      <span class="separator">|</span>
+                      <span class="valueglobal">{{ formatNumber((analysisData?.globalMetrics.mean_volume_imbalance ?? 0) * 100, 1) }}%</span>
+                      <span class="separator">|</span>
+                      <span class="threshold">20%+ optimal</span>
+                    </div>
+                    <span :class="['status', getDirectionStrengthStatus(analysis.slice.stats.volume_imbalance_mean)]">
+                      {{ getDirectionStrengthStatusText(analysis.slice.stats.volume_imbalance_mean) }}
                     </span>
-                    <span class="separator">|</span>
-                    <span class="valueglobal">{{ formatNumber((analysisData?.globalMetrics.mean_volume_imbalance ?? 0) * 100, 1) }}%</span>
-                    <span class="separator">|</span>
-                    <span class="threshold">20%+ optimal</span>
                   </div>
-                  <span :class="['status', getDirectionStrengthStatus(analysis.slice.stats.volume_imbalance_mean)]">
-                    {{ getDirectionStrengthStatusText(analysis.slice.stats.volume_imbalance_mean) }}
-                  </span>
-                </div>
-                  <template #definition>Direction Strength = (|Body Range %| × Breakout %) / 100. Mesure puissance mouvement directionnel optimal Forex.</template>
+                  <template #definition>
+                    Direction Strength = (|Body Range %| × Breakout %) / 100. Mesure puissance mouvement directionnel optimal Forex.
+                  </template>
                   <template #usage>
                     🟢 <strong>&gt;20%:</strong> Excellent directional<br>
                     🔵 <strong>10-20%:</strong> Bon<br>
                     🟠 <strong>5-10%:</strong> Moyen<br>
                     🔴 <strong>&lt;5%:</strong> Faible direction.
                   </template>
-                  <template #scoring>Combine directionnalite (corps de bougie) + cassures identifiees = proxy force direction optimal Forex Straddle.</template>
+                  <template #scoring>
+                    Combine directionnalite (corps de bougie) + cassures identifiees = proxy force direction optimal Forex Straddle.
+                  </template>
                 </MetricTooltip>
 
                 <!-- Breakout % -->
                 <MetricTooltip title="Breakout">
-                <div class="metric-item">
-                  <span class="metric-name">Breakout %</span>
-                  <div class="metric-values">
-                    <span class="value15" :class="getMetricClass(analysis.slice.stats.breakout_percentage, 10, 20)">
-                      {{ formatNumber(analysis.slice.stats.breakout_percentage, 1) }}%
+                  <div class="metric-item">
+                    <span class="metric-name">Breakout %</span>
+                    <div class="metric-values">
+                      <span
+                        class="value15"
+                        :class="getMetricClass(analysis.slice.stats.breakout_percentage, 10, 20)"
+                      >
+                        {{ formatNumber(analysis.slice.stats.breakout_percentage, 1) }}%
+                      </span>
+                      <span class="separator">|</span>
+                      <span class="valueglobal">{{ formatNumber(analysisData?.globalMetrics.mean_breakout_percentage ?? 0, 1) }}%</span>
+                      <span class="separator">|</span>
+                      <span class="threshold">>15%</span>
+                    </div>
+                    <span :class="['status', getMetricStatus(analysis.slice.stats.breakout_percentage, 15)]">
+                      {{ getMetricStatusText(analysis.slice.stats.breakout_percentage, 15) }}
                     </span>
-                    <span class="separator">|</span>
-                    <span class="valueglobal">{{ formatNumber(analysisData?.globalMetrics.mean_breakout_percentage ?? 0, 1) }}%</span>
-                    <span class="separator">|</span>
-                    <span class="threshold">>15%</span>
                   </div>
-                  <span :class="['status', getMetricStatus(analysis.slice.stats.breakout_percentage, 15)]">
-                    {{ getMetricStatusText(analysis.slice.stats.breakout_percentage, 15) }}
-                  </span>
-                </div>
-                  <template #definition>Pourcentage de fois où le prix casse les niveaux clés (support/résistance) du créneau : opportunités de tendance.</template>
-                  <template #usage>Score &gt;15% = Breakouts Fréquents (momentum exploitable) | &lt;10% = Peu de breakouts (range-bound).</template>
-                  <template #scoring>Formula: (Breakout_events / Total_periods) × 100. Haut = plus d'opportunités trendy, bas = plus d'oscillation/straddle pure.</template>
+                  <template #definition>
+                    Pourcentage de fois où le prix casse les niveaux clés (support/résistance) du créneau : opportunités de tendance.
+                  </template>
+                  <template #usage>
+                    Score &gt;15% = Breakouts Fréquents (momentum exploitable) | &lt;10% = Peu de breakouts (range-bound).
+                  </template>
+                  <template #scoring>
+                    Formula: (Breakout_events / Total_periods) × 100. Haut = plus d'opportunités trendy, bas = plus d'oscillation/straddle pure.
+                  </template>
                 </MetricTooltip>
               </div>
             </div>
@@ -238,85 +338,137 @@
               <h4>💫 Qualité du Mouvement</h4>
               
               <!-- Pas d'événements -->
-              <div v-if="analysis.slice.stats.events.length === 0" style="color: #999;">
+              <div
+                v-if="analysis.slice.stats.events.length === 0"
+                style="color: #999;"
+              >
                 ⚠️ Pas d'événement dans ce slice
               </div>
               
               <!-- Clé vide -->
-              <div v-else-if="!getMovementQualityKey(analysis)" style="color: #999;">
+              <div
+                v-else-if="!getMovementQualityKey(analysis)"
+                style="color: #999;"
+              >
                 ⚠️ Clé vide générée
               </div>
               
               <!-- Données chargées -->
-              <div v-else-if="movementQualities[getMovementQualityKey(analysis)]" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 15px;">
+              <div
+                v-else-if="movementQualities[getMovementQualityKey(analysis)]"
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 15px;"
+              >
                 <!-- Score Qualité -->
                 <MetricTooltip title="Score Qualité">
-                <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
-                  <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">Score Qualité</div>
-                  <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">
-                    {{ (movementQualities[getMovementQualityKey(analysis)]?.quality_score || 0).toFixed(1) }}/10
+                  <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">
+                      Score Qualité
+                    </div>
+                    <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">
+                      {{ (movementQualities[getMovementQualityKey(analysis)]?.quality_score || 0).toFixed(1) }}/10
+                    </div>
                   </div>
-                </div>
-                <template #definition>Notation globale 0-10 de la qualité du setup combinant tous les facteurs : volatilité, signal purity, mouvement directionnel.</template>
-                <template #usage>Score &gt;7 = Excellent (trader) | 5-7 = Acceptable | &lt;5 = Mauvais (skip). Basé sur pondération : Volatilité 40%, Signal 35%, Direction 25%.</template>
-                <template #scoring>Formula: (ATR_score × 0.4 + Body_Range_score × 0.35 + Direction_score × 0.25) / 10. Seuil global qualité.</template>
+                  <template #definition>
+                    Notation globale 0-10 de la qualité du setup combinant tous les facteurs : volatilité, signal purity, mouvement directionnel.
+                  </template>
+                  <template #usage>
+                    Score &gt;7 = Excellent (trader) | 5-7 = Acceptable | &lt;5 = Mauvais (skip). Basé sur pondération : Volatilité 40%, Signal 35%, Direction 25%.
+                  </template>
+                  <template #scoring>
+                    Formula: (ATR_score × 0.4 + Body_Range_score × 0.35 + Direction_score × 0.25) / 10. Seuil global qualité.
+                  </template>
                 </MetricTooltip>
                 
                 <!-- Mouvement Directionnel -->
                 <MetricTooltip title="Mouvement Directionnel">
-                <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
-                  <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">Mouvement Directionnel</div>
-                  <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">
-                    {{ ((movementQualities[getMovementQualityKey(analysis)]?.directional_move_rate || 0) * 100).toFixed(0) }}%
+                  <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">
+                      Mouvement Directionnel
+                    </div>
+                    <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">
+                      {{ ((movementQualities[getMovementQualityKey(analysis)]?.directional_move_rate || 0) * 100).toFixed(0) }}%
+                    </div>
                   </div>
-                </div>
-                <template #definition>Pourcentage du range total qui s'est déplacé dans une direction cohérente sans retracer significativement.</template>
-                <template #usage>Score &gt;70% = Très directionnel (bon momentum) | 50-70% = Modérément directionnel | &lt;50% = Chaotique/bidirectionnel.</template>
-                <template #scoring>Formula: (Net_directional_pips / Total_range) × 100. Élevé = tendance claire, faible = oscillation indécise.</template>
+                  <template #definition>
+                    Pourcentage du range total qui s'est déplacé dans une direction cohérente sans retracer significativement.
+                  </template>
+                  <template #usage>
+                    Score &gt;70% = Très directionnel (bon momentum) | 50-70% = Modérément directionnel | &lt;50% = Chaotique/bidirectionnel.
+                  </template>
+                  <template #scoring>
+                    Formula: (Net_directional_pips / Total_range) × 100. Élevé = tendance claire, faible = oscillation indécise.
+                  </template>
                 </MetricTooltip>
                 
                 <!-- Whipsaw Rate -->
                 <MetricTooltip title="Whipsaw Rate">
-                <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
-                  <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">Whipsaw Rate</div>
-                  <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">
-                    {{ ((movementQualities[getMovementQualityKey(analysis)]?.whipsaw_rate || 0) * 100).toFixed(0) }}%
+                  <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">
+                      Whipsaw Rate
+                    </div>
+                    <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">
+                      {{ ((movementQualities[getMovementQualityKey(analysis)]?.whipsaw_rate || 0) * 100).toFixed(0) }}%
+                    </div>
                   </div>
-                </div>
-                <template #definition>Pourcentage de fausses sorties : fois où le prix dépasse SL temporairement avant de revenir vers TP (dangereux au scalp).</template>
-                <template #usage>Score &lt;10% = Excellent (peu de faux signaux) | 10-20% = Acceptable | &gt;20% = Danger (trop de whipsaws, avoid).</template>
-                <template #scoring>Formula: (Whipsaw_events / Total_trades) × 100. Barrière psychologique et cash-drag majeure. À minimiser absolument.</template>
+                  <template #definition>
+                    Pourcentage de fausses sorties : fois où le prix dépasse SL temporairement avant de revenir vers TP (dangereux au scalp).
+                  </template>
+                  <template #usage>
+                    Score &lt;10% = Excellent (peu de faux signaux) | 10-20% = Acceptable | &gt;20% = Danger (trop de whipsaws, avoid).
+                  </template>
+                  <template #scoring>
+                    Formula: (Whipsaw_events / Total_trades) × 100. Barrière psychologique et cash-drag majeure. À minimiser absolument.
+                  </template>
                 </MetricTooltip>
                 
                 <!-- Taux Succès -->
                 <MetricTooltip title="Taux Succès">
-                <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
-                  <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">Taux Succès</div>
-                  <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">
-                    {{ ((movementQualities[getMovementQualityKey(analysis)]?.success_rate || 0) * 100).toFixed(0) }}%
+                  <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">
+                      Taux Succès
+                    </div>
+                    <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">
+                      {{ ((movementQualities[getMovementQualityKey(analysis)]?.success_rate || 0) * 100).toFixed(0) }}%
+                    </div>
                   </div>
-                </div>
-                <template #definition>Pourcentage d'événements dans ce créneau qui ont atteint leur objectif TP avant d'être arrêtés au SL (win rate brut).</template>
-                <template #usage>Score &gt;60% = Excellent (trades qui marche) | 50-60% = Bon (profitable avec R/R) | &lt;50% = Mauvais (éviter ce créneau).</template>
-                <template #scoring>Formula: (Winning_events / Total_events) × 100. Directement utilisé pour profitabilité espérance = WR × TP - (1-WR) × SL.</template>
+                  <template #definition>
+                    Pourcentage d'événements dans ce créneau qui ont atteint leur objectif TP avant d'être arrêtés au SL (win rate brut).
+                  </template>
+                  <template #usage>
+                    Score &gt;60% = Excellent (trades qui marche) | 50-60% = Bon (profitable avec R/R) | &lt;50% = Mauvais (éviter ce créneau).
+                  </template>
+                  <template #scoring>
+                    Formula: (Winning_events / Total_events) × 100. Directement utilisé pour profitabilité espérance = WR × TP - (1-WR) × SL.
+                  </template>
                 </MetricTooltip>
                 
                 <!-- Mouvement Moyen -->
                 <MetricTooltip title="Mouvement Moyen">
-                <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
-                  <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">Mouvement Moyen</div>
-                  <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">
-                    {{ (movementQualities[getMovementQualityKey(analysis)]?.avg_pips_moved || 0).toFixed(1) }} <span style="color: #888; font-size: 11px;">pips</span>
+                  <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">
+                      Mouvement Moyen
+                    </div>
+                    <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">
+                      {{ (movementQualities[getMovementQualityKey(analysis)]?.avg_pips_moved || 0).toFixed(1) }} <span style="color: #888; font-size: 11px;">pips</span>
+                    </div>
                   </div>
-                </div>
-                <template #definition>Distance moyenne en pips que le prix parcourt par événement dans ce créneau historiquement.</template>
-                <template #usage>Score &gt;15 pips = Excellent (suffisant pour scalp) | 10-15 pips = Bon | &lt;10 pips = Faible mouvement (skip).</template>
-                <template #scoring>Formula: Sum(|move_pips|) / Number_events. Doit être &gt; SL pour que TP soit atteignable (SL +TP × R/R) = mouvement attendu.</template>
+                  <template #definition>
+                    Distance moyenne en pips que le prix parcourt par événement dans ce créneau historiquement.
+                  </template>
+                  <template #usage>
+                    Score &gt;15 pips = Excellent (suffisant pour scalp) | 10-15 pips = Bon | &lt;10 pips = Faible mouvement (skip).
+                  </template>
+                  <template #scoring>
+                    Formula: Sum(|move_pips|) / Number_events. Doit être &gt; SL pour que TP soit atteignable (SL +TP × R/R) = mouvement attendu.
+                  </template>
                 </MetricTooltip>
               </div>
               
               <!-- Chargement en cours -->
-              <div v-else class="quality-loading">
+              <div
+                v-else
+                class="quality-loading"
+              >
                 ⏳ Analyse du mouvement en cours...
               </div>
             </div>
@@ -326,55 +478,99 @@
               <h4>⏱️ DURÉE DE VOLATILITÉ</h4>
               <div style="margin-top: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
                 <!-- Peak Duration -->
-                <MetricTooltip title="Durée du Pic" direction="top">
+                <MetricTooltip
+                  title="Durée du Pic"
+                  direction="top"
+                >
                   <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
-                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">Durée Pic</div>
+                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">
+                      Durée Pic
+                    </div>
                     <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">
                       {{ volatilityDuration?.peak_duration_minutes || '—' }} <span style="color: #888; font-size: 11px;">min</span>
                     </div>
                   </div>
-                  <template #definition>Nombre de minutes où la volatilité reste supérieure à 80% du pic observé pendant le créneau.</template>
-                  <template #usage>Indique combien de temps le mouvement principal persiste avant de perdre son énergie. Exemple : NFP = 90-150min, données faibles = 150-270min.</template>
-                  <template #scoring>Calculé à partir de l'ATR, Range et Body Range empiriques. Volatilité très élevée (ATR>50pts) = pic court. Volatilité faible (ATR<25pts) = pic long.</template>
+                  <template #definition>
+                    Nombre de minutes où la volatilité reste supérieure à 80% du pic observé pendant le créneau.
+                  </template>
+                  <template #usage>
+                    Indique combien de temps le mouvement principal persiste avant de perdre son énergie. Exemple : NFP = 90-150min, données faibles = 150-270min.
+                  </template>
+                  <template #scoring>
+                    Calculé à partir de l'ATR, Range et Body Range empiriques. Volatilité très élevée (ATR>50pts) = pic court. Volatilité faible (ATR<25pts) = pic long.
+                  </template>
                 </MetricTooltip>
 
                 <!-- Volatility Half-Life -->
-                <MetricTooltip title="Demi-Vie de Volatilité" direction="top">
+                <MetricTooltip
+                  title="Demi-Vie de Volatilité"
+                  direction="top"
+                >
                   <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
-                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">Demi-Vie</div>
+                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">
+                      Demi-Vie
+                    </div>
                     <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">
                       {{ volatilityDuration?.volatility_half_life_minutes || '—' }} <span style="color: #888; font-size: 11px;">min</span>
                     </div>
                   </div>
-                  <template #definition>Nombre de minutes pour que la volatilité décroisse à 50% de son pic (décroissance exponentielle).</template>
-                  <template #usage>Mesure la vitesse de dissipation de la volatilité. Demi-vie courte (30-50min) = volatilité s'effondre rapidement. Demi-vie longue (80-120min) = volatilité persiste.</template>
-                  <template #scoring>Basée sur le Noise Ratio et la stabilité du mouvement. NR<1.5 (stable) = demi-vie longue 60-70% du pic. NR>2.5 (décroissant) = demi-vie courte 30-40% du pic.</template>
+                  <template #definition>
+                    Nombre de minutes pour que la volatilité décroisse à 50% de son pic (décroissance exponentielle).
+                  </template>
+                  <template #usage>
+                    Mesure la vitesse de dissipation de la volatilité. Demi-vie courte (30-50min) = volatilité s'effondre rapidement. Demi-vie longue (80-120min) = volatilité persiste.
+                  </template>
+                  <template #scoring>
+                    Basée sur le Noise Ratio et la stabilité du mouvement. NR<1.5 (stable) = demi-vie longue 60-70% du pic. NR>2.5 (décroissant) = demi-vie courte 30-40% du pic.
+                  </template>
                 </MetricTooltip>
 
                 <!-- Trade Duration (NEW PARAM) -->
-                <MetricTooltip title="Durée du Trade" direction="top">
+                <MetricTooltip
+                  title="Durée du Trade"
+                  direction="top"
+                >
                   <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
-                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">Durée Trade</div>
+                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">
+                      Durée Trade
+                    </div>
                     <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">
                       {{ tradingPlan?.tradeDurationMinutes || '—' }} <span style="color: #888; font-size: 11px;">min</span>
                     </div>
                   </div>
-                  <template #definition>Durée optimale de trading recommandée = max(peak_duration, demi-vie × 2). C'est le temps maximum avant que la volatilité devienne insuffisante.</template>
-                  <template #usage>Indique quand fermer le trade pour éviter les whipsaws en fin de mouvement. Exemple : si durée=150min et entrée 14h30, fermer avant 16h20. Crucial pour le trailing stop.</template>
-                  <template #scoring>Formula : max(peak_duration, half_life × 2). Protège contre surtemps = perte. Exemple: pic 150min + half-life 60min → max(150, 120) = 150min de trading.</template>
+                  <template #definition>
+                    Durée optimale de trading recommandée = max(peak_duration, demi-vie × 2). C'est le temps maximum avant que la volatilité devienne insuffisante.
+                  </template>
+                  <template #usage>
+                    Indique quand fermer le trade pour éviter les whipsaws en fin de mouvement. Exemple : si durée=150min et entrée 14h30, fermer avant 16h20. Crucial pour le trailing stop.
+                  </template>
+                  <template #scoring>
+                    Formula : max(peak_duration, half_life × 2). Protège contre surtemps = perte. Exemple: pic 150min + half-life 60min → max(150, 120) = 150min de trading.
+                  </template>
                 </MetricTooltip>
 
                 <!-- Confidence Score -->
-                <MetricTooltip title="Score de Confiance" direction="top">
+                <MetricTooltip
+                  title="Score de Confiance"
+                  direction="top"
+                >
                   <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
-                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">Confiance</div>
+                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">
+                      Confiance
+                    </div>
                     <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">
                       {{ volatilityDuration?.confidence_score || '—' }} <span style="color: #888; font-size: 11px;">%</span>
                     </div>
                   </div>
-                  <template #definition>Fiabilité des métriques de durée basée sur la taille de l'échantillon historique du créneau.</template>
-                  <template #usage>Score ≥90% = métriques très fiables (données abondantes). Score 50-75% = données partielles, variance possible. Influence la position size et le stop loss.</template>
-                  <template #scoring>Basé sur le sample_size du créneau : ≥100 occurrences = 100%, 50-99 = 90%, 30-49 = 75%, 15-29 = 60%, &lt;15 = 50%.</template>
+                  <template #definition>
+                    Fiabilité des métriques de durée basée sur la taille de l'échantillon historique du créneau.
+                  </template>
+                  <template #usage>
+                    Score ≥90% = métriques très fiables (données abondantes). Score 50-75% = données partielles, variance possible. Influence la position size et le stop loss.
+                  </template>
+                  <template #scoring>
+                    Basé sur le sample_size du créneau : ≥100 occurrences = 100%, 50-99 = 90%, 30-49 = 75%, 15-29 = 60%, &lt;15 = 50%.
+                  </template>
                 </MetricTooltip>
               </div>
             </div>
@@ -383,70 +579,159 @@
             <div style="margin-top: 20px; padding: 20px; background: #1a1a2e; border: 1px solid #16213e; border-radius: 8px;">
               <h4>⚙️ PARAMÈTRES BIDI OPTIMISÉS</h4>
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 15px;">
-                <MetricTooltip title="Meilleur Moment" direction="top">
+                <MetricTooltip
+                  title="Meilleur Moment"
+                  direction="top"
+                >
                   <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
-                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">Meilleur Moment</div>
+                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">
+                      Meilleur Moment
+                    </div>
                     <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">
                       {{ sliceAnalyses && sliceAnalyses.length > 0 ? calculateExactTime() : entryWindowAnalysis.optimal_offset + ' min' }}
                     </div>
                   </div>
-                  <template #definition>L'heure exacte d'entrée optimale pour le straddle basée sur l'analyse historique des créneau horaires.</template>
-                  <template #usage>Entrée au-delà de 14:00 avec ≥ 3 créneau optimaux et un taux de succès ≥ 55%.</template>
-                  <template #scoring>Sélectionné parmi les 3 meilleurs créneau horaires du jour avec le plus haut taux de succès ajusté.</template>
+                  <template #definition>
+                    L'heure exacte d'entrée optimale pour le straddle basée sur l'analyse historique des créneau horaires.
+                  </template>
+                  <template #usage>
+                    Entrée au-delà de 14:00 avec ≥ 3 créneau optimaux et un taux de succès ≥ 55%.
+                  </template>
+                  <template #scoring>
+                    Sélectionné parmi les 3 meilleurs créneau horaires du jour avec le plus haut taux de succès ajusté.
+                  </template>
                 </MetricTooltip>
-                <MetricTooltip title="Taux de Succès" direction="top">
+                <MetricTooltip
+                  title="Taux de Succès"
+                  direction="top"
+                >
                   <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
-                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">Taux de Succès</div>
-                    <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">{{ (entryWindowAnalysis.optimal_win_rate * 100).toFixed(0) }}% <span style="color: #888; font-size: 11px;">événement</span></div>
+                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">
+                      Taux de Succès
+                    </div>
+                    <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">
+                      {{ (entryWindowAnalysis.optimal_win_rate * 100).toFixed(0) }}% <span style="color: #888; font-size: 11px;">événement</span>
+                    </div>
                   </div>
-                  <template #definition>Pourcentage de fois où le créneau horaire a produit un mouvement straddle gagnant (atteint TP avant SL).</template>
-                  <template #usage>Critère crucial : minimum 55% pour un biais positif. ≥65% = excellent signal. &lt;50% = dangereux.</template>
-                  <template #scoring>Calculé sur l'historique complet du créneau avec ajustement volatilité/range/body-range.</template>
+                  <template #definition>
+                    Pourcentage de fois où le créneau horaire a produit un mouvement straddle gagnant (atteint TP avant SL).
+                  </template>
+                  <template #usage>
+                    Critère crucial : minimum 55% pour un biais positif. ≥65% = excellent signal. &lt;50% = dangereux.
+                  </template>
+                  <template #scoring>
+                    Calculé sur l'historique complet du créneau avec ajustement volatilité/range/body-range.
+                  </template>
                 </MetricTooltip>
-                <MetricTooltip title="Stop Loss" direction="top">
+                <MetricTooltip
+                  title="Stop Loss"
+                  direction="top"
+                >
                   <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
-                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">Stop Loss</div>
-                    <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">{{ analysis.tradingPlan.slPips }} <span style="color: #888; font-size: 11px;">pips</span></div>
+                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">
+                      Stop Loss
+                    </div>
+                    <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">
+                      {{ analysis.tradingPlan.slPips }} <span style="color: #888; font-size: 11px;">pips</span>
+                    </div>
                   </div>
-                  <template #definition>Distance en pips entre l'entrée et le niveau de stop loss (limite de perte).</template>
-                  <template #usage>Calculé dynamiquement : SL = (Score/100 × Range_actuelle) / 1.5. Exemple : score 60 = ±20 pips de range.</template>
-                  <template #scoring>Formula: SL_pips = (Score/100) × (ATR × 2.5). Augmente avec la volatilité, diminue si score faible (&lt;50).</template>
+                  <template #definition>
+                    Distance en pips entre l'entrée et le niveau de stop loss (limite de perte).
+                  </template>
+                  <template #usage>
+                    Calculé dynamiquement : SL = (Score/100 × Range_actuelle) / 1.5. Exemple : score 60 = ±20 pips de range.
+                  </template>
+                  <template #scoring>
+                    Formula: SL_pips = (Score/100) × (ATR × 2.5). Augmente avec la volatilité, diminue si score faible (&lt;50).
+                  </template>
                 </MetricTooltip>
-                <MetricTooltip title="Win Rate" direction="top">
+                <MetricTooltip
+                  title="Win Rate"
+                  direction="top"
+                >
                   <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
-                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">Win Rate</div>
-                    <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">{{ analysis.tradingPlan.winProbability }}% <span style="color: #888; font-size: 11px;">histo</span></div>
+                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">
+                      Win Rate
+                    </div>
+                    <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">
+                      {{ analysis.tradingPlan.winProbability }}% <span style="color: #888; font-size: 11px;">histo</span>
+                    </div>
                   </div>
-                  <template #definition>Pourcentage de trades théoriques gagnants selon l'historique des mouvements (atteint TP avant SL).</template>
-                  <template #usage>Basé sur les histogrammes de distribution des mouvements du créneau. &gt;55% = profitable à long terme. &lt;50% = stop trading.</template>
-                  <template #scoring>Calculé à partir de : success_rate du créneau + volatility_score + body_range_score. Ajustement variance inclus.</template>
+                  <template #definition>
+                    Pourcentage de trades théoriques gagnants selon l'historique des mouvements (atteint TP avant SL).
+                  </template>
+                  <template #usage>
+                    Basé sur les histogrammes de distribution des mouvements du créneau. &gt;55% = profitable à long terme. &lt;50% = stop trading.
+                  </template>
+                  <template #scoring>
+                    Calculé à partir de : success_rate du créneau + volatility_score + body_range_score. Ajustement variance inclus.
+                  </template>
                 </MetricTooltip>
-                <MetricTooltip title="Avg Gain" direction="top">
+                <MetricTooltip
+                  title="Avg Gain"
+                  direction="top"
+                >
                   <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
-                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">Avg Gain</div>
-                    <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">{{ analysis.tradingPlan.avgGainR.toFixed(1) }}R <span style="color: #888; font-size: 11px;">moyen</span></div>
+                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">
+                      Avg Gain
+                    </div>
+                    <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">
+                      {{ analysis.tradingPlan.avgGainR.toFixed(1) }}R <span style="color: #888; font-size: 11px;">moyen</span>
+                    </div>
                   </div>
-                  <template #definition>Espérance mathématique moyenne en "R" (risque unitaire). Exemple : 0.5R = 50% du risque en gain moyen.</template>
-                  <template #usage>Critère clé : Avg Gain = (Win% × Win_avg) - (Loss% × Loss_avg) × Risk. &gt;0.3R = très bon. &lt;0 = à éviter.</template>
-                  <template #scoring>Formula: AvgGain = (win_rate × avg_win_pips - (1-win_rate) × avg_loss_pips) / SL_pips. Mesure la profitabilité nette.</template>
+                  <template #definition>
+                    Espérance mathématique moyenne en "R" (risque unitaire). Exemple : 0.5R = 50% du risque en gain moyen.
+                  </template>
+                  <template #usage>
+                    Critère clé : Avg Gain = (Win% × Win_avg) - (Loss% × Loss_avg) × Risk. &gt;0.3R = très bon. &lt;0 = à éviter.
+                  </template>
+                  <template #scoring>
+                    Formula: AvgGain = (win_rate × avg_win_pips - (1-win_rate) × avg_loss_pips) / SL_pips. Mesure la profitabilité nette.
+                  </template>
                 </MetricTooltip>
-                <MetricTooltip title="Trailing Stop" direction="top">
+                <MetricTooltip
+                  title="Trailing Stop"
+                  direction="top"
+                >
                   <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
-                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">Trailing Stop</div>
-                    <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">{{ analysis.tradingPlan.trailingStopCoefficient.toFixed(2) }}x <span style="color: #888; font-size: 11px;">ATR</span></div>
+                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">
+                      Trailing Stop
+                    </div>
+                    <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">
+                      {{ analysis.tradingPlan.trailingStopCoefficient.toFixed(2) }}x <span style="color: #888; font-size: 11px;">ATR</span>
+                    </div>
                   </div>
-                  <template #definition>Multiplicateur ATR pour recalculer dynamiquement le stop loss en hausse (protection des gains). Fixe le SL à [prix bas × (1.5 + volatilité_ratio)].</template>
-                  <template #usage>Trailing = 1.5x ATR + (ATR_current/ATR_avg - 1) × 0.5. Exemple : ATR_actuel 0.002 = 1.8x. Permet de sécuriser les gains sans bloquer.</template>
-                  <template #scoring>Formula: Coefficient = 1.5 + (ATR_current/ATR_moyenne - 1) × 0.5. Plage 1.5-2.5x. Volatilité haute = coefficient plus bas (plus serré).</template>
+                  <template #definition>
+                    Multiplicateur ATR pour recalculer dynamiquement le stop loss en hausse (protection des gains). Fixe le SL à [prix bas × (1.5 + volatilité_ratio)].
+                  </template>
+                  <template #usage>
+                    Trailing = 1.5x ATR + (ATR_current/ATR_avg - 1) × 0.5. Exemple : ATR_actuel 0.002 = 1.8x. Permet de sécuriser les gains sans bloquer.
+                  </template>
+                  <template #scoring>
+                    Formula: Coefficient = 1.5 + (ATR_current/ATR_moyenne - 1) × 0.5. Plage 1.5-2.5x. Volatilité haute = coefficient plus bas (plus serré).
+                  </template>
                 </MetricTooltip>
-                <MetricTooltip title="Trade Expiration" direction="top">
+                <MetricTooltip
+                  title="Trade Expiration"
+                  direction="top"
+                >
                   <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px;">
-                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">Expiration</div>
-                    <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">{{ analysis.tradingPlan.tradeExpiration || '—' }} <span style="color: #888; font-size: 11px;">min</span></div>
+                    <div style="font-size: 11px; color: #999; margin-bottom: 6px; text-transform: uppercase;">
+                      Expiration
+                    </div>
+                    <div style="font-size: 13px; color: #4ecdc4; font-weight: bold;">
+                      {{ analysis.tradingPlan.tradeExpiration || '—' }} <span style="color: #888; font-size: 11px;">min</span>
+                    </div>
                   </div>
-                  <template #definition>Limite de temps maximale avant fermeture automatique du trade (dans le robot Bidi). Basée sur la volatilité et remplace les 300min fixes.</template>
-                  <template #usage>Entrée à 14h30 + expiration 180min = fermer avant 16h30. Si TP non atteint à l'expiration, fermer à market. Évite les whipsaws post-peak.</template>
-                  <template #scoring>Formula: max(peak_duration, half_life × 2). Ajustée selon ATR. Volatilité haute = expiration courte (120-150min). Volatilité faible = expiration longue (240-270min). Max 300min.</template>
+                  <template #definition>
+                    Limite de temps maximale avant fermeture automatique du trade (dans le robot Bidi). Basée sur la volatilité et remplace les 300min fixes.
+                  </template>
+                  <template #usage>
+                    Entrée à 14h30 + expiration 180min = fermer avant 16h30. Si TP non atteint à l'expiration, fermer à market. Évite les whipsaws post-peak.
+                  </template>
+                  <template #scoring>
+                    Formula: max(peak_duration, half_life × 2). Ajustée selon ATR. Volatilité haute = expiration courte (120-150min). Volatilité faible = expiration longue (240-270min). Max 300min.
+                  </template>
                 </MetricTooltip>
               </div>
             </div>
@@ -457,14 +742,25 @@
               <div style="margin-top: 15px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;">
                 <!-- Analyse Range -->
                 <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; display: flex; flex-direction: column;">
-                  <div style="font-size: 12px; color: #999; margin-bottom: 6px; font-weight: bold;">📊 Range</div>
+                  <div style="font-size: 12px; color: #999; margin-bottom: 6px; font-weight: bold;">
+                    📊 Range
+                  </div>
                   <div style="font-size: 13px; color: #fff; font-weight: bold;">
                     {{ (analysis.slice.stats.range_mean * 10000).toFixed(0) }} pips
                   </div>
                   <div style="font-size: 11px; margin: 6px 0;">
-                    <span v-if="analysis.slice.stats.range_mean > 0.0025" style="color: #4ecdc4;">✅ Excellent</span>
-                    <span v-else-if="analysis.slice.stats.range_mean > 0.0015" style="color: #ffd700;">⚠️ Bon</span>
-                    <span v-else style="color: #ff6b6b;">❌ Faible</span>
+                    <span
+                      v-if="analysis.slice.stats.range_mean > 0.0025"
+                      style="color: #4ecdc4;"
+                    >✅ Excellent</span>
+                    <span
+                      v-else-if="analysis.slice.stats.range_mean > 0.0015"
+                      style="color: #ffd700;"
+                    >⚠️ Bon</span>
+                    <span
+                      v-else
+                      style="color: #ff6b6b;"
+                    >❌ Faible</span>
                   </div>
                   <div style="font-size: 10px; color: #888; margin-top: auto;">
                     💡 Plus élevé = meilleure opportunité straddle
@@ -473,14 +769,25 @@
 
                 <!-- Analyse ATR -->
                 <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; display: flex; flex-direction: column;">
-                  <div style="font-size: 12px; color: #999; margin-bottom: 6px; font-weight: bold;">⚡ ATR</div>
+                  <div style="font-size: 12px; color: #999; margin-bottom: 6px; font-weight: bold;">
+                    ⚡ ATR
+                  </div>
                   <div style="font-size: 13px; color: #fff; font-weight: bold;">
                     {{ (analysis.slice.stats.atr_mean * 10000).toFixed(0) }} pips
                   </div>
                   <div style="font-size: 11px; margin: 6px 0;">
-                    <span v-if="analysis.slice.stats.atr_mean > 0.0020" style="color: #4ecdc4;">✅ Excellent</span>
-                    <span v-else-if="analysis.slice.stats.atr_mean > 0.0010" style="color: #ffd700;">⚠️ Bon</span>
-                    <span v-else style="color: #ff6b6b;">❌ Faible</span>
+                    <span
+                      v-if="analysis.slice.stats.atr_mean > 0.0020"
+                      style="color: #4ecdc4;"
+                    >✅ Excellent</span>
+                    <span
+                      v-else-if="analysis.slice.stats.atr_mean > 0.0010"
+                      style="color: #ffd700;"
+                    >⚠️ Bon</span>
+                    <span
+                      v-else
+                      style="color: #ff6b6b;"
+                    >❌ Faible</span>
                   </div>
                   <div style="font-size: 10px; color: #888; margin-top: auto;">
                     💡 Volatilité confirmée = SL/TP plus larges
@@ -489,14 +796,25 @@
 
                 <!-- Analyse Body Range -->
                 <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; display: flex; flex-direction: column;">
-                  <div style="font-size: 12px; color: #999; margin-bottom: 6px; font-weight: bold;">📈 Body Range</div>
+                  <div style="font-size: 12px; color: #999; margin-bottom: 6px; font-weight: bold;">
+                    📈 Body Range
+                  </div>
                   <div style="font-size: 13px; color: #fff; font-weight: bold;">
                     {{ analysis.slice.stats.body_range_mean.toFixed(1) }}%
                   </div>
                   <div style="font-size: 11px; margin: 6px 0;">
-                    <span v-if="analysis.slice.stats.body_range_mean > 45" style="color: #4ecdc4;">✅ Très Pur</span>
-                    <span v-else-if="analysis.slice.stats.body_range_mean > 25" style="color: #ffd700;">⚠️ Acceptable</span>
-                    <span v-else style="color: #ff6b6b;">❌ Très Bruité</span>
+                    <span
+                      v-if="analysis.slice.stats.body_range_mean > 45"
+                      style="color: #4ecdc4;"
+                    >✅ Très Pur</span>
+                    <span
+                      v-else-if="analysis.slice.stats.body_range_mean > 25"
+                      style="color: #ffd700;"
+                    >⚠️ Acceptable</span>
+                    <span
+                      v-else
+                      style="color: #ff6b6b;"
+                    >❌ Très Bruité</span>
                   </div>
                   <div style="font-size: 10px; color: #888; margin-top: auto;">
                     💡 Élevé = signal pur, peu de bruit
@@ -505,7 +823,9 @@
 
                 <!-- Analyse Qualité Mouvement (Phase 1.2) -->
                 <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; display: flex; flex-direction: column;">
-                  <div style="font-size: 12px; color: #999; margin-bottom: 6px; font-weight: bold;">💫 Qualité</div>
+                  <div style="font-size: 12px; color: #999; margin-bottom: 6px; font-weight: bold;">
+                    💫 Qualité
+                  </div>
                   <div style="font-size: 13px; color: #fff; font-weight: bold;">
                     <template v-if="movementQualities[getMovementQualityKey(analysis)]?.quality_score">
                       {{ (movementQualities[getMovementQualityKey(analysis)]?.quality_score || 0).toFixed(1) }}/10
@@ -516,11 +836,23 @@
                   </div>
                   <div style="font-size: 11px; margin: 6px 0;">
                     <template v-if="movementQualities[getMovementQualityKey(analysis)]?.quality_score">
-                      <span v-if="(movementQualities[getMovementQualityKey(analysis)]?.quality_score || 0) >= 8" style="color: #4ecdc4;">✅ Excellent</span>
-                      <span v-else-if="(movementQualities[getMovementQualityKey(analysis)]?.quality_score || 0) >= 6" style="color: #ffd700;">⚠️ Bon</span>
-                      <span v-else style="color: #ff6b6b;">❌ Faible</span>
+                      <span
+                        v-if="(movementQualities[getMovementQualityKey(analysis)]?.quality_score || 0) >= 8"
+                        style="color: #4ecdc4;"
+                      >✅ Excellent</span>
+                      <span
+                        v-else-if="(movementQualities[getMovementQualityKey(analysis)]?.quality_score || 0) >= 6"
+                        style="color: #ffd700;"
+                      >⚠️ Bon</span>
+                      <span
+                        v-else
+                        style="color: #ff6b6b;"
+                      >❌ Faible</span>
                     </template>
-                    <span v-else style="color: #999;">Calcul...</span>
+                    <span
+                      v-else
+                      style="color: #999;"
+                    >Calcul...</span>
                   </div>
                   <div style="font-size: 10px; color: #888; margin-top: auto;">
                     💡 Basé sur mouvements directionnel
@@ -529,7 +861,9 @@
 
                 <!-- Analyse Durée de Volatilité (Phase 1.1) -->
                 <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; display: flex; flex-direction: column;">
-                  <div style="font-size: 12px; color: #999; margin-bottom: 6px; font-weight: bold;">⏱️ Durée Vol.</div>
+                  <div style="font-size: 12px; color: #999; margin-bottom: 6px; font-weight: bold;">
+                    ⏱️ Durée Vol.
+                  </div>
                   <div style="font-size: 12px; color: #fff; font-weight: bold;">
                     <template v-if="volatilityDuration?.peak_duration_minutes">
                       {{ volatilityDuration.peak_duration_minutes }}min
@@ -540,17 +874,28 @@
                   </div>
                   <div style="font-size: 11px; margin: 6px 0;">
                     <template v-if="volatilityDuration?.confidence_score">
-                      <span v-if="volatilityDuration.confidence_score >= 75" style="color: #4ecdc4;">✅ Haute conf.</span>
-                      <span v-else-if="volatilityDuration.confidence_score >= 50" style="color: #ffd700;">⚠️ Moyenne</span>
-                      <span v-else style="color: #ff6b6b;">❌ Basse</span>
+                      <span
+                        v-if="volatilityDuration.confidence_score >= 75"
+                        style="color: #4ecdc4;"
+                      >✅ Haute conf.</span>
+                      <span
+                        v-else-if="volatilityDuration.confidence_score >= 50"
+                        style="color: #ffd700;"
+                      >⚠️ Moyenne</span>
+                      <span
+                        v-else
+                        style="color: #ff6b6b;"
+                      >❌ Basse</span>
                     </template>
-                    <span v-else style="color: #999;">Calcul...</span>
+                    <span
+                      v-else
+                      style="color: #999;"
+                    >Calcul...</span>
                   </div>
                   <div style="font-size: 10px; color: #888; margin-top: auto;">
                     💡 Pic {{ volatilityDuration?.peak_duration_minutes || '?' }}min
                   </div>
                 </div>
-
               </div>
             </div>
 
@@ -560,36 +905,66 @@
               <div class="performance-grid">
                 <!-- Win Rate -->
                 <div class="performance-metric">
-                  <div class="metric-label">Win Rate</div>
-                  <div v-if="winRate" class="metric-display">
-                    <span class="metric-value" :style="{ color: winRateColor }">{{ winRate.win_rate_percentage.toFixed(1) }}%</span>
+                  <div class="metric-label">
+                    Win Rate
+                  </div>
+                  <div
+                    v-if="winRate"
+                    class="metric-display"
+                  >
+                    <span
+                      class="metric-value"
+                      :style="{ color: winRateColor }"
+                    >{{ winRate.win_rate_percentage.toFixed(1) }}%</span>
                     <span class="metric-subtext">({{ winRate.wins }}/{{ winRate.total_trades }} trades)</span>
                   </div>
-                  <div v-else class="metric-loading">
+                  <div
+                    v-else
+                    class="metric-loading"
+                  >
                     <span>⏳ Calcul...</span>
                   </div>
                 </div>
 
                 <!-- Whipsaw Frequency -->
                 <div class="performance-metric">
-                  <div class="metric-label">Fréquence Whipsaw</div>
-                  <div v-if="whipsawAnalysis" class="metric-display">
-                    <span class="metric-value" :style="{ color: whipsawAnalysis.risk_color }">{{ whipsawAnalysis.whipsaw_frequency_percentage.toFixed(1) }}%</span>
+                  <div class="metric-label">
+                    Fréquence Whipsaw
+                  </div>
+                  <div
+                    v-if="whipsawAnalysis"
+                    class="metric-display"
+                  >
+                    <span
+                      class="metric-value"
+                      :style="{ color: whipsawAnalysis.risk_color }"
+                    >{{ whipsawAnalysis.whipsaw_frequency_percentage.toFixed(1) }}%</span>
                     <span class="metric-subtext">({{ whipsawAnalysis.risk_level }})</span>
                   </div>
-                  <div v-else class="metric-loading">
+                  <div
+                    v-else
+                    class="metric-loading"
+                  >
                     <span>⏳ Calcul...</span>
                   </div>
                 </div>
 
                 <!-- Offset Optimal -->
                 <div class="performance-metric">
-                  <div class="metric-label">Offset Optimal</div>
-                  <div v-if="offsetOptimal" class="metric-display">
+                  <div class="metric-label">
+                    Offset Optimal
+                  </div>
+                  <div
+                    v-if="offsetOptimal"
+                    class="metric-display"
+                  >
                     <span class="metric-value">{{ offsetOptimal.offset_pips.toFixed(1) }} pips</span>
                     <span class="metric-subtext">(P95: {{ offsetOptimal.percentile_95_wicks.toFixed(1) }})</span>
                   </div>
-                  <div v-else class="metric-loading">
+                  <div
+                    v-else
+                    class="metric-loading"
+                  >
                     <span>⏳ Calcul...</span>
                   </div>
                 </div>
@@ -598,15 +973,29 @@
           </div>
         </div>
         
-        <div v-if="!sliceAnalyses || sliceAnalyses.length === 0" class="no-data">
+        <div
+          v-if="!sliceAnalyses || sliceAnalyses.length === 0"
+          class="no-data"
+        >
           <p>Aucune donnée disponible pour l'analyse</p>
         </div>
       </div>
 
       <!-- Footer -->
       <div class="modal-footer">
-        <button v-if="!isArchiveMode" class="btn-archive" @click="openArchiveModal">💾 Archiver</button>
-        <button class="btn-primary" @click="close">Fermer l'analyse</button>
+        <button
+          v-if="!isArchiveMode"
+          class="btn-archive"
+          @click="openArchiveModal"
+        >
+          💾 Archiver
+        </button>
+        <button
+          class="btn-primary"
+          @click="close"
+        >
+          Fermer l'analyse
+        </button>
       </div>
     </div>
   </div>
@@ -626,15 +1015,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, reactive, onMounted, computed } from 'vue'
+import { ref, watch, reactive, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import type { AnalysisResult } from '../stores/volatility'
 import type { SliceAnalysis } from '../utils/straddleAnalysis'
 import { analyzeTop3Slices, calculateBidiParameters } from '../utils/straddleAnalysis'
-import type { BidiParameters } from '../utils/straddleAnalysis'
 import MetricTooltip from './MetricTooltip.vue'
 import ArchiveModal from './ArchiveModal.vue'
-import { useStraddleAnalysis, type OptimalOffset, type WinRateMetric, type WhipsawMetric } from '../composables/useStraddleAnalysis'
+import { useStraddleAnalysis } from '../composables/useStraddleAnalysis'
 
 interface Props {
   isOpen: boolean
@@ -879,18 +1267,16 @@ watch(
       try {
         const symbol = props.analysisResult.symbol || 'EURUSD'
         
-        // Récupérer la date et l'heure du meilleur slice
-        // TODO: Extraire date depuis props.analysisResult ou bestSlice
-        const today = new Date()
-        const dateStr = today.toISOString().split('T')[0] // Format: YYYY-MM-DD
+        // Récupérer hour et quarter depuis le meilleur slice
         const hour = bestSlice.slice?.hour || 0
+        const quarter = bestSlice.slice?.quarter || 0
         
-        console.log(`📊 Chargement candles: ${symbol} ${dateStr} heure ${hour}`)
+        console.log(`📊 Analyse Straddle: ${symbol} heure ${hour} quarter ${quarter}`)
 
-        // Appeler la composable avec date/heure pour charger les VRAIES candles depuis DB
-        await analyzeStraddleMetrics(symbol, dateStr, hour)
+        // Appeler la composable avec hour/quarter pour charger candles filtrées
+        await analyzeStraddleMetrics(symbol, hour, quarter)
 
-        console.log('✅ TÂCHE 5 Métriques calculées avec VRAIES données:')
+        console.log('✅ TÂCHE 5 Métriques calculées avec VRAIES candles du quarter:')
         console.log('   - Offset:', offsetOptimal.value?.offset_pips, 'pips')
         console.log('   - Win Rate:', winRate.value?.win_rate_percentage, '%')
         console.log('   - Whipsaw:', whipsawAnalysis.value?.whipsaw_frequency_percentage, '%')

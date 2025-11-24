@@ -1,20 +1,39 @@
 <template>
-  <div v-if="show" class="modal-overlay" @click.self="closeModal">
+  <div
+    v-if="show"
+    class="modal-overlay"
+    @click.self="closeModal"
+  >
     <div class="modal-content">
       <div class="modal-header">
         <h2>💾 Archiver l'analyse</h2>
-        <button class="close-btn" @click="closeModal">✕</button>
+        <button
+          class="close-btn"
+          @click="closeModal"
+        >
+          ✕
+        </button>
       </div>
 
       <div class="modal-body">
         <div class="form-group">
           <label>Type d'archive</label>
-          <input type="text" :value="archiveType" disabled class="input-disabled" />
+          <input
+            type="text"
+            :value="archiveType"
+            disabled
+            class="input-disabled"
+          >
         </div>
 
         <div class="form-group">
           <label>Période</label>
-          <input type="text" :value="periodLabel" disabled class="input-disabled" />
+          <input
+            type="text"
+            :value="periodLabel"
+            disabled
+            class="input-disabled"
+          >
         </div>
 
         <div class="form-group">
@@ -24,7 +43,7 @@
             type="text" 
             class="input-field"
             placeholder="Nom de l'archive"
-          />
+          >
         </div>
 
         <div class="form-group">
@@ -34,13 +53,22 @@
             class="textarea-field"
             placeholder="Ajoutez des notes ou commentaires..."
             rows="4"
-          ></textarea>
+          />
         </div>
       </div>
 
       <div class="modal-footer">
-        <button class="btn-cancel" @click="closeModal">Annuler</button>
-        <button class="btn-save" @click="handleSave" :disabled="saving">
+        <button
+          class="btn-cancel"
+          @click="closeModal"
+        >
+          Annuler
+        </button>
+        <button
+          class="btn-save"
+          :disabled="saving"
+          @click="handleSave"
+        >
           {{ saving ? 'Sauvegarde...' : 'Archiver' }}
         </button>
       </div>

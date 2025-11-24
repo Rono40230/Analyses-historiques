@@ -1,12 +1,20 @@
 <template>
-  <div v-if="loadingEvent" class="loading">
-    <div class="spinner"></div>
+  <div
+    v-if="loadingEvent"
+    class="loading"
+  >
+    <div class="spinner" />
     <p>Analyse de l'impact de l'événement...</p>
   </div>
 
   <!-- Message de bienvenue avec dropdown événement -->
-  <div v-if="!selectedEventId && !loadingEvent" class="welcome">
-    <div class="welcome-icon">🎯</div>
+  <div
+    v-if="!selectedEventId && !loadingEvent"
+    class="welcome"
+  >
+    <div class="welcome-icon">
+      🎯
+    </div>
     <h3>Analyse Rétrospective par Événement</h3>
     <div class="welcome-select-container">
       <!-- Dropdown UNIQUE pour tous les événements -->
@@ -18,8 +26,14 @@
           class="welcome-symbol-select"
           @change="loadEventImpact"
         >
-          <option value="">Choisir un événement</option>
-          <option v-for="event in props.pastEvents" :key="`event-${event.name}`" :value="event.name">
+          <option value="">
+            Choisir un événement
+          </option>
+          <option
+            v-for="event in props.pastEvents"
+            :key="`event-${event.name}`"
+            :value="event.name"
+          >
             {{ getEventLabel(event.name) }} ({{ event.count }} occurrences)
           </option>
         </select>
@@ -27,7 +41,10 @@
     </div>
   </div>
 
-  <div v-if="eventImpact && !loadingEvent" class="event-impact-results">
+  <div
+    v-if="eventImpact && !loadingEvent"
+    class="event-impact-results"
+  >
     <!-- Informations sur l'événement avec dropdown pour changer -->
     <div class="event-info-card">
       <div class="event-header">
@@ -42,13 +59,24 @@
             class="inline-select"
             @change="loadEventImpact"
           >
-            <option value="">Changer d'événement</option>
-            <option v-for="event in props.pastEvents" :key="`event-${event.name}`" :value="event.name">
+            <option value="">
+              Changer d'événement
+            </option>
+            <option
+              v-for="event in props.pastEvents"
+              :key="`event-${event.name}`"
+              :value="event.name"
+            >
               {{ getEventLabel(event.name) }}
             </option>
           </select>
         </div>
-        <button class="btn-archive" @click="openArchiveModal">💾 Archiver</button>
+        <button
+          class="btn-archive"
+          @click="openArchiveModal"
+        >
+          💾 Archiver
+        </button>
       </div>
     </div>
 
@@ -61,26 +89,52 @@
           <tr>
             <th>Rang</th>
             <th>Paire</th>
-            <th style="cursor: pointer;" @click="sortEventVolatility">Volatilité Event</th>
-            <th title="Variation moyenne en pips sur les 7 jours ouvrables précédant l'événement, à la même heure">Vol. Baseline</th>
-            <th title="Ratio: volatilité event / volatilité baseline. Mesure l'amplification de la volatilité">Multiplicateur</th>
-            <th title="Points de trading (1 point = 1/10 pip)">Points</th>
+            <th
+              style="cursor: pointer;"
+              @click="sortEventVolatility"
+            >
+              Volatilité Event
+            </th>
+            <th title="Variation moyenne en pips sur les 7 jours ouvrables précédant l'événement, à la même heure">
+              Vol. Baseline
+            </th>
+            <th title="Ratio: volatilité event / volatilité baseline. Mesure l'amplification de la volatilité">
+              Multiplicateur
+            </th>
+            <th title="Points de trading (1 point = 1/10 pip)">
+              Points
+            </th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(pair, index) in eventImpact.pair_impacts" :key="pair.symbol" :class="{ 'top-pair': index === 0 }">
+          <tr
+            v-for="(pair, index) in eventImpact.pair_impacts"
+            :key="pair.symbol"
+            :class="{ 'top-pair': index === 0 }"
+          >
             <td>
               #{{ index + 1 }}
             </td>
-            <td class="pair-name">{{ pair.symbol }}</td>
-            <td class="volatility">{{ pair.event_volatility_formatted }} pips</td>
-            <td class="baseline">{{ pair.baseline_volatility_formatted }} pips</td>
+            <td class="pair-name">
+              {{ pair.symbol }}
+            </td>
+            <td class="volatility">
+              {{ pair.event_volatility_formatted }} pips
+            </td>
+            <td class="baseline">
+              {{ pair.baseline_volatility_formatted }} pips
+            </td>
             <td class="multiplier">
-              <span class="multiplier-value" :class="getMultiplierClass(pair.multiplier)">
+              <span
+                class="multiplier-value"
+                :class="getMultiplierClass(pair.multiplier)"
+              >
                 ×{{ pair.multiplier.toFixed(1) }}
               </span>
             </td>
-            <td class="points">{{ pair.points_formatted }}</td>
+            <td class="points">
+              {{ pair.points_formatted }}
+            </td>
           </tr>
         </tbody>
       </table>
@@ -90,7 +144,12 @@
     <div class="observations-card">
       <h3>💡 Observations</h3>
       <ul>
-        <li v-for="(obs, index) in eventImpact.observations" :key="index">{{ obs }}</li>
+        <li
+          v-for="(obs, index) in eventImpact.observations"
+          :key="index"
+        >
+          {{ obs }}
+        </li>
       </ul>
     </div>
   </div>

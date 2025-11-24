@@ -1,5 +1,8 @@
 <template>
-  <div v-if="stats.length > 0" class="hourly-table">
+  <div
+    v-if="stats.length > 0"
+    class="hourly-table"
+  >
     <!-- Header simple avec titre -->
     <div class="table-header">
       <div class="header-left">
@@ -11,7 +14,10 @@
       <table>
         <thead>
           <tr>
-            <th v-if="props.stats15min" style="width: 30px;"></th>
+            <th
+              v-if="props.stats15min"
+              style="width: 30px;"
+            />
             <th>Heure</th>
             <th>ATR Moyen</th>
             <th>True Range</th>
@@ -25,23 +31,32 @@
           </tr>
         </thead>
         <tbody>
-          <template v-for="stat in stats" :key="stat.hour">
+          <template
+            v-for="stat in stats"
+            :key="stat.hour"
+          >
             <!-- Ligne horaire normale -->
             <tr>
-              <td v-if="props.stats15min" class="expand-cell">
+              <td
+                v-if="props.stats15min"
+                class="expand-cell"
+              >
                 <button
                   v-if="getQuartersForHour(stat.hour).length > 0"
                   class="expand-btn"
                   :class="{ expanded: expandedHours.includes(stat.hour) }"
-                  @click="toggleExpand(stat.hour)"
                   :title="expandedHours.includes(stat.hour) ? 'Replier' : 'Voir 15min'"
+                  @click="toggleExpand(stat.hour)"
                 >
                   ▶
                 </button>
               </td>
               <td class="hour-cell">
                 {{ formatHour(stat.hour) }}
-                <span v-if="stat.hour == bestSliceHour" class="star">⭐</span>
+                <span
+                  v-if="stat.hour == bestSliceHour"
+                  class="star"
+                >⭐</span>
               </td>
               <td>{{ formatATR(stat.atr_mean) }}</td>
               <td>
@@ -61,18 +76,27 @@
                   v-if="getDistinctEventCount(stat.events) > 0"
                   class="event-badge-btn"
                   :class="getEventBadgeClass(stat.events)"
-                  @click="selectHour(stat.hour, stat.events)"
                   :title="`${getDistinctEventCount(stat.events)} événement(s) HIGH`"
+                  @click="selectHour(stat.hour, stat.events)"
                 >
                   {{ logHourEventCount(stat.hour, stat.events) }}
                 </button>
-                <span v-else class="no-event">—</span>
+                <span
+                  v-else
+                  class="no-event"
+                >—</span>
               </td>
             </tr>
 
             <!-- Accordion 15-minutes -->
-            <tr v-if="expandedHours.includes(stat.hour) && props.stats15min" class="accordion-row">
-              <td :colspan="props.stats15min ? 14 : 10" class="accordion-cell">
+            <tr
+              v-if="expandedHours.includes(stat.hour) && props.stats15min"
+              class="accordion-row"
+            >
+              <td
+                :colspan="props.stats15min ? 14 : 10"
+                class="accordion-cell"
+              >
                 <div class="scalping-details">
                   <table class="scalping-table">
                     <thead>
@@ -86,16 +110,30 @@
                         <th>Tick Quality</th>
                         <th>Noise Ratio</th>
                         <th>Breakouts %</th>
-                        <th title="TÂCHE 4: Minutes volatilité > 80% pic">Peak (min)</th>
-                        <th title="TÂCHE 4: Minutes pour -50% volatilité">Half-Life (min)</th>
-                        <th title="TÂCHE 4: Durée optimale fermeture trade">Trade Exp (min)</th>
+                        <th title="TÂCHE 4: Minutes volatilité > 80% pic">
+                          Peak (min)
+                        </th>
+                        <th title="TÂCHE 4: Minutes pour -50% volatilité">
+                          Half-Life (min)
+                        </th>
+                        <th title="TÂCHE 4: Durée optimale fermeture trade">
+                          Trade Exp (min)
+                        </th>
                         <th>Événements</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr v-for="quarter in getQuartersForHour(stat.hour)" :key="`${stat.hour}-${quarter.quarter}`" class="scalping-row" :class="{ 'top3-slice': isBestSliceInHour(stat.hour, quarter.quarter) }">
+                      <tr
+                        v-for="quarter in getQuartersForHour(stat.hour)"
+                        :key="`${stat.hour}-${quarter.quarter}`"
+                        class="scalping-row"
+                        :class="{ 'top3-slice': isBestSliceInHour(stat.hour, quarter.quarter) }"
+                      >
                         <td class="time-cell">
-                          <span v-if="isBestSliceInHour(stat.hour, quarter.quarter)" class="top3-star">⭐</span>
+                          <span
+                            v-if="isBestSliceInHour(stat.hour, quarter.quarter)"
+                            class="top3-star"
+                          >⭐</span>
                           {{ String(stat.hour).padStart(2, '0') }}:{{ String(quarter.quarter * 15).padStart(2, '0') }}-{{ String(stat.hour).padStart(2, '0') }}:{{ String(Math.min(quarter.quarter * 15 + 15, 60)).padStart(2, '0') }}
                         </td>
                         <td>{{ formatATR(quarter.atr_mean) }}</td>
@@ -109,26 +147,42 @@
                         <td>{{ formatTickQuality(quarter.tick_quality_mean) }}</td>
                         <td>{{ quarter.noise_ratio_mean.toFixed(2) }}</td>
                         <td>{{ quarter.breakout_percentage.toFixed(2) }}%</td>
-                        <td class="duration-cell" :title="`Peak duration: ${quarter.peak_duration_minutes ?? 'N/A'} min`">
+                        <td
+                          class="duration-cell"
+                          :title="`Peak duration: ${quarter.peak_duration_minutes ?? 'N/A'} min`"
+                        >
                           {{ quarter.peak_duration_minutes !== undefined ? quarter.peak_duration_minutes + ' min' : '—' }}
                         </td>
-                        <td class="duration-cell" :title="`Half-life: ${quarter.volatility_half_life_minutes ?? 'N/A'} min`">
+                        <td
+                          class="duration-cell"
+                          :title="`Half-life: ${quarter.volatility_half_life_minutes ?? 'N/A'} min`"
+                        >
                           {{ quarter.volatility_half_life_minutes !== undefined ? quarter.volatility_half_life_minutes + ' min' : '—' }}
                         </td>
-                        <td class="trade-exp-cell" :class="{ 'warning': isTradeExpTooLong(quarter) }" :title="`Fermer trade après ${quarter.recommended_trade_expiration_minutes ?? 'N/A'} min`">
+                        <td
+                          class="trade-exp-cell"
+                          :class="{ 'warning': isTradeExpTooLong(quarter) }"
+                          :title="`Fermer trade après ${quarter.recommended_trade_expiration_minutes ?? 'N/A'} min`"
+                        >
                           {{ quarter.recommended_trade_expiration_minutes !== undefined ? quarter.recommended_trade_expiration_minutes + ' min' : '—' }}
-                          <span v-if="isTradeExpTooLong(quarter)" class="warning-icon">⚠️</span>
+                          <span
+                            v-if="isTradeExpTooLong(quarter)"
+                            class="warning-icon"
+                          >⚠️</span>
                         </td>
                         <td class="events-cell">
                           <button
                             v-if="getEventsForQuarter(stat.events, stat.hour, quarter.quarter).length > 0"
                             class="event-badge-btn high"
-                            @click="selectHour(stat.hour, getEventsForQuarter(stat.events, stat.hour, quarter.quarter))"
                             style="font-size: 0.8em; padding: 2px 6px;"
+                            @click="selectHour(stat.hour, getEventsForQuarter(stat.events, stat.hour, quarter.quarter))"
                           >
                             {{ getEventsForQuarter(stat.events, stat.hour, quarter.quarter).length }}
                           </button>
-                          <span v-else class="no-event">—</span>
+                          <span
+                            v-else
+                            class="no-event"
+                          >—</span>
                         </td>
                       </tr>
                     </tbody>
@@ -143,9 +197,9 @@
 
     <!-- Drawer des événements -->
     <EventDetailsDrawer
-      :isOpen="drawerOpen"
-      :selectedHour="selectedHour"
-      :allEvents="selectedEvents"
+      :is-open="drawerOpen"
+      :selected-hour="selectedHour"
+      :all-events="selectedEvents"
       @close="drawerOpen = false"
     />
   </div>

@@ -1,17 +1,23 @@
 <template>
-  <div v-if="loadingHeatmap" class="loading">
-    <div class="spinner"></div>
+  <div
+    v-if="loadingHeatmap"
+    class="loading"
+  >
+    <div class="spinner" />
     <p>Génération de la heatmap...</p>
   </div>
 
-  <div v-if="heatmapData && !loadingHeatmap" class="heatmap-container">
+  <div
+    v-if="heatmapData && !loadingHeatmap"
+    class="heatmap-container"
+  >
     <div class="heatmap-header">
       <div class="heatmap-scale">
-        <span class="scale-item"><span class="scale-color heat-very-low"></span>≥12 pips</span>
-        <span class="scale-item"><span class="scale-color heat-low"></span>9-11 pips</span>
-        <span class="scale-item"><span class="scale-color heat-medium"></span>6-8 pips</span>
-        <span class="scale-item"><span class="scale-color heat-high"></span>3-5 pips</span>
-        <span class="scale-item"><span class="scale-color heat-very-high"></span>&lt;3 pips</span>
+        <span class="scale-item"><span class="scale-color heat-very-low" />≥12 pips</span>
+        <span class="scale-item"><span class="scale-color heat-low" />9-11 pips</span>
+        <span class="scale-item"><span class="scale-color heat-medium" />6-8 pips</span>
+        <span class="scale-item"><span class="scale-color heat-high" />3-5 pips</span>
+        <span class="scale-item"><span class="scale-color heat-very-high" />&lt;3 pips</span>
       </div>
     </div>
 
@@ -19,41 +25,87 @@
     <div class="filters-container">
       <div class="filter-group">
         <label for="volatility-threshold">Volatilité minimale :</label>
-        <select id="volatility-threshold" v-model.number="minVolatilityThreshold" class="filter-select">
-          <option value="3">≥3 pips</option>
-          <option value="6">≥6 pips</option>
-          <option value="9">≥9 pips</option>
-          <option value="12">≥12 pips</option>
+        <select
+          id="volatility-threshold"
+          v-model.number="minVolatilityThreshold"
+          class="filter-select"
+        >
+          <option value="3">
+            ≥3 pips
+          </option>
+          <option value="6">
+            ≥6 pips
+          </option>
+          <option value="9">
+            ≥9 pips
+          </option>
+          <option value="12">
+            ≥12 pips
+          </option>
         </select>
       </div>
       <div class="filter-group">
         <label for="max-events">Nombre d'événements max :</label>
-        <select id="max-events" v-model.number="maxEventsToDisplay" class="filter-select">
-          <option value="5">5 événements</option>
-          <option value="10">10 événements</option>
-          <option value="15">15 événements</option>
-          <option value="20">20 événements</option>
+        <select
+          id="max-events"
+          v-model.number="maxEventsToDisplay"
+          class="filter-select"
+        >
+          <option value="5">
+            5 événements
+          </option>
+          <option value="10">
+            10 événements
+          </option>
+          <option value="15">
+            15 événements
+          </option>
+          <option value="20">
+            20 événements
+          </option>
         </select>
       </div>
     </div>
     <div class="heatmap-wrapper">
       <table class="heatmap-table">
-      <thead>
-        <tr>
-          <th class="header-corner">Type d'événement</th>
-          <th v-for="pair in heatmapData.pairs" :key="pair">{{ pair }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="eventType in getSortedEventTypes()" :key="eventType.name">
-          <td class="event-type-cell" :class="{ 'no-data': eventType.has_data === false }">
-            <div class="event-type-name">{{ getFormattedEventName(eventType.name) }}</div>
-          </td>
-          <td v-for="pair in heatmapData.pairs" :key="`${eventType.name}-${pair}`" :class="['heatmap-cell', getHeatmapValue(eventType.name, pair) >= minVolatilityThreshold ? getHeatmapClass(getHeatmapValue(eventType.name, pair)) : 'empty-cell']">
-            <span v-if="getHeatmapValue(eventType.name, pair) >= minVolatilityThreshold" class="cell-value">{{ getHeatmapValue(eventType.name, pair) }}</span>
-          </td>
-        </tr>
-      </tbody>
+        <thead>
+          <tr>
+            <th class="header-corner">
+              Type d'événement
+            </th>
+            <th
+              v-for="pair in heatmapData.pairs"
+              :key="pair"
+            >
+              {{ pair }}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="eventType in getSortedEventTypes()"
+            :key="eventType.name"
+          >
+            <td
+              class="event-type-cell"
+              :class="{ 'no-data': eventType.has_data === false }"
+            >
+              <div class="event-type-name">
+                {{ getFormattedEventName(eventType.name) }}
+              </div>
+            </td>
+            <td
+              v-for="pair in heatmapData.pairs"
+              :key="`${eventType.name}-${pair}`"
+              :class="['heatmap-cell', getHeatmapValue(eventType.name, pair) >= minVolatilityThreshold ? getHeatmapClass(getHeatmapValue(eventType.name, pair)) : 'empty-cell']"
+            >
+              <span
+                v-if="getHeatmapValue(eventType.name, pair) >= minVolatilityThreshold"
+                class="cell-value"
+              >{{ getHeatmapValue(eventType.name, pair) }}</span>
+            </td>
+          </tr>
+        </tbody>
       </table>
     </div>
   </div>
