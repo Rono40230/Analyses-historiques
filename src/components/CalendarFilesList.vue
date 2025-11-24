@@ -166,7 +166,6 @@ async function handleImportClick() {
       sourcePath: selectedPath
     })
     
-    console.log(`✅ ${count} événements importés avec succès`)
     
     // Rafraîchir automatiquement la liste des fichiers
     await refreshFiles()

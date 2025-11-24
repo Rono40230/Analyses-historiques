@@ -8,7 +8,6 @@
       v-if="props.result"
       style="display: none;"
     >
-      {{ console.log('AnalysisPanel result:', props.result) }}
     </div>
     
     <div class="panel-header">

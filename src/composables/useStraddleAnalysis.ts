@@ -48,16 +48,13 @@ export function useStraddleAnalysis() {
     hour: number,
     quarter: number
   ): Promise<any[]> => {
-    console.log(`🔍 loadCandlesForQuarter: symbol=${symbol} hour=${hour} quarter=${quarter}`)
     try {
       const response = await invoke<any>('get_candles_for_quarter', {
         symbol,
         hour,
         quarter,
       })
-      console.log(`✅ Chargé ${response.candle_count} candles pour ${symbol} heure ${hour} quarter ${quarter}`)
       if (response.candle_count > 0) {
-        console.log(`   Candles: ${response.candles.length} items`)
       }
       return response.candles || []
     } catch (err) {
@@ -74,23 +71,19 @@ export function useStraddleAnalysis() {
     hour: number,
     quarter: number
   ) => {
-    console.log(`📊 analyzeStraddleMetrics: symbol=${symbol} hour=${hour} quarter=${quarter}`)
     try {
       isLoading.value = true
       error.value = null
 
       // S'assurer que la paire est chargée AVANT de demander les candles
-      console.log(`🔄 Préchargement de la paire ${symbol}...`)
       try {
         await invoke<string>('load_pair_candles', { symbol })
-        console.log(`✅ Paire ${symbol} préchargée`)
       } catch (preloadErr) {
         console.warn(`⚠️ Préchargement ${symbol} échoué (peut-être déjà chargée):`, preloadErr)
       }
 
       // Charger les candles filtrées pour ce quarter depuis la DB
       const candles = await loadCandlesForQuarter(symbol, hour, quarter)
-      console.log(`📈 Reçu ${candles.length} candles pour analyse`)
 
       if (candles.length === 0) {
         console.warn('⚠️ Pas de candles pour ce quarter - valeurs par défaut')
@@ -117,7 +110,6 @@ export function useStraddleAnalysis() {
       }
 
       // Appeler la command avec les VRAIES candles filtrées
-      console.log(`🚀 Appelant analyze_straddle_metrics avec ${candles.length} candles`)
       const result = await invoke<StraddleMetricsResponse>('analyze_straddle_metrics', {
         symbol,
         hour,
@@ -128,10 +120,6 @@ export function useStraddleAnalysis() {
       winRate.value = result.win_rate
       whipsawAnalysis.value = result.whipsaw
 
-      console.log('✅ TÂCHE 5 - Analyse Straddle avec VRAIES candles du quarter:')
-      console.log('   - Offset optimal:', offsetOptimal.value.offset_pips, 'pips')
-      console.log('   - Win Rate:', winRate.value.win_rate_percentage.toFixed(1), '%')
-      console.log('   - Whipsaw:', whipsawAnalysis.value.whipsaw_frequency_percentage.toFixed(1), '%')
 
       return result
     } catch (err) {

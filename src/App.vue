@@ -11,15 +11,10 @@ import EventCorrelationView from './components/EventCorrelationView.vue'
 import ArchivesView from './views/ArchivesView.vue'
 
 onMounted(async () => {
-  console.log('🎯 Vue App.vue mounted - Application Vue initialisée');
-  console.log('📱 activeTab:', activeTab.value);
-  console.log('🌐 window.location:', window.location.href);
-  console.log('📦 Composants importés:', { SymbolSelector, AnalysisPanel, HourlyTable, ImportHub, EventCorrelationView });
   
   // 🚀 OPTIMISATION: Initialiser l'index des candles au démarrage
   try {
     const result = await invoke('init_candle_index', {})
-    console.log('✅ CandleIndex initialisé:', result)
   } catch (error) {
     console.warn('⚠️ CandleIndex initialization warning:', error)
     // Non-bloquant - l'app continue même si l'index ne charge pas
@@ -37,19 +32,16 @@ const selectedSymbolLocal = ref('')
 const activeCalendarId = ref<number | null>(null)
 
 async function handleSymbolSelected(symbol: string) {
-  console.log('🔍 Symbol selected:', symbol);
   await store.analyzeSymbol(symbol)
 }
 
 async function handleSymbolChange() {
   if (selectedSymbolLocal.value) {
-    console.log('🔍 Symbol selected:', selectedSymbolLocal.value);
     await store.analyzeSymbol(selectedSymbolLocal.value)
   }
 }
 
 function switchTab(tab: 'volatility' | 'calendar' | 'correlation' | 'archives') {
-  console.log('🔄 Changement d onglet:', tab);
   activeTab.value = tab
 }
 </script>

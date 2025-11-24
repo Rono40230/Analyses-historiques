@@ -140,7 +140,6 @@ const maxEventsToDisplay = ref(10)     // Nombre max: 5, 10, 15, 20
 async function loadHeatmap() {
   if (props.isArchiveMode && props.archiveData) {
     heatmapData.value = props.archiveData
-    console.log('📊 Heatmap loaded from archive:', heatmapData.value)
     return
   }
 
@@ -155,15 +154,11 @@ async function loadHeatmap() {
       calendarId: props.calendarId,
       pairs: props.availablePairs
     })
-    console.log('📊 Heatmap data loaded:', heatmapData.value)
     
     // Debug: inspecter la structure data
     if (heatmapData.value?.data) {
-      console.log('🔍 Data structure keys:', Object.keys(heatmapData.value.data))
       for (const [eventType, pairData] of Object.entries(heatmapData.value.data)) {
-        console.log(`  📌 ${eventType}:`, pairData)
         for (const [pair, value] of Object.entries(pairData as any)) {
-          console.log(`    ✓ ${pair}: ${value}`)
         }
       }
     }

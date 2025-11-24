@@ -698,7 +698,6 @@ async function runAnalysis(animate = true) {
       pairs: selectedPairs.value.length > 0 ? selectedPairs.value : null
     }
     
-    console.log("Lancement analyse globale avec filtres:", filters)
 
     const data = await invoke<GlobalAnalysisResult>('analyze_all_archives', {
       filters: filters

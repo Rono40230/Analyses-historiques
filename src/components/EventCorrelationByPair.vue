@@ -363,7 +363,6 @@ function openArchiveModal() {
 }
 
 function handleArchiveSaved() {
-  console.log('Archive sauvegardée avec succès')
   showArchiveModal.value = false
 }
 </script>

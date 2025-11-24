@@ -75,7 +75,6 @@ onBeforeUnmount(() => unsubscribe())
 
 // Écouter les changements du signal de rafraîchissement
 watch(() => store.dataRefreshTrigger, async () => {
-  console.log('🔄 Rafraîchissement des événements déclenché')
   await loadPastEvents()
 })
 
@@ -85,12 +84,10 @@ onMounted(async () => {
 })
 
 async function handleCalendarSelected(filename: string) {
-  console.log('📅 Calendrier sélectionné:', filename)
   try {
     // Récupérer l'ID du calendrier depuis le nom du fichier
     const calendarId = await invoke<number | null>('get_calendar_id_by_filename', { filename })
     selectedCalendarId.value = calendarId
-    console.log('📅 Calendar ID:', calendarId)
     
     // Recharger les événements pour ce calendrier
     await loadPastEvents()
@@ -111,7 +108,6 @@ async function loadPastEvents() {
       calendarId: selectedCalendarId.value
     })
     pastEvents.value = result
-    console.log('📊 Événements chargés pour calendrier', selectedCalendarId.value, ':', pastEvents.value.length, 'événements')
   } catch (error) {
     console.error('Erreur:', error)
     pastEvents.value = []

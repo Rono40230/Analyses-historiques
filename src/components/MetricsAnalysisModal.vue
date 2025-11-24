@@ -1107,9 +1107,6 @@ const entryWindowAnalysis = reactive({
   total_events_analyzed: 0
 } as EntryWindowAnalysisResult)
 
-console.log(`🔍 [INIT] entryWindowAnalysis créé:`, entryWindowAnalysis)
-console.log(`🔍 [INIT] Type:`, typeof entryWindowAnalysis)
-console.log(`🔍 [INIT] Symbol:`, entryWindowAnalysis.symbol)
 
 /**
  * Helper: construit la clé pour accéder une qualité de mouvement
@@ -1125,7 +1122,6 @@ const getMovementQualityKey = (analysis: SliceAnalysis): string => {
 async function updateAnalysis() {
   if (props.analysisResult && props.isOpen) {
     const result = props.analysisResult
-    console.log(`🔄 updateAnalysis() - Symbol: ${result.symbol}`)
     analysisData.value = {
       globalMetrics: result.global_metrics,
       symbol: result.symbol,
@@ -1136,20 +1132,16 @@ async function updateAnalysis() {
 
     // Analyser les TOP 3 tranches 15min
     if (result.stats_15min && result.stats_15min.length > 0) {
-      console.log('Analyzing', result.stats_15min.length, 'slices')
       sliceAnalyses.value = analyzeTop3Slices(result.stats_15min)
-      console.log('Top 3 slices:', sliceAnalyses.value)
 
       // Calculer et stocker les paramètres Bidi pour le meilleur moment (rank 1)
       if (sliceAnalyses.value && sliceAnalyses.value.length > 0) {
         const bestSlice = sliceAnalyses.value[0] // Top slice
         tradingPlan.value = calculateBidiParameters(bestSlice.slice, sliceAnalyses.value.map(a => a.slice))
-        console.log('Trading Plan (avec tradeDurationMinutes):', tradingPlan.value)
         
         // Calculer la volatilité empirique via Tauri command
         try {
           const stats15min = bestSlice.slice.stats
-          console.log('📊 Appel Tauri: analyze_volatility_duration avec Stats15Min:', stats15min)
           
           volatilityDuration.value = await invoke('analyze_volatility_duration', {
             stats: {
@@ -1169,7 +1161,6 @@ async function updateAnalysis() {
               events: stats15min.events || []
             }
           })
-          console.log('✅ VolatilityDuration reçu du backend:', volatilityDuration.value)
         } catch (error) {
           console.error('❌ Erreur lors de l\'appel Tauri analyze_volatility_duration:', error)
           // Fallback: utiliser des valeurs heuristiques par défaut
@@ -1183,26 +1174,21 @@ async function updateAnalysis() {
             confidence_score: 50, // Confiance basse avec fallback
             sample_size: bestSlice.slice.stats.candle_count
           }
-          console.log('⚠️ Utilisation des valeurs heuristiques:', volatilityDuration.value)
         }
       }
 
       // Charger les qualités de mouvement pour chaque slice (Phase 1.2)
       if (sliceAnalyses.value && sliceAnalyses.value.length > 0) {
-        console.log(`💫 Chargement des qualités pour ${sliceAnalyses.value.length} slices...`)
         for (const analysis of sliceAnalyses.value) {
           if (analysis.slice.stats.events && analysis.slice.stats.events.length > 0) {
             const eventName = analysis.slice.stats.events[0].event_name
-            console.log(`  → Appel loadMovementQuality(${result.symbol}, ${eventName})`)
             await loadMovementQuality(result.symbol, eventName)
           }
         }
-        console.log(`✅ Chargement des qualités terminé`)
 
         // Charger l'analyse de fenêtre d'entrée (Phase 1.3)
         const firstEvent = sliceAnalyses.value[0].slice.stats.events[0]
         if (firstEvent) {
-          console.log(`🪟 Chargement fenêtre d'entrée pour ${result.symbol}/${firstEvent.event_name}`)
           await loadEntryWindowAnalysis(result.symbol, firstEvent.event_name)
         }
       }
@@ -1222,14 +1208,12 @@ watch(
 watch(
   () => entryWindowAnalysis.symbol,
   (newVal, oldVal) => {
-    console.log(`👀 [WATCHER] entryWindowAnalysis.symbol changé: "${oldVal}" → "${newVal}"`)
   }
 )
 
 watch(
   () => entryWindowAnalysis,
   (newVal, oldVal) => {
-    console.log(`👀 [WATCHER] entryWindowAnalysis objet changé:`, newVal)
   },
   { deep: true }
 )
@@ -1255,7 +1239,6 @@ watch(
   () => sliceAnalyses.value,
   async (newSlices) => {
     if (newSlices && newSlices.length > 0 && props.analysisResult) {
-      console.log('🎯 TÂCHE 5: Analyse des métriques Straddle...')
       
       // Récupérer le meilleur slice (rank 1)
       const bestSlice = newSlices[0]
@@ -1271,15 +1254,10 @@ watch(
         const hour = bestSlice.slice?.hour || 0
         const quarter = bestSlice.slice?.quarter || 0
         
-        console.log(`📊 Analyse Straddle: ${symbol} heure ${hour} quarter ${quarter}`)
 
         // Appeler la composable avec hour/quarter pour charger candles filtrées
         await analyzeStraddleMetrics(symbol, hour, quarter)
 
-        console.log('✅ TÂCHE 5 Métriques calculées avec VRAIES candles du quarter:')
-        console.log('   - Offset:', offsetOptimal.value?.offset_pips, 'pips')
-        console.log('   - Win Rate:', winRate.value?.win_rate_percentage, '%')
-        console.log('   - Whipsaw:', whipsawAnalysis.value?.whipsaw_frequency_percentage, '%')
       } catch (error) {
         console.error('❌ Erreur calcul TÂCHE 5:', error)
       }
@@ -1329,7 +1307,6 @@ function openArchiveModal() {
 }
 
 function handleArchiveSaved() {
-  console.log('Archive sauvegardée avec succès')
   showArchiveModal.value = false
 }
 
@@ -1338,24 +1315,16 @@ function handleArchiveSaved() {
  */
 const loadMovementQuality = async (symbol: string, eventType: string) => {
   const key = `${symbol}_${eventType}`
-  console.log(`🔄 Chargement qualité mouvement: ${key}`)
   
   if (movementQualities.value[key]) {
-    console.log(`✅ Qualité en cache: ${key}`)
     return movementQualities.value[key]
   }
 
   try {
-    console.log(`📤 Appel Tauri: analyze_movement_quality(${symbol}, ${eventType})`)
-    console.log(`📝 Paramètres envoyés:`, { symbol, eventType })
     const quality: MovementQuality = await invoke('analyze_movement_quality', {
       symbol,
       eventType
     })
-    console.log(`✅ Réponse reçue (type: ${typeof quality}):`, quality)
-    console.log(`📝 Type réel réponse:`, Object.prototype.toString.call(quality))
-    console.log(`📝 Contenu réponse:`, JSON.stringify(quality))
-    console.log(`📝 Clés réponse:`, quality ? Object.keys(quality) : 'null')
     
     if (!quality) {
       console.warn(`⚠️ Réponse null ou undefined reçue!`)
@@ -1363,8 +1332,6 @@ const loadMovementQuality = async (symbol: string, eventType: string) => {
     }
     
     movementQualities.value[key] = quality
-    console.log(`✅ Stockée dans Map avec clé: ${key}`)
-    console.log(`📊 Movement Quality [${symbol}/${eventType}]:`, quality)
     return quality
   } catch (error) {
     console.error(`❌ Erreur chargement qualité mouvement:`, error)
@@ -1377,32 +1344,19 @@ const loadMovementQuality = async (symbol: string, eventType: string) => {
  * Charge l'analyse de fenêtre d'entrée pour une paire et événement (Phase 1.3)
  */
 const loadEntryWindowAnalysis = async (symbol: string, eventType: string) => {
-  console.log(`\n🪟 [LOAD START] Chargement fenêtre d'entrée: ${symbol} / ${eventType}`)
   
   try {
-    console.log(`📤 Appel Tauri: analyze_entry_window(${symbol}, ${eventType})`)
     const result: EntryWindowAnalysisResult = await invoke('analyze_entry_window', {
       symbol,
       eventType
     })
-    console.log(`✅ Réponse reçue:`, result)
-    console.log(`📊 Result.symbol = "${result.symbol}"`)
-    console.log(`📊 Result.event_type = "${result.event_type}"`)
-    console.log(`📊 Result.optimal_offset = ${result.optimal_offset}`)
     
     // Avant assignment
-    console.log(`📍 [BEFORE] entryWindowAnalysis.symbol = "${entryWindowAnalysis.symbol}"`)
-    console.log(`📍 [BEFORE] Type entryWindowAnalysis:`, typeof entryWindowAnalysis)
-    console.log(`📍 [BEFORE] entryWindowAnalysis est Proxy?:`, entryWindowAnalysis.toString().includes('Proxy'))
     
     // Assigner chaque propriété
-    console.log(`🔄 Assigning symbol="${result.symbol}"...`)
     entryWindowAnalysis.symbol = result.symbol
-    console.log(`✓ symbol assigné. Valeur actuelle: "${entryWindowAnalysis.symbol}"`)
     
-    console.log(`🔄 Assigning event_type="${result.event_type}"...`)
     entryWindowAnalysis.event_type = result.event_type
-    console.log(`✓ event_type assigné. Valeur actuelle: "${entryWindowAnalysis.event_type}"`)
     
     entryWindowAnalysis.offsets = result.offsets
     entryWindowAnalysis.optimal_offset = result.optimal_offset
@@ -1411,12 +1365,7 @@ const loadEntryWindowAnalysis = async (symbol: string, eventType: string) => {
     entryWindowAnalysis.total_events_analyzed = result.total_events_analyzed
     
     // Après assignment
-    console.log(`📍 [AFTER] entryWindowAnalysis.symbol = "${entryWindowAnalysis.symbol}"`)
-    console.log(`📍 [AFTER] entryWindowAnalysis.event_type = "${entryWindowAnalysis.event_type}"`)
-    console.log(`📍 [AFTER] entryWindowAnalysis.optimal_offset = ${entryWindowAnalysis.optimal_offset}`)
-    console.log(`📍 [AFTER] Objet complet:`, { ...entryWindowAnalysis })
     
-    console.log(`✅ LOAD COMPLETE\n`)
     return result
   } catch (error) {
     console.error(`❌ ERREUR:`, error)
@@ -1436,41 +1385,30 @@ const formatNumber = (value: number, decimals: number): string => {
  * Note: offset négatif = avant (ex: -5 = 5 min avant)
  */
 const calculateExactTime = (): string => {
-  console.log('🔍 calculateExactTime() appelée')
-  console.log('  - sliceAnalyses:', sliceAnalyses.value)
-  console.log('  - sliceAnalyses length:', sliceAnalyses.value?.length)
-  console.log('  - optimal_offset:', entryWindowAnalysis.optimal_offset)
   
   // Vérifier que nous avons les données nécessaires
   if (!sliceAnalyses.value || sliceAnalyses.value.length === 0) {
-    console.log('  ❌ sliceAnalyses vide, retour "-"')
     return '-'
   }
   
   const firstSlice = sliceAnalyses.value[0]
-  console.log('  - firstSlice:', firstSlice)
   
   const timeRange = firstSlice.slice.startTime // Format: "14:30-14:45"
   const offset = entryWindowAnalysis.optimal_offset // En minutes (négatif = avant)
   
-  console.log('  - timeRange:', timeRange)
-  console.log('  - offset:', offset)
   
   // Extraire l'heure de début (avant le tiret)
   const startTimeStr = timeRange.split('-')[0] // "14:30"
-  console.log('  - startTimeStr:', startTimeStr)
   
   // Parser le startTime (format "14:30" avec deux points)
   const timeMatch = startTimeStr.match(/(\d+):(\d+)/)
   if (!timeMatch) {
-    console.log('  ❌ Regex ne match pas, retour:', timeRange)
     return timeRange
   }
   
   let hours = parseInt(timeMatch[1], 10)
   let minutes = parseInt(timeMatch[2], 10)
   
-  console.log('  - avant calcul: hours=', hours, 'minutes=', minutes)
   
   // Ajouter l'offset (négatif = avant, positif = après)
   minutes += offset
@@ -1490,7 +1428,6 @@ const calculateExactTime = (): string => {
   if (hours >= 24) hours -= 24
   
   const result = `${hours.toString().padStart(2, '0')}h${minutes.toString().padStart(2, '0')}`
-  console.log('  ✅ Résultat:', result)
   
   // Formater le résultat
   return result
