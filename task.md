@@ -1,20 +1,4 @@
 
-## 🟡 PRIORITÉ MOYENNE (Optimisations)
-
-### 🔄 TÂCHE 6: Fusionner Tick Quality et Body Range
-**Problème**: Redondance conceptuelle  
-**Impact**: Simplifie l'interface  
-**Fichiers à modifier**:
-- `src-tauri/src/services/volatility/hourly_stats.rs` - Retirer `tick_quality_mean`
-- `src/components/HourlyTable.vue` - Retirer colonne
-- `src/components/AnalysisPanel.vue` - Vérifier usage
-
-**Alternative**: Renommer Tick Quality en "Body Size Moyen" si on veut garder la métrique absolue
-
-**Estimation**: 1 heure  
-**Validation**: Vérifier que Body Range % suffit pour les analyses
-
----
 
 ### 📐 TÂCHE 7: Améliorer la Formule de Trade Duration
 **Problème**: Formule actuelle ignore event_type et hour_of_day  
@@ -115,34 +99,6 @@ function calculateTradeDuration(
 
 ---
 
-### 📈 TÂCHE 11: Exporter Paramètres Bidi en JSON
-**Objectif**: Permettre export direct des paramètres pour le robot  
-**Impact**: Automatisation complète  
-**Fichiers à créer/modifier**:
-- `src/utils/straddleAnalysis.ts` - Fonction `exportBidiConfig()`
-- `src/components/BidiParametersModal.vue` - Bouton export
-
-**Format JSON**:
-```json
-{
-  "symbol": "EURUSD",
-  "event_name": "NFP",
-  "event_time": "2025-11-22T14:29:50Z",
-  "entry_offset_pips": 12,
-  "stop_loss_pips": 11,
-  "take_profit_pips": 33,
-  "trailing_stop_multiplier": 2.0,
-  "trade_duration_minutes": 150,
-  "confidence_score": 78.5,
-  "win_rate_estimated": 0.65
-}
-```
-
-**Estimation**: 2 heures  
-**Validation**: JSON valide et importable par robot Bidi
-
----
-
 ## 📝 RÉCAPITULATIF DES PRIORITÉS
 
 | Priorité | Tâches | Estimation Totale |
@@ -185,6 +141,5 @@ Avant de considérer l'application "production-ready" :
 ### Sprint 3 (Basse - 1-2 jours)
 - 9 Graphique décroissance
 - 10 Filtre événements
-- 11 Export JSON
 
 **TOTAL**: 4-6 jours de développement

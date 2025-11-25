@@ -99,7 +99,6 @@ export function useMetricsAnalysisData() {
               range_mean: stats15min.range_mean,
               body_range_mean: stats15min.body_range_mean,
               shadow_ratio_mean: stats15min.shadow_ratio_mean,
-              tick_quality_mean: stats15min.tick_quality_mean,
               volume_imbalance_mean: stats15min.volume_imbalance_mean,
               noise_ratio_mean: stats15min.noise_ratio_mean,
               breakout_percentage: stats15min.breakout_percentage,

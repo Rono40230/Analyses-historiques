@@ -88,17 +88,6 @@ const getMetrics = computed(() => () => {
       decimals: 1
     },
     {
-      label: 'Tick Quality',
-      value15: stats.tick_quality_mean,
-      valueGlobal: globals.mean_tick_quality ?? 0,
-      goodThreshold: 0.0005,
-      excellentThreshold: 0.001,
-      definition: 'Mesure la douceur du pricing : variance des ticks.',
-      usage: '>0.001 = Excellent (mouvements lisses) | <0.0005 = Mauvais (bruit).',
-      scoring: 'Standard deviation des mouvements de tick.',
-      decimals: 5
-    },
-    {
       label: 'Noise Ratio',
       value15: stats.noise_ratio_mean,
       valueGlobal: globals.mean_noise_ratio ?? 0,

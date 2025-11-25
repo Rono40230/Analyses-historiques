@@ -22,7 +22,6 @@ export interface HourlyStats {
   range_mean: number
   body_range_mean: number
   shadow_ratio_mean: number
-  tick_quality_mean: number
   volume_imbalance_mean: number
   noise_ratio_mean: number
   breakout_percentage: number
@@ -39,7 +38,6 @@ export interface Stats15Min {
   range_mean: number
   body_range_mean: number
   shadow_ratio_mean: number
-  tick_quality_mean: number
   volume_imbalance_mean: number
   noise_ratio_mean: number
   breakout_percentage: number
@@ -53,7 +51,6 @@ export interface GlobalMetrics {
   mean_atr: number
   mean_volatility: number
   mean_body_range: number
-  mean_tick_quality: number
   mean_noise_ratio: number
   mean_volume_imbalance: number
   mean_breakout_percentage: number

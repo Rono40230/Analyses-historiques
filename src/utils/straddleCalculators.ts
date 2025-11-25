@@ -40,15 +40,6 @@ export function detectGoldenCombos(slice: Stats15Min): GoldenCombo[] {
       avgGainR: 0.35
     })
   }
-  if (slice.tick_quality_mean > 0.001 && slice.noise_ratio_mean < 1.5 && slice.body_range_mean > 50) {
-    combos.push({
-      name: 'Signal Ultra-Pur',
-      description: 'Movement extrêmement propre avec tick quality excellente',
-      confidence: 'EXCELLENT',
-      winRate: 0.70,
-      avgGainR: 0.55
-    })
-  }
   return combos
 }
 

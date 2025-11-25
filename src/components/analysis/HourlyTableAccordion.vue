@@ -14,7 +14,6 @@
               <th>Volatilité %</th>
               <th>Body Range %</th>
               <th>Vol. Imbalance %</th>
-              <th>Tick Quality</th>
               <th>Noise Ratio</th>
               <th>Breakouts %</th>
               <th>Peak Dur</th>
@@ -43,7 +42,6 @@
                 <span style="font-size: 0.8em; opacity: 0.7;">{{ quarter.body_range_mean >= 0 ? '↗' : '↘' }}</span>
               </td>
               <td>{{ (quarter.volume_imbalance_mean * 100).toFixed(2) }}%</td>
-              <td>{{ formatTickQuality(quarter.tick_quality_mean, estimatedPrice) }}</td>
               <td>{{ quarter.noise_ratio_mean.toFixed(2) }}</td>
               <td>{{ quarter.breakout_percentage.toFixed(2) }}%</td>
               <td class="duration-cell" :title="`${quarter.peak_duration_minutes ?? 'N/A'} min`">
@@ -65,7 +63,7 @@
 
 <script setup lang="ts">
 import type { HourlyStats, Stats15Min } from '../stores/volatility'
-import { formatATR, formatTickQuality, isTradeExpTooLong } from '../utils/hourlyTableUtils'
+import { formatATR, isTradeExpTooLong } from '../utils/hourlyTableUtils'
 
 defineProps<{
   stat: HourlyStats

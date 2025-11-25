@@ -22,7 +22,6 @@ impl MetricsAggregator {
                 mean_atr: 0.0,
                 mean_volatility: 0.0,
                 mean_body_range: 0.0,
-                mean_tick_quality: 0.0,
                 mean_noise_ratio: 0.0,
                 mean_volume_imbalance: 0.0,
                 mean_breakout_percentage: 0.0,
@@ -43,11 +42,6 @@ impl MetricsAggregator {
             mean_body_range: stats_with_data
                 .iter()
                 .map(|h| h.body_range_mean)
-                .sum::<f64>()
-                / count,
-            mean_tick_quality: stats_with_data
-                .iter()
-                .map(|h| h.tick_quality_mean)
                 .sum::<f64>()
                 / count,
             mean_noise_ratio: stats_with_data

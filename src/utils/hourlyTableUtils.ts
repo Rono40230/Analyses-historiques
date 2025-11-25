@@ -14,11 +14,6 @@ export function formatATR(atr: number, price: number): string {
   return `${atrPercent.toFixed(2)}%`
 }
 
-export function formatTickQuality(tick: number, price: number): string {
-  const tickPercent = (tick / price) * 100
-  return `${tickPercent.toFixed(2)}%`
-}
-
 export function formatHour(hour: number): string {
   return `${hour.toString().padStart(2, '0')}:00`
 }

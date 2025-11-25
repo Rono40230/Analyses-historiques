@@ -52,7 +52,6 @@ impl<'a> HourlyStatsCalculator<'a> {
                     range_mean: 0.0,
                     body_range_mean: 0.0,
                     shadow_ratio_mean: 0.0,
-                    tick_quality_mean: 0.0,
                     volume_imbalance_mean: 0.0,
                     noise_ratio_mean: 0.0,
                     breakout_percentage: 0.0,
@@ -78,7 +77,6 @@ impl<'a> HourlyStatsCalculator<'a> {
         let volatility_values = calc.calculate_volatility(20).unwrap_or_default();
         let body_ranges = calc.calculate_body_ranges();
         let shadow_ratios = calc.calculate_shadow_ratios();
-        let tick_qualities = calc.calculate_tick_quality();
         let noise_ratios = calc.calculate_noise_ratio();
         let tr_dist = calc.calculate_true_range_distribution()?;
 
@@ -90,7 +88,6 @@ impl<'a> HourlyStatsCalculator<'a> {
         let range_mean = mean(&tr_dist.true_ranges);
         let body_range_mean = mean(&body_ranges);
         let shadow_ratio_mean = mean(&shadow_ratios);
-        let tick_quality_mean = mean(&tick_qualities);
         let noise_ratio_mean = mean(&noise_ratios);
         
         // Calculate breakout percentage first
@@ -111,7 +108,6 @@ impl<'a> HourlyStatsCalculator<'a> {
             range_mean,
             body_range_mean,
             shadow_ratio_mean,
-            tick_quality_mean,
             volume_imbalance_mean: direction_strength, // Remplacé par direction_strength
             noise_ratio_mean,
             breakout_percentage,

@@ -108,7 +108,6 @@ interface GlobalMetrics {
   mean_atr: number
   mean_volatility: number
   mean_body_range: number
-  mean_tick_quality: number
   mean_noise_ratio: number
   mean_volume_imbalance: number
   mean_breakout_percentage: number

@@ -65,7 +65,6 @@ impl<'a> Stats15MinCalculator<'a> {
                         range_mean: 0.0,
                         body_range_mean: 0.0,
                         shadow_ratio_mean: 0.0,
-                        tick_quality_mean: 0.0,
                         volume_imbalance_mean: 0.0,
                         noise_ratio_mean: 0.0,
                         breakout_percentage: 0.0,
@@ -105,7 +104,6 @@ impl<'a> Stats15MinCalculator<'a> {
                 range_mean: 0.0,
                 body_range_mean: 0.0,
                 shadow_ratio_mean: 0.0,
-                tick_quality_mean: 0.0,
                 volume_imbalance_mean: 0.0,
                 noise_ratio_mean: 0.0,
                 breakout_percentage: 0.0,
@@ -177,7 +175,6 @@ impl<'a> Stats15MinCalculator<'a> {
             range_mean,
             body_range_mean,
             shadow_ratio_mean,
-            tick_quality_mean,
             volume_imbalance_mean: direction_strength, // Remplacé par direction_strength
             noise_ratio_mean,
             breakout_percentage,

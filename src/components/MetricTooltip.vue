@@ -65,8 +65,8 @@ const showTooltip = ref(false)
   border-radius: 8px;
   padding: 0;
   z-index: 1000;
-  min-width: 300px;
-  max-width: 400px;
+  min-width: 600px;
+  max-width: 900px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(102, 126, 234, 0.3);
   backdrop-filter: blur(10px);
   left: 50%;
@@ -178,6 +178,8 @@ const showTooltip = ref(false)
   color: #cbd5e0;
   font-size: 0.9em;
   line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 /* Transition animations */

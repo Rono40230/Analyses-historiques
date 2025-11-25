@@ -24,7 +24,6 @@
             <th>Volatilite %</th>
             <th>Body Range %</th>
             <th>Direction Strength</th>
-            <th>Tick Quality</th>
             <th>Noise Ratio</th>
             <th>Breakouts %</th>
             <th>Evenements</th>
@@ -68,7 +67,6 @@
                 <span style="font-size: 0.8em; opacity: 0.7;">{{ stat.body_range_mean >= 0 ? '↗' : '↘' }}</span>
               </td>
               <td>{{ (stat.volume_imbalance_mean * 100).toFixed(2) }}%</td>
-              <td>{{ formatTickQuality(stat.tick_quality_mean) }}</td>
               <td>{{ stat.noise_ratio_mean.toFixed(2) }}</td>
               <td>{{ stat.breakout_percentage.toFixed(2) }}%</td>
               <td class="events-cell">
@@ -107,7 +105,6 @@
                         <th>Volatilité %</th>
                         <th>Body Range %</th>
                         <th>Direction Strength</th>
-                        <th>Tick Quality</th>
                         <th>Noise Ratio</th>
                         <th>Breakouts %</th>
                         <th title="TÂCHE 4: Minutes volatilité > 80% pic">
@@ -144,7 +141,6 @@
                           <span style="font-size: 0.8em; opacity: 0.7;">{{ quarter.body_range_mean >= 0 ? '↗' : '↘' }}</span>
                         </td>
                         <td>{{ (quarter.volume_imbalance_mean * 100).toFixed(2) }}%</td>
-                        <td>{{ formatTickQuality(quarter.tick_quality_mean) }}</td>
                         <td>{{ quarter.noise_ratio_mean.toFixed(2) }}</td>
                         <td>{{ quarter.breakout_percentage.toFixed(2) }}%</td>
                         <td
@@ -234,13 +230,6 @@ function formatATR(atr: number): string {
   const price = getEstimatedPrice()
   const atrPercent = (atr / price) * 100
   return `${atrPercent.toFixed(2)}%`
-}
-
-// Formatte le Tick Quality en % du prix
-function formatTickQuality(tick: number): string {
-  const price = getEstimatedPrice()
-  const tickPercent = (tick / price) * 100
-  return `${tickPercent.toFixed(2)}%`
 }
 
 // État du drawer
@@ -420,7 +409,6 @@ function getQuartersForHour(hour: number) {
         range_mean: 0,
         body_range_mean: 0,
         shadow_ratio_mean: 0,
-        tick_quality_mean: 0,
         volume_imbalance_mean: 0,
         noise_ratio_mean: 0,
         breakout_percentage: 0,

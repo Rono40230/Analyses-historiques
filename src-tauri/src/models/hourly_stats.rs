@@ -22,7 +22,6 @@ pub struct HourlyStats {
     pub range_mean: f64,
     pub body_range_mean: f64,
     pub shadow_ratio_mean: f64,
-    pub tick_quality_mean: f64,
     pub volume_imbalance_mean: f64,
     pub noise_ratio_mean: f64,
     pub breakout_percentage: f64,

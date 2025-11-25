@@ -24,7 +24,6 @@ pub struct GlobalMetrics {
     pub mean_atr: f64,
     pub mean_volatility: f64,
     pub mean_body_range: f64,
-    pub mean_tick_quality: f64,
     pub mean_noise_ratio: f64,
     pub mean_volume_imbalance: f64,
     pub mean_breakout_percentage: f64,
