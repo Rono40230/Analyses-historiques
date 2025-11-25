@@ -35,6 +35,25 @@ mod tests {
     }
 
     #[test]
+    fn test_body_range_bearish() {
+        // Test pour vérifier que Body Range n'est jamais négatif pour une bougie baissière
+        let candle = Candle {
+            id: None,
+            symbol: "EURUSD".to_string(),
+            datetime: Utc::now(),
+            open: 1.0970,
+            close: 1.0950,
+            high: 1.0980,
+            low: 1.0940,
+            volume: 1200.0,
+        };
+        let body_range = candle.body_range();
+        // Body Range doit toujours être positif: |close - open| / range * 100
+        assert!(body_range >= 0.0);
+        assert!((body_range - 50.0).abs() < 0.1);
+    }
+
+    #[test]
     fn test_true_range() {
         let candle = Candle {
             id: None,

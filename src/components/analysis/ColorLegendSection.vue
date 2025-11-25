@@ -37,7 +37,7 @@
       title="Ouvrir l'analyse détaillée des métriques"
       @click="$emit('analyze')"
     >
-      📊 Analyse des métriques
+      📊 Analyse des métriques<br><span style="font-size: 0.85em">du meilleur créneau horaire</span>
     </button>
   </div>
 </template>

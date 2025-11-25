@@ -62,7 +62,7 @@ impl Candle {
         if range == 0.0 {
             return 0.0;
         }
-        ((self.close - self.open) / range) * 100.0
+        (((self.close - self.open).abs()) / range) * 100.0
     }
 
     pub fn shadow_ratio(&self) -> f64 {
