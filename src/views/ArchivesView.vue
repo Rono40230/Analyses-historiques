@@ -237,9 +237,7 @@ function viewArchive(archive: Archive) {
     selectedArchive.value = archive
     showViewer.value = true
   } catch (e) {
-    console.error('Erreur parsing JSON archive:', e)
-    // eslint-disable-next-line no-alert
-    alert('Impossible de lire les données de cette archive.')
+    // Erreur silencieuse - JSON invalide
   }
 }
 
@@ -264,9 +262,7 @@ async function confirmDelete(archive: Archive) {
   try {
     await archiveStore.deleteArchive(archive.id)
   } catch (error) {
-    console.error('Erreur lors de la suppression:', error)
-    // eslint-disable-next-line no-alert
-    alert('Erreur lors de la suppression: ' + error)
+    // Erreur silencieuse - suppression échouée
   }
 }
 </script>

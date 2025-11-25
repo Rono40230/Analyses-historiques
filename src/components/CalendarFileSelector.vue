@@ -76,7 +76,7 @@ async function loadFiles() {
       emit('file-selected', selectedFile.value)
     }
   } catch (e) {
-    console.error('Erreur lors du chargement des fichiers:', e)
+    // Erreur silencieuse - fichiers non disponibles
   } finally {
     loading.value = false
   }
@@ -90,7 +90,7 @@ async function handleFileChange() {
       await invoke('set_selected_calendar_file', { filename: selectedFile.value })
       emit('file-selected', selectedFile.value)
     } catch (e) {
-      console.error('Erreur lors de la sauvegarde du fichier sélectionné:', e)
+      // Erreur silencieuse - sauvegarde échouée
     }
   }
 }

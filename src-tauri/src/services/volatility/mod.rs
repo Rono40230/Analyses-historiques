@@ -16,6 +16,6 @@ mod win_rate_calculator;
 
 // Ré-exporte l'analyseur principal
 pub use analyzer::VolatilityAnalyzer;
-pub use offset_calculator::{calculate_optimal_offset, OffsetStats};
-pub use whipsaw_detector::{calculate_whipsaw_frequency, WhipsawAnalysis, WhipsawRiskLevel};
-pub use win_rate_calculator::{simulate_straddle_win_rate, WinRateResult};
+pub use offset_calculator::calculate_optimal_offset;
+pub use whipsaw_detector::calculate_whipsaw_frequency;
+pub use win_rate_calculator::simulate_straddle_win_rate;

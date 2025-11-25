@@ -92,7 +92,7 @@ async function handleCalendarSelected(filename: string) {
     // Recharger les événements pour ce calendrier
     await loadPastEvents()
   } catch (error) {
-    console.error('Erreur lors de la récupération du calendar ID:', error)
+    // Erreur gérée silencieusement - valeurs par défaut utilisées
   }
 }
 
@@ -109,7 +109,6 @@ async function loadPastEvents() {
     })
     pastEvents.value = result
   } catch (error) {
-    console.error('Erreur:', error)
     pastEvents.value = []
   }
 }
@@ -119,7 +118,6 @@ async function loadAvailablePairs() {
     const symbolData = await invoke<Array<{ symbol: string; file_path: string }>>('load_symbols')
     availablePairs.value = symbolData.map(item => item.symbol)
   } catch (error) {
-    console.error('Erreur:', error)
     availablePairs.value = ['EURUSD', 'GBPUSD', 'USDJPY', 'XAUUSD', 'BTCUSD']
   }
 }

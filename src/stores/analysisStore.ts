@@ -1,7 +1,3 @@
-// stores/analysisStore.ts
-// Persiste l'état des analyses entre changements d'onglets
-// Conforme .clinerules: < 100 lignes
-
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
@@ -55,15 +51,12 @@ export interface AnalysisData {
 }
 
 export const useAnalysisStore = defineStore('analysis', () => {
-  // État persisté
   const selectedPair = ref<string>('')
   const selectedEvent = ref<string>('')
   const selectedCalendarId = ref<number | null>(null)
   const pairCorrelationData = ref<AnalysisData | null>(null)
   const eventCorrelationData = ref<AnalysisData | null>(null)
   const heatmapData = ref<AnalysisData | null>(null)
-
-  // Actions
   function setPairSelection(pair: string, calId: number | null = null) {
     selectedPair.value = pair
     selectedCalendarId.value = calId
@@ -95,14 +88,12 @@ export const useAnalysisStore = defineStore('analysis', () => {
   }
 
   return {
-    // État
     selectedPair,
     selectedEvent,
     selectedCalendarId,
     pairCorrelationData,
     eventCorrelationData,
     heatmapData,
-    // Actions
     setPairSelection,
     setEventSelection,
     setPairCorrelationData,

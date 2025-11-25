@@ -18,6 +18,8 @@ pub mod event_metrics_aggregator;
 pub mod global_analyzer;
 pub mod global_analyzer_helpers;
 pub mod global_analyzer_types;
+pub mod global_analyzer_metrics;
+pub mod global_analyzer_straddle_calc;
 pub mod import_processor;
 pub mod metrics;
 pub mod movement_analyzer;

@@ -1,6 +1,19 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
+    archives (id) {
+        id -> Integer,
+        title -> Text,
+        archive_type -> Text,
+        period_start -> Text,
+        period_end -> Text,
+        comment -> Nullable<Text>,
+        created_at -> Timestamp,
+        data_json -> Text,
+    }
+}
+
+diesel::table! {
     calendar_events (id) {
         id -> Integer,
         symbol -> Text,
@@ -70,6 +83,7 @@ diesel::table! {
 diesel::joinable!(predicted_events -> calendar_events (event_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
+    archives,
     calendar_events,
     predicted_events,
     event_metrics,

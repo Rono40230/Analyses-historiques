@@ -40,18 +40,22 @@ impl<'a> MetricsCalculator<'a> {
             true_ranges.push(self.candles[i].true_range(prev_close));
         }
 
-        // Calcule l'ATR comme moyenne mobile du True Range
+        // Calcule l'ATR avec Wilder's smoothing (EMA)
         let mut atr_values = Vec::new();
 
-        for i in (period - 1)..true_ranges.len() {
-            // Calculer l'indice de début : i - (period - 1) = i + 1 - period
-            let start_idx = i + 1 - period;
-            let sum: f64 = true_ranges[start_idx..=i].iter().sum();
-            let atr = sum / period as f64;
+        // Première valeur: moyenne simple des premiers TR
+        let first_atr = true_ranges[0..period].iter().sum::<f64>() / period as f64;
+        atr_values.push(first_atr);
+
+        // Smoothing Wilder: ATR[i] = (ATR[i-1] * (period - 1) + TR[i]) / period
+        let multiplier = (period - 1) as f64;
+        for i in period..true_ranges.len() {
+            let prev_atr = atr_values[atr_values.len() - 1];  // Dernière valeur ATR calculée
+            let atr = (prev_atr * multiplier + true_ranges[i]) / period as f64;
             atr_values.push(atr);
         }
 
-        debug!("ATR calculated: {} values", atr_values.len());
+        debug!("ATR calculated with Wilder's smoothing: {} values", atr_values.len());
         Ok(atr_values)
     }
 
@@ -112,27 +116,12 @@ impl<'a> MetricsCalculator<'a> {
             .collect()
     }
 
-    /// Calcule le Volume Imbalance (momentum du volume)
-    pub fn calculate_volume_imbalance(&self, period: usize) -> Result<Vec<f64>> {
-        if self.candles.len() < period {
-            return Err(VolatilityError::InsufficientData(format!(
-                "Need at least {} candles for volume imbalance",
-                period
-            )));
-        }
-
-        let mut imbalances = Vec::new();
-
-        for i in (period - 1)..self.candles.len() {
-            let start_idx = i + 1 - period;
-            let slice = &self.candles[start_idx..=i];
-            let mean_volume = slice.iter().map(|c| c.volume).sum::<f64>() / period as f64;
-            let current_volume = self.candles[i].volume;
-            let imbalance = (current_volume - mean_volume) / mean_volume.max(0.1);
-            imbalances.push(imbalance);
-        }
-
-        Ok(imbalances)
+    /// OBSOLÈTE: Volume Imbalance (inutilisable en Forex - pas de données volume acheteur/vendeur)
+    /// Remplacé par Direction Strength = (body_range_mean * breakout_percentage) / 100
+    #[deprecated(since = "2.2.0", note = "Use direction_strength metric instead")]
+    pub fn calculate_volume_imbalance(&self, _period: usize) -> Result<Vec<f64>> {
+        // Retourne un vecteur vide pour compatibilité
+        Ok(Vec::new())
     }
 
     /// Calcule le Noise Ratio (True Range / mouvement net)

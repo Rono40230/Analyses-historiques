@@ -1,5 +1,3 @@
-// Auto-generated - DO NOT EDIT MANUALLY
-// Régénéré par scripts/regenerate-translations.sh
 export interface EventTranslation {
   fr: string;
   country: string;

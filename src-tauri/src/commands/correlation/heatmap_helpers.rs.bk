@@ -20,6 +20,8 @@ pub struct EventTypeInfo {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HeatmapData {
     pub period: String,
+    pub period_start: String,
+    pub period_end: String,
     pub pairs: Vec<String>,
     pub event_types: Vec<EventTypeInfo>,
     pub data: HashMap<String, HashMap<String, f64>>,

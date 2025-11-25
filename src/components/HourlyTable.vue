@@ -207,7 +207,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import type { HourlyStats, EventInHour } from '../stores/volatility'
+import type { HourlyStats, EventInHour, Stats15Min } from '../stores/volatility'
 import EventDetailsDrawer from './EventDetailsDrawer.vue'
 
 const props = defineProps<{
@@ -268,7 +268,7 @@ onMounted(() => {
         .slice(0, 3)
         .map((item: any) => ({ hour: item.hour, quarter: item.quarter }))
     } catch (err) {
-      console.error('Erreur calcul TOP 3:', err)
+      // Erreur calcul TOP 3 - ignorer silencieusement
     }
   }
 })
@@ -428,7 +428,7 @@ function getQuartersForHour(hour: number) {
         peak_duration_minutes: undefined,
         volatility_half_life_minutes: undefined,
         recommended_trade_expiration_minutes: undefined,
-      } as any)
+      } as Stats15Min)
     }
   }
   return quarters

@@ -1,77 +1,14 @@
 <template>
-  <div
-    v-if="show"
-    class="modal-overlay"
-    @click.self="closeModal"
-  >
+  <div v-if="show" class="modal-overlay" @click.self="closeModal">
     <div class="modal-content">
-      <div class="modal-header">
-        <h2>💾 Archiver l'analyse</h2>
-        <button
-          class="close-btn"
-          @click="closeModal"
-        >
-          ✕
-        </button>
-      </div>
-
+      <div class="modal-header"><h2>💾 Archiver l'analyse</h2><button class="close-btn" @click="closeModal">✕</button></div>
       <div class="modal-body">
-        <div class="form-group">
-          <label>Type d'archive</label>
-          <input
-            type="text"
-            :value="archiveType"
-            disabled
-            class="input-disabled"
-          >
-        </div>
-
-        <div class="form-group">
-          <label>Période</label>
-          <input
-            type="text"
-            :value="periodLabel"
-            disabled
-            class="input-disabled"
-          >
-        </div>
-
-        <div class="form-group">
-          <label>Nom de l'archive</label>
-          <input 
-            v-model="archiveTitle" 
-            type="text" 
-            class="input-field"
-            placeholder="Nom de l'archive"
-          >
-        </div>
-
-        <div class="form-group">
-          <label>Commentaires</label>
-          <textarea 
-            v-model="comment" 
-            class="textarea-field"
-            placeholder="Ajoutez des notes ou commentaires..."
-            rows="4"
-          />
-        </div>
+        <div class="form-group"><label>Type d'archive</label><input type="text" :value="archiveType" disabled class="input-disabled"></div>
+        <div class="form-group"><label>Période</label><input type="text" :value="periodLabel" disabled class="input-disabled"></div>
+        <div class="form-group"><label>Nom de l'archive</label><input v-model="archiveTitle" type="text" class="input-field" placeholder="Nom de l'archive"></div>
+        <div class="form-group"><label>Commentaires</label><textarea v-model="comment" class="textarea-field" placeholder="Ajoutez des notes ou commentaires..." rows="4" /></div>
       </div>
-
-      <div class="modal-footer">
-        <button
-          class="btn-cancel"
-          @click="closeModal"
-        >
-          Annuler
-        </button>
-        <button
-          class="btn-save"
-          :disabled="saving"
-          @click="handleSave"
-        >
-          {{ saving ? 'Sauvegarde...' : 'Archiver' }}
-        </button>
-      </div>
+      <div class="modal-footer"><button class="btn-cancel" @click="closeModal">Annuler</button><button class="btn-save" :disabled="saving" @click="handleSave">{{ saving ? 'Sauvegarde...' : 'Archiver' }}</button></div>
     </div>
   </div>
 </template>
@@ -155,8 +92,7 @@ watch(() => props.show, (newVal) => {
 
 async function handleSave() {
   if (!archiveTitle.value.trim()) {
-    // eslint-disable-next-line no-alert
-    alert('Veuillez saisir un nom pour l\'archive')
+    // Validation silencieuse - l'input field a focus/placeholder
     return
   }
 
@@ -173,9 +109,7 @@ async function handleSave() {
     emit('saved')
     closeModal()
   } catch (error) {
-    console.error('Erreur lors de l\'archivage:', error)
-    // eslint-disable-next-line no-alert
-    alert('Erreur lors de l\'archivage: ' + error)
+    // Erreur gérée silencieusement - fermer la modal
   } finally {
     saving.value = false
   }

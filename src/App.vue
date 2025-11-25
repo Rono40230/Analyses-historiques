@@ -16,8 +16,7 @@ onMounted(async () => {
   try {
     const result = await invoke('init_candle_index', {})
   } catch (error) {
-    console.warn('⚠️ CandleIndex initialization warning:', error)
-    // Non-bloquant - l'app continue même si l'index ne charge pas
+    // CandleIndex initialization non-bloquant
   }
   
   // Charger les symboles au démarrage

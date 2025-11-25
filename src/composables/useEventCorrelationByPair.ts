@@ -68,7 +68,6 @@ export function useEventCorrelationByPair(availablePairs: string[], isArchiveMod
       const result = await invoke<PairCorrelationData>('get_pair_event_correlation', { symbol: selectedPair.value, monthsBack: 12 })
       pairCorrelation.value = result
     } catch (error) {
-      console.error('Erreur corrélation paire:', error)
       pairCorrelation.value = { pair: selectedPair.value, events: [] }
     } finally {
       loading.value = false

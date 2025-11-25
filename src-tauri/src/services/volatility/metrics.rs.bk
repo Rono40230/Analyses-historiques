@@ -26,6 +26,7 @@ impl MetricsAggregator {
                 mean_noise_ratio: 0.0,
                 mean_volume_imbalance: 0.0,
                 mean_breakout_percentage: 0.0,
+                mean_range: 0.0,
                 total_candles: 0,
             };
         }
@@ -62,6 +63,11 @@ impl MetricsAggregator {
             mean_breakout_percentage: stats_with_data
                 .iter()
                 .map(|h| h.breakout_percentage)
+                .sum::<f64>()
+                / count,
+            mean_range: stats_with_data
+                .iter()
+                .map(|h| h.range_mean)
                 .sum::<f64>()
                 / count,
             total_candles,

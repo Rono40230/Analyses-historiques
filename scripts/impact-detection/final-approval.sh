@@ -88,13 +88,61 @@ else
     ((CHECKS_FAILED++))
 fi
 
+# 7. Vérifier qualité Frontend (Vue/TypeScript)
+if [ -f "./scripts/check-vue-quality.sh" ]; then
+    if ./scripts/check-vue-quality.sh > /dev/null 2>&1; then
+        echo "  ✅ Qualité Frontend (Vue/TypeScript)"
+        ((CHECKS_PASSED++))
+    else
+        echo "  ❌ Violations Frontend détectées"
+        ((CHECKS_FAILED++))
+    fi
+else
+    echo "  ℹ️  Frontend quality check non disponible (ignoré)"
+fi
+
+# 8. Vérifier tailles Vue
+if [ -f "./scripts/check-vue-size.sh" ]; then
+    if ./scripts/check-vue-size.sh > /dev/null 2>&1; then
+        echo "  ✅ Tailles Frontend (Vue/TS/Stores)"
+        ((CHECKS_PASSED++))
+    else
+        echo "  ❌ Fichiers Frontend trop volumineux"
+        ((CHECKS_FAILED++))
+    fi
+else
+    echo "  ℹ️  Vue size check non disponible (ignoré)"
+fi
+
+# 9. Vérifier anti-patterns TypeScript
+if [ -f "./scripts/check-typescript-quality.sh" ]; then
+    if ./scripts/check-typescript-quality.sh > /dev/null 2>&1; then
+        echo "  ✅ Anti-patterns TypeScript"
+        ((CHECKS_PASSED++))
+    else
+        echo "  ⚠️  Anti-patterns TypeScript (avertissement)"
+        ((CHECKS_PASSED++))
+    fi
+fi
+
+# 10. Vérifier nommage français
+if [ -f "./scripts/check-french-naming-frontend.sh" ]; then
+    if ./scripts/check-french-naming-frontend.sh > /dev/null 2>&1; then
+        echo "  ✅ Nommage français Frontend"
+        ((CHECKS_PASSED++))
+    else
+        echo "  ⚠️  Nommage français (avertissement)"
+        ((CHECKS_PASSED++))
+    fi
+fi
+
 echo ""
 echo "═══════════════════════════════════════════════════════════════"
 echo "                      📊 RÉSUMÉ FINAL"
 echo "═══════════════════════════════════════════════════════════════"
 echo ""
-echo "  Vérifications passées : $CHECKS_PASSED/6 ✅"
-echo "  Vérifications échouées : $CHECKS_FAILED/6 ❌"
+echo "  Vérifications passées : $CHECKS_PASSED/10+ ✅"
+echo "  Vérifications échouées : $CHECKS_FAILED ❌"
 echo ""
 
 # Décision finale

@@ -122,6 +122,11 @@ impl CandleIndex {
         self.data.insert(symbol.to_string(), date_map);
     }
 
+    /// Retourne true si une paire est chargée, false sinon
+    pub fn is_pair_loaded(&self, symbol: &str) -> bool {
+        self.data.contains_key(symbol)
+    }
+
     /// Récupère ALL candles pour une paire
     /// NOTE: Cette fonction est conservée pour usage futur
     #[allow(dead_code)]

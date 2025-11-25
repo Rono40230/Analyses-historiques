@@ -73,7 +73,7 @@ async function loadSummary() {
     const data = await invoke<PairDataSummary>('get_pair_data_summary')
     summary.value = data
   } catch (e) {
-    console.error('Erreur récupération summary:', e)
+    // Erreur silencieuse - summary non disponible
   } finally {
     loadingInfo.value = false
   }

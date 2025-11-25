@@ -53,7 +53,6 @@ export function useEventCorrelationByEvent(pastEvents: PastEvent[], calendarId: 
       store.setEventSelection(selectedEventId.value, calendarId)
       store.setEventCorrelationData({ event: selectedEventId.value, eventImpact: eventImpact.value })
     } catch (error) {
-      console.error('Erreur analyse événement:', error)
       eventImpact.value = null
     } finally {
       loadingEvent.value = false

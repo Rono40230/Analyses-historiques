@@ -1,8 +1,6 @@
-// src/stores/volatility.ts - Store Pinia pour l'analyse de volatilité
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-
 export interface SymbolInfo {
   symbol: string
   file_path: string
@@ -46,7 +44,6 @@ export interface Stats15Min {
   noise_ratio_mean: number
   breakout_percentage: number
   events: EventInHour[]
-  // TÂCHE 4: Analyse de décroissance de volatilité
   peak_duration_minutes?: number
   volatility_half_life_minutes?: number
   recommended_trade_expiration_minutes?: number
@@ -99,15 +96,12 @@ export interface AnalysisResult {
 }
 
 export const useVolatilityStore = defineStore('volatility', () => {
-  // State
   const symbols = ref<SymbolInfo[]>([])
   const selectedSymbol = ref('')
   const analysisResult = ref<AnalysisResult | null>(null)
   const loading = ref(false)
   const error = ref('')
-  const dataRefreshTrigger = ref(0) // Signal pour forcer le refresh des données
-
-  // Computed
+  const dataRefreshTrigger = ref(0)
   const hasAnalysis = computed(() => analysisResult.value !== null)
   const bestHoursStats = computed(() => {
     if (!analysisResult.value) return []
@@ -116,15 +110,13 @@ export const useVolatilityStore = defineStore('volatility', () => {
     ).filter(Boolean)
   })
 
-  // Actions
   async function loadSymbols() {
     loading.value = true
     error.value = ''
     try {
       symbols.value = await invoke<SymbolInfo[]>('load_symbols')
-    } catch (e: any) {
-      error.value = `Erreur chargement symboles: ${e.message || e}`
-      console.error('Load symbols error:', e)
+    } catch (e: Error | unknown) {
+      error.value = `Erreur chargement symboles: ${e instanceof Error ? e.message : String(e)}`
     } finally {
       loading.value = false
     }
@@ -144,9 +136,8 @@ export const useVolatilityStore = defineStore('volatility', () => {
       }
       
       analysisResult.value = await invoke<AnalysisResult>('analyze_symbol', { symbol, calendarId: cid })
-    } catch (e: any) {
-      error.value = `Erreur analyse: ${e.message || e}`
-      console.error('Analyze symbol error:', e)
+    } catch (e: Error | unknown) {
+      error.value = `Erreur analyse: ${e instanceof Error ? e.message : String(e)}`
       analysisResult.value = null
     } finally {
       loading.value = false
@@ -163,9 +154,8 @@ export const useVolatilityStore = defineStore('volatility', () => {
       }
       
       return await invoke<HourlyStats>('get_hourly_stats', { symbol, hour, calendarId: cid })
-    } catch (e: any) {
-      error.value = `Erreur stats horaires: ${e.message || e}`
-      console.error('Get hourly stats error:', e)
+    } catch (e: Error | unknown) {
+      error.value = `Erreur stats horaires: ${e instanceof Error ? e.message : String(e)}`
       return null
     }
   }
@@ -181,17 +171,14 @@ export const useVolatilityStore = defineStore('volatility', () => {
   }
 
   return {
-    // State
     symbols,
     selectedSymbol,
     analysisResult,
     loading,
     error,
     dataRefreshTrigger,
-    // Computed
     hasAnalysis,
     bestHoursStats,
-    // Actions
     loadSymbols,
     analyzeSymbol,
     getHourlyStats,

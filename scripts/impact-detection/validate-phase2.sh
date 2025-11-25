@@ -39,6 +39,16 @@ fi
 echo ""
 echo "───────────────────────────────────────────────────────────"
 echo ""
+echo "📍 Étape 1.6 : Audit complet (Backend + Frontend)..."
+echo ""
+if ! ./scripts/full-code-audit.sh; then
+    echo "❌ Audit complet échoué - Violations .clinerules détectées"
+    exit 1
+fi
+
+echo ""
+echo "───────────────────────────────────────────────────────────"
+echo ""
 echo "📍 Étape 2 : Détection des régressions..."
 echo ""
 if ! ./scripts/impact-detection/regression-detector.sh; then

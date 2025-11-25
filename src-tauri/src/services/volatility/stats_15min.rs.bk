@@ -3,7 +3,7 @@
 
 use super::utils::{max, mean};
 use crate::models::{Candle, Result, Stats15Min};
-use crate::services::MetricsCalculator;
+use crate::services::{MetricsCalculator, VolatilityDurationAnalyzer};
 use chrono::Timelike;
 use std::collections::HashMap;
 use tracing::debug;
@@ -70,6 +70,9 @@ impl<'a> Stats15MinCalculator<'a> {
                         noise_ratio_mean: 0.0,
                         breakout_percentage: 0.0,
                         events: Vec::new(),
+                        peak_duration_minutes: None,
+                        volatility_half_life_minutes: None,
+                        recommended_trade_expiration_minutes: None,
                     });
                 }
             }
@@ -107,6 +110,9 @@ impl<'a> Stats15MinCalculator<'a> {
                 noise_ratio_mean: 0.0,
                 breakout_percentage: 0.0,
                 events: Vec::new(),
+                peak_duration_minutes: None,
+                volatility_half_life_minutes: None,
+                recommended_trade_expiration_minutes: None,
             });
         }
 
@@ -120,25 +126,46 @@ impl<'a> Stats15MinCalculator<'a> {
         let body_ranges = calc.calculate_body_ranges();
         let shadow_ratios = calc.calculate_shadow_ratios();
         let tick_qualities = calc.calculate_tick_quality();
-        let volume_imbalances = calc.calculate_volume_imbalance(14).unwrap_or_default();
         let noise_ratios = calc.calculate_noise_ratio();
         let tr_dist = calc.calculate_true_range_distribution()?;
 
         // Calcule les moyennes
-        let atr_mean = mean(&atr_values);
+        let atr_mean = atr_values.last().copied().unwrap_or(0.0);  // Dernière valeur ATR lissée (Wilder's)
         let atr_max = max(&atr_values);
         let volatility_mean = mean(&volatility_values);
-        let range_mean =
-            owned_candles.iter().map(|c| c.high - c.low).sum::<f64>() / owned_candles.len() as f64;
+        // TÂCHE 3: Utiliser True Range au lieu de simple H-L
+        let range_mean = mean(&tr_dist.true_ranges);
         let body_range_mean = mean(&body_ranges);
         let shadow_ratio_mean = mean(&shadow_ratios);
         let tick_quality_mean = mean(&tick_qualities);
-        let volume_imbalance_mean = mean(&volume_imbalances);
         let noise_ratio_mean = mean(&noise_ratios);
-
+        
+        // Calculate breakout percentage first
         let breakout_count = tr_dist.is_breakout.iter().filter(|&&b| b).count();
         let breakout_percentage =
             (breakout_count as f64 / tr_dist.is_breakout.len() as f64) * 100.0;
+        
+        // Direction Strength: Force directionnelle = (|directionalite| * cassures) / 100
+        // Note: body_range_mean can be negative (directional indicator), so use absolute value
+        let direction_strength = (body_range_mean.abs() * breakout_percentage) / 100.0;
+
+        // TÂCHE 4: Analyse réelle de décroissance de volatilité
+        let (peak_duration, half_life, trade_exp) = 
+            match VolatilityDurationAnalyzer::analyze_from_candles(hour, quarter, &candles) {
+                Ok(vd) => {
+                    debug!("✅ TÂCHE 4 OK: {}:{} peak={} half_life={} trade_exp={}", 
+                        hour, quarter, vd.peak_duration_minutes, vd.volatility_half_life_minutes, vd.recommended_trade_expiration_minutes);
+                    (
+                        Some(vd.peak_duration_minutes),
+                        Some(vd.volatility_half_life_minutes),
+                        Some(vd.recommended_trade_expiration_minutes),
+                    )
+                },
+                Err(e) => {
+                    debug!("⚠️ TÂCHE 4 ERREUR: {}:{} - {}", hour, quarter, e);
+                    (None, None, None)
+                }
+            };
 
         Ok(Stats15Min {
             hour,
@@ -151,10 +178,13 @@ impl<'a> Stats15MinCalculator<'a> {
             body_range_mean,
             shadow_ratio_mean,
             tick_quality_mean,
-            volume_imbalance_mean,
+            volume_imbalance_mean: direction_strength, // Remplacé par direction_strength
             noise_ratio_mean,
             breakout_percentage,
-            events: Vec::new(), // Sera rempli après par l'analyseur
+            events: Vec::new(),
+            peak_duration_minutes: peak_duration,
+            volatility_half_life_minutes: half_life,
+            recommended_trade_expiration_minutes: trade_exp,
         })
     }
 }

@@ -1,5 +1,3 @@
-// src/composables/useDataRefresh.ts
-// Système d'événements pour rafraîchir automatiquement les listes après import
 import { ref } from 'vue'
 
 type RefreshCallback = () => Promise<void> | void

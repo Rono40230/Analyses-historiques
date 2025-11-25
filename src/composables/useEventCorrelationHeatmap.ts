@@ -8,7 +8,7 @@ interface HeatmapData {
   data: Record<string, Record<string, number>>
 }
 
-export function useEventCorrelationHeatmap(availablePairs: string[] = [], isArchiveMode = false, archiveData?: any) {
+export function useEventCorrelationHeatmap(availablePairs: string[] = [], isArchiveMode = false, archiveData?: HeatmapData) {
   const { getEventTranslation } = useEventTranslation()
   const loadingHeatmap = ref(false)
   const heatmapData = ref<HeatmapData | null>(null)
@@ -21,7 +21,6 @@ export function useEventCorrelationHeatmap(availablePairs: string[] = [], isArch
       const result = await invoke<HeatmapData>('get_event_pair_heatmap', { monthsBack: 12 })
       heatmapData.value = result
     } catch (error) {
-      console.error('Erreur heatmap:', error)
       heatmapData.value = { pairs: [], event_types: [], data: {} }
     } finally {
       loadingHeatmap.value = false

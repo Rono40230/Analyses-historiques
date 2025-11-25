@@ -11,6 +11,7 @@ pub mod event_metrics;
 pub mod event_movement_quality;
 pub mod global_analysis;
 pub mod hourly_stats;
+pub mod hourly_stats_thresholds;
 pub mod stats_15min;
 pub mod trading_recommendation;
 pub mod volatility_duration;

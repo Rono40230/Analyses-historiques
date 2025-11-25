@@ -158,7 +158,7 @@ impl VolatilityAnalyzer {
         let total_15min_events: usize = stats_15min.iter().map(|s| s.events.len()).sum();
         tracing::info!("📋 Stats15Min: {} slices, {} total events across all quarters", stats_15min.len(), total_15min_events);
         
-        for (idx, slice) in stats_15min.iter().enumerate().take(10) {
+        for (_idx, slice) in stats_15min.iter().enumerate().take(10) {
             if slice.events.len() > 0 {
                 tracing::info!("   Slice {}:{}  has {} events: {:?}", 
                     slice.hour, slice.quarter, slice.events.len(),

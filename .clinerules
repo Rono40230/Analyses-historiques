@@ -83,6 +83,21 @@
 - HTML5 sémantique
 - IDs uniques pour éléments interactifs
 
+### RÈGLE 10.5 : Qualité Code Frontend (CRITIQUE)
+**Interdictions strictes en production:**
+- ❌ `console.log()` : INTERDIT (utiliser logger si nécessaire)
+- ❌ `console.error/warn/debug()` : INTERDIT
+- ❌ `debugger` : INTERDIT
+- ❌ `alert()` : INTERDIT (utiliser notifications UI)
+- ❌ Types `any` : À ÉVITER (typer explicitement)
+
+**Bonnes pratiques:**
+- ✅ Gestion d'erreurs avec try/catch + logger
+- ✅ Types TypeScript explicites
+- ✅ Pas de code mort (imports/composants inutilisés)
+- ✅ Pas d'imports circulaires
+- ✅ TODO formatés: `TODO(nom): description`
+
 ---
 
 ## 🦀 RÈGLES BACKEND (Rust/Tauri)
@@ -111,10 +126,21 @@ Pour chaque fonction publique :
 - Coverage > 80% pour nouveaux modules
 
 ### RÈGLE 15 : Limites de Taille Strictes
+
+**Backend (Rust):**
 - Services : < 300 lignes (HARD LIMIT)
-- Commands : < 200 lignes
-- main.rs : < 120 lignes
-- Modèles : < 150 lignes
+- Commands : < 200 lignes (HARD LIMIT)
+- Models : < 150 lignes (HARD LIMIT)
+- main.rs : < 120 lignes (HARD LIMIT)
+
+**Frontend (Vue.js/TypeScript):**
+- Composants Vue : < 250 lignes (HARD LIMIT)
+  - Exception modals/tables complexes : < 300 lignes
+- Stores Pinia : < 200 lignes (HARD LIMIT)
+  - Exception stores de données statiques : < 500 lignes
+- Composables : < 150 lignes (HARD LIMIT)
+- Utils/Helpers : < 200 lignes (HARD LIMIT)
+
 Si dépasse → STOP + Split
 
 ### RÈGLE 16 : Architecture 3 Niveaux (DAG)
