@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 import type { EventInHour } from '../stores/volatility'
 import { getEventTranslation } from '../stores/eventTranslations'
-import { getEventSchedule } from '../stores/eventSchedules'
+import { getEventSchedule } from '../utils/eventSchedules'
 
 export interface EventSummaryItem {
   eventName: string
