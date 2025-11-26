@@ -7,55 +7,71 @@ use crate::models::HourlyStats;
 pub(super) struct BestHoursFinder;
 
 impl BestHoursFinder {
-    /// Trouve les meilleures heures pour stratégie STRADDLE scalping (V2)
+    /// Trouve les meilleures heures pour stratégie STRADDLE (V3)
     ///
-    /// AMÉLIORATION V2 :
-    /// - Score composite multi-dimensionnel (pas juste range > 25pips)
-    /// - Bonus signal propre (Noise faible)
-    /// - Pénalité volatilité chaotique (Breakout % élevé + BodyRange faible)
-    /// - Détecte heures stables MÊME avec range < 25pips
+    /// OPTIMISATION STRADDLE (V3) :
+    /// - Priorité ABSOLUE à la Volatilité (40% pondération)
+    /// - Range + ATR secondaires (30% + 20%)
+    /// - Direction Strength (10%)
+    /// - Pénalité pour Whipsaw (volatilité chaotique)
+    /// - Straddle cherche VOLATILITÉ ÉLEVÉE, pas juste "signal propre"
     ///
     /// Logique :
     /// 1. Calculer score composite pour chaque heure
-    ///    - Range (60% pondération)
-    ///    - ATR (25%)
-    ///    - BodyRange (15%)
-    ///    - Bonus Noise faible (-2 pts)
-    ///    - Pénalité chaos (Breakout élevé + BodyRange faible)
-    /// 2. Retourner top 6 heures avec score le plus élevé
+    ///    - Volatilité % (40% pondération) ← NOUVEAU, PRIORITAIRE
+    ///    - Range (30%)
+    ///    - ATR (20%)
+    ///    - Direction Strength (10%)
+    /// 2. Bonus si volatilité > 25% (conditions excellentes)
+    /// 3. Pénalité si volatilité < 15% (trop calme pour straddle)
+    /// 4. Retourner top 6 heures avec score le plus élevé
     pub(super) fn find_best_hours(hourly_stats: &[HourlyStats]) -> Vec<u8> {
         const MAX_HOURS: usize = 6;
         const RANGE_IDEAL: f64 = 0.0025; // 25 pips = référence 100%
         const ATR_IDEAL: f64 = 0.0020;
-        const BODYRANGE_IDEAL: f64 = 40.0; // 40% = référence 100%
+        const VOLATILITY_IDEAL: f64 = 0.25; // 25% = référence 100% pour straddle
+        const DIRECTION_STRENGTH_IDEAL: f64 = 0.20; // 20% = référence 100%
 
         let mut scored_hours: Vec<(u8, f64)> = hourly_stats
             .iter()
             .filter(|h| h.candle_count > 0)
             .map(|h| {
-                // Score composite : Range (60%) + ATR (25%) + BodyRange (15%)
-                let range_score = (h.range_mean / RANGE_IDEAL).min(1.0) * 60.0;
-                let atr_score = (h.atr_mean / ATR_IDEAL).min(1.0) * 25.0;
-                let body_score = (h.body_range_mean / BODYRANGE_IDEAL).min(1.0) * 15.0;
+                // Score composite STRADDLE : Volatilité (40%) + Range (30%) + ATR (20%) + Direction (10%)
+                let volatility_score = (h.volatility_mean / VOLATILITY_IDEAL).min(1.0) * 40.0;
+                let range_score = (h.range_mean / RANGE_IDEAL).min(1.0) * 30.0;
+                let atr_score = (h.atr_mean / ATR_IDEAL).min(1.0) * 20.0;
+                let direction_score = (h.volume_imbalance_mean / DIRECTION_STRENGTH_IDEAL).min(1.0) * 10.0;
 
-                let mut total_score = range_score + atr_score + body_score;
+                let mut total_score = volatility_score + range_score + atr_score + direction_score;
 
-                // BONUS: Signal propre (Noise faible = scalping propre)
-                if h.noise_ratio_mean < 2.0 {
+                // BONUS: Volatilité excellente (> 25% = parfait pour straddle)
+                if h.volatility_mean > 0.25 {
+                    total_score += 20.0;
+                } else if h.volatility_mean > 0.20 {
+                    // Volatilité très bonne (20-25%)
                     total_score += 10.0;
-                } else if h.noise_ratio_mean < 2.5 {
-                    total_score += 5.0;
                 }
 
-                // PÉNALITÉ: Volatilité chaotique (Breakout % élevé + BodyRange faible)
-                // = fausses cassures = danger pour scalping
+                // PÉNALITÉ MAJEURE: Volatilité trop faible (< 15% = trop calme pour straddle)
+                // Straddle ne profite PAS d'un marché endormi
+                if h.volatility_mean < 0.15 {
+                    total_score -= 30.0; // Pénalité sévère
+                }
+
+                // PÉNALITÉ: Volatilité chaotique (Breakout % très élevé + BodyRange faible)
+                // = fausses cassures = Whipsaw élevé = danger pour straddle
                 if h.breakout_percentage > 20.0 && h.body_range_mean < 25.0 {
-                    total_score -= 15.0;
+                    total_score -= 12.0;
                 }
 
-                // PÉNALITÉ: BodyRange fort MAIS peu de Breakouts (indécision)
-                if h.body_range_mean > 40.0 && h.breakout_percentage < 8.0 {
-                    total_score -= 8.0;
+                // PÉNALITÉ: Noise ratio très élevé (> 3.5 = trop de rejet)
+                if h.noise_ratio_mean > 3.5 {
+                    total_score -= 10.0;
+                }
+
+                // BONUS: Signal propre avec haute volatilité (idéal straddle)
+                if h.noise_ratio_mean < 2.0 && h.volatility_mean > 0.20 {
+                    total_score += 15.0;
                 }
 
                 (h.hour, total_score)
