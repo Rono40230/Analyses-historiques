@@ -60,7 +60,7 @@
             Durée Trade
           </div>
           <div class="metric-value">
-            {{ tradingPlan?.tradeDurationMinutes || '—' }} <span class="unit">min</span>
+            {{ volatilityDuration?.recommended_trade_expiration_minutes || tradingPlan?.tradeDurationMinutes || '—' }} <span class="unit">min</span>
           </div>
         </div>
         <template #definition>
@@ -112,7 +112,6 @@ defineProps<{
 
 <style scoped>
 .volatility-duration-section {
-  margin-top: 20px;
   padding: 20px;
   background: linear-gradient(135deg, rgba(45, 90, 123, 0.15) 0%, rgba(78, 205, 196, 0.1) 100%);
   border: 1px solid #2d5a7b;

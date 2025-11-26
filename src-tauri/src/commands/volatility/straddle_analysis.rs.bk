@@ -125,7 +125,7 @@ mod tests {
             percentile_95_wicks: 10.0,
             with_margin: 11.0,
         };
-        let json = serde_json::to_string(&resp).unwrap();
+        let json = serde_json::to_string(&resp).expect("serialization failed");
         assert!(json.contains("offset_pips"));
     }
 }

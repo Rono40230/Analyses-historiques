@@ -135,7 +135,7 @@ impl<'a> Stats15MinCalculator<'a> {
         let range_mean = mean(&tr_dist.true_ranges);
         let body_range_mean = mean(&body_ranges);
         let shadow_ratio_mean = mean(&shadow_ratios);
-        let tick_quality_mean = mean(&tick_qualities);
+        let _tick_quality_mean = mean(&tick_qualities);
         let noise_ratio_mean = mean(&noise_ratios);
         
         // Calculate breakout percentage first

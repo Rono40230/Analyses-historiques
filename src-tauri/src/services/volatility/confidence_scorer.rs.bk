@@ -139,21 +139,13 @@ impl ConfidenceScorer {
             score += 3.0;
         }
 
-        // 7. BONUS Tick Quality (8 pts max) - Liquidity = profitabilité scalping
-        // Tick Quality élevé = spreads serrés = profits meilleurs
-        if metrics.mean_tick_quality > 0.001 {
-            score += 8.0; // Excellente liquidité pour scalping
-        } else if metrics.mean_tick_quality > 0.0005 {
-            score += 4.0; // Acceptable
-        }
-
-        // 8. PÉNALITÉ: ATR élevé MAIS Noise élevé (contradiction)
+        // 7. PÉNALITÉ: ATR élevé MAIS Noise élevé (contradiction)
         // Volatilité chaotique = mauvais pour scalping propre
         if metrics.mean_atr > 0.0002 && metrics.mean_noise_ratio > 3.0 {
             score -= 15.0; // Volatilité mais signal chaotique = danger
         }
 
-        // 9. PÉNALITÉ: BodyRange fort MAIS peu de Breakouts (indécision)
+        // 8. PÉNALITÉ: BodyRange fort MAIS peu de Breakouts (indécision)
         // Bougies directionnelles mais pas de cassures = signal faible
         if metrics.mean_body_range > 40.0 && metrics.mean_breakout_percentage < 8.0 {
             score -= 10.0; // Contrainte = trading moins net
@@ -181,7 +173,6 @@ mod tests {
             mean_body_range: 0.0,
             mean_noise_ratio: 10.0,
             mean_breakout_percentage: 0.0,
-            mean_tick_quality: 0.0,
             mean_volume_imbalance: 0.0,
             total_candles: 1000,
         };
@@ -202,7 +193,6 @@ mod tests {
             mean_body_range: 50.0,
             mean_noise_ratio: 1.5,
             mean_breakout_percentage: 20.0,
-            mean_tick_quality: 0.001,
             mean_volume_imbalance: 0.05,
             total_candles: 200000,
         };
@@ -225,19 +215,16 @@ mod tests {
             (0.001, 0.70),
         ];
 
-        for (atr, volatility) in test_cases {
+            for (atr, volatility) in test_cases {
             let metrics = GlobalMetrics {
                 mean_atr: atr,
                 mean_volatility: volatility,
                 mean_body_range: 40.0,
                 mean_noise_ratio: 2.0,
                 mean_breakout_percentage: 12.0,
-                mean_tick_quality: 0.0008,
                 mean_volume_imbalance: 0.05,
                 total_candles: 100000,
-            };
-
-            let score = ConfidenceScorer::calculate_confidence_score(&metrics);
+            };            let score = ConfidenceScorer::calculate_confidence_score(&metrics);
             assert!(
                 score <= 100.0,
                 "Score ne doit pas dépasser 100. ATR={}, Vol={}, Score={}",

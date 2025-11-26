@@ -132,16 +132,6 @@ function getColorClass(metric: string, value: number): string {
 
 const displayedMetrics = computed(() => [
   {
-    key: 'bougies',
-    label: 'Bougies',
-    value: props.globalMetrics.total_candles,
-    formattedValue: props.globalMetrics.total_candles.toLocaleString(),
-    definition: 'Nombre total de bougies analysées. Plus il y a de données, plus l\'analyse statistique est fiable et robuste pour identifier les patterns récurrents.',
-    usage: '>500 bougies = données abondantes, idéal pour straddle\n200-500 = bon volume\n100-200 = acceptable\n<100 = insuffisant pour fiabilité.',
-    scoring: '🟢 Excellent (>500) = Confiance maximale\n🔵 Bon (200-500) = Fiable\n🟡 Acceptable (100-200) = Modéré\n🔴 Pauvre (<100) = Données trop limitées',
-    realUseCases: 'Vous analysez le DAX avec 250 bougies (15 min × 250 = 62h d\'historique)\n→ Bon volume pour straddle\n→ Les patterns identifiés sont fiables\n\nMais si vous n\'avez que 80 bougies\n→ Manque de données\n→ Risque de résultats biaisés\n→ Recommandation: attendre plus de données avant de trader'
-  },
-  {
     key: 'atr',
     label: 'ATR moyen',
     value: props.globalMetrics.mean_atr,
@@ -150,6 +140,16 @@ const displayedMetrics = computed(() => [
     usage: '>2.5% du prix = volatilité excellente, spreads serrés\n1.5-2.5% = bon (straddle profitable)\n1-1.5% = acceptable\n<1% = faible (gaps risqués).',
     scoring: '🟢 Excellent (>2.5%) = ATR très élevé, gains potentiels importants\n🔵 Bon (1.5-2.5%) = conditions optimales straddle\n🟡 Acceptable (1-1.5%) = possible mais serré\n🔴 Pauvre (<1%) = straddle peu rentable',
     realUseCases: 'EUR/USD à 15h (NY open), ATR = 2.2%\n→ SL = 2.2 × 1.5 = 3.3%, TP = 2.2 × 2.5 = 5.5%\n→ Conditions optimales pour entrer\n\nMême instrument à 12h, ATR = 0.8%\n→ SL = 1.2%, TP = 2.0%\n→ Spreads très serrés, risque/récompense faible\n→ Recommandation: passer, attendre conditions plus volatiles'
+  },
+  {
+    key: 'range',
+    label: 'True Range',
+    value: props.globalMetrics.mean_range,
+    formattedValue: `${(props.globalMetrics.mean_range / props.estimatedPrice * 100).toFixed(2)}%`,
+    definition: 'True Range (H-L avec gaps) : capture le mouvement RÉEL exploitable (contrairement au simple range). Évalue l\'amplitude vraie que le straddle peut capturer.',
+    usage: '>2.5% = mouvement énorme exploitable\n1.5-2.5% = bon range, straddle bien positionné\n1-1.5% = acceptable mais serré\n<1% = peu de mouvement.',
+    scoring: '🟢 Excellent (>2.5%) = Énorme amplitude, profit assuré\n🔵 Bon (1.5-2.5%) = Range parfait straddle\n🟡 Acceptable (1-1.5%) = Limité mais jouable\n🔴 Pauvre (<1%) = Mouvement insuffisant',
+    realUseCases: 'DAX à 8h (London open), range = 2.1%\n→ Si vous entrez au milieu du range\n→ TP à +1% = réaliste et atteignable\n→ Position: entrer avec confiance\n\nS&P 500 en consolidation, range = 0.6%\n→ Très peu d\'espace pour profit\n→ SL et TP trop proches = FX coûts élevés\n→ Recommandation: SKIP, trop de friction'
   },
   {
     key: 'volatility',
@@ -162,16 +162,6 @@ const displayedMetrics = computed(() => [
     realUseCases: 'GBP/USD après communiqué de la BoE, volatilité = 28%\n→ Conditions très favorables\n→ Position size: normal\n→ Attendre breakout confirmé\n\nMême paire en milieu d\'après-midi, volatilité = 3%\n→ Marché endormi (range-bound)\n→ Rejets fréquents, fausses cassures\n→ Recommandation: SKIP, attendre le prochain événement'
   },
   {
-    key: 'range',
-    label: 'Range',
-    value: props.globalMetrics.mean_range,
-    formattedValue: `${(props.globalMetrics.mean_range / props.estimatedPrice * 100).toFixed(2)}%`,
-    definition: 'True Range (H-L avec gaps) : capture le mouvement RÉEL exploitable (contrairement au simple range). Évalue l\'amplitude vraie que le straddle peut capturer.',
-    usage: '>2.5% = mouvement énorme exploitable\n1.5-2.5% = bon range, straddle bien positionné\n1-1.5% = acceptable mais serré\n<1% = peu de mouvement.',
-    scoring: '🟢 Excellent (>2.5%) = Énorme amplitude, profit assuré\n🔵 Bon (1.5-2.5%) = Range parfait straddle\n🟡 Acceptable (1-1.5%) = Limité mais jouable\n🔴 Pauvre (<1%) = Mouvement insuffisant',
-    realUseCases: 'DAX à 8h (London open), range = 2.1%\n→ Si vous entrez au milieu du range\n→ TP à +1% = réaliste et atteignable\n→ Position: entrer avec confiance\n\nS&P 500 en consolidation, range = 0.6%\n→ Très peu d\'espace pour profit\n→ SL et TP trop proches = FX coûts élevés\n→ Recommandation: SKIP, trop de friction'
-  },
-  {
     key: 'bodyrange',
     label: 'Body Range %',
     value: props.globalMetrics.mean_body_range,
@@ -182,16 +172,6 @@ const displayedMetrics = computed(() => [
     realUseCases: 'EUR/USD suite NFP, body range = 52%\n→ Direction très claire (peu de queue)\n→ Fermeture proche du high/low\n→ Signal de conviction forte\n→ Recommandation: prendre straddle directionnel\n\nMême jour, différente paire, body range = 18%\n→ Mèches énormes = rejet du mouvement\n→ Indécision du marché\n→ Augmenter SL de 20-30%'
   },
   {
-    key: 'noiseratio',
-    label: 'Noise Ratio',
-    value: props.globalMetrics.mean_noise_ratio,
-    formattedValue: `${props.globalMetrics.mean_noise_ratio.toFixed(2)}`,
-    definition: 'Ratio Wicks/Body : mesure le ratio bruit/signal. Bas = direction confirmée, spread étroit. Haut = beaucoup de rejets (fausses mèches) = problème majeur pour straddle.',
-    usage: '<2.0 = signal excellent, spreads serrés\n2.0-3.0 = acceptable, quelques rejets\n3.0-4.0 = très bruyant, spreads larges\n>4.0 = chaotique, rejets constants.',
-    scoring: '🟢 Excellent (<2.0) = Direction nette, pas de spreads larges\n🔵 Bon (2.0-3.0) = Acceptable\n🟡 Acceptable (3.0-4.0) = Rejets importants, TP/SL plus large\n🔴 Pauvre (>4.0) = Chaos, à éviter absolument',
-    realUseCases: 'Gold à NFP, noise ratio = 1.8\n→ Peu de rejets, direction confirmée\n→ SL standard (1.5× ATR)\n→ Breakout fiable\n→ Recommandation: TRADE en confiance\n\nMême paire en CPI, noise ratio = 3.2\n→ Beaucoup de fausses mèches\n→ Augmenter SL de 30% (2× ATR au lieu de 1.5×)\n→ Réduire position size de 20%'
-  },
-  {
     key: 'volumeimbalance',
     label: 'Direction Strength',
     value: props.globalMetrics.mean_volume_imbalance,
@@ -200,6 +180,16 @@ const displayedMetrics = computed(() => [
     usage: '>20% = direction TRÈS forte confirmée\n10-20% = bon directif\n5-10% = moyen, pas assez fort\n<5% = trop faible, movement indécis.',
     scoring: '🟢 Excellent (>20%) = Force directionnelle maximale\n🔵 Bon (10-20%) = Momentum clair\n🟡 Acceptable (5-10%) = Modéré, risqué\n🔴 Pauvre (<5%) = Pas assez de conviction',
     realUseCases: 'DAX à 8h, direction strength = 22%\n→ Force maximale = momentum confirmé\n→ Probabilité de poursuite: 65%+\n→ Position full size\n→ TP agressif (+2.5× ATR)\n\nMême créneau autre jour, direction strength = 4%\n→ Force minimale = indécision\n→ Probabilité de reversal: 50%+\n→ Recommandation: réduire 50% ou SKIP'
+  },
+  {
+    key: 'noiseratio',
+    label: 'Noise Ratio',
+    value: props.globalMetrics.mean_noise_ratio,
+    formattedValue: `${props.globalMetrics.mean_noise_ratio.toFixed(2)}`,
+    definition: 'Ratio Wicks/Body : mesure le ratio bruit/signal. Bas = direction confirmée, spread étroit. Haut = beaucoup de rejets (fausses mèches) = problème majeur pour straddle.',
+    usage: '<2.0 = signal excellent, spreads serrés\n2.0-3.0 = acceptable, quelques rejets\n3.0-4.0 = très bruyant, spreads larges\n>4.0 = chaotique, rejets constants.',
+    scoring: '🟢 Excellent (<2.0) = Direction nette, pas de spreads larges\n🔵 Bon (2.0-3.0) = Acceptable\n🟡 Acceptable (3.0-4.0) = Rejets importants, TP/SL plus large\n🔴 Pauvre (>4.0) = Chaos, à éviter absolument',
+    realUseCases: 'Gold à NFP, noise ratio = 1.8\n→ Peu de rejets, direction confirmée\n→ SL standard (1.5× ATR)\n→ Breakout fiable\n→ Recommandation: TRADE en confiance\n\nMême paire en CPI, noise ratio = 3.2\n→ Beaucoup de fausses mèches\n→ Augmenter SL de 30% (2× ATR au lieu de 1.5×)\n→ Réduire position size de 20%'
   },
   {
     key: 'breakout',

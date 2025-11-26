@@ -7,19 +7,24 @@
     <div class="panel-header">
       <div class="header-title">
         <h2>🎯 Analyse: {{ props.result.symbol }}</h2>
-        <select
-          :value="currentSymbol"
-          class="symbol-select"
-          @change="(e) => onSymbolChange((e.target as HTMLSelectElement).value)"
-        >
-          <option
-            v-for="s in symbols"
-            :key="s.symbol"
-            :value="s.symbol"
+        <div class="symbol-control">
+          <select
+            :value="currentSymbol"
+            class="symbol-select"
+            @change="(e) => onSymbolChange((e.target as HTMLSelectElement).value)"
           >
-            {{ s.symbol }}
-          </option>
-        </select>
+            <option
+              v-for="s in symbols"
+              :key="s.symbol"
+              :value="s.symbol"
+            >
+              {{ s.symbol }}
+            </option>
+          </select>
+          <div class="candles-info">
+            calculée à partir de <span class="candles-value">{{ formatCandlesCount(props.result.global_metrics.total_candles) }}</span> bougies
+          </div>
+        </div>
       </div>
       <div class="badges">
         <MetricTooltip title="Qualité du Setup Straddle">
@@ -149,31 +154,22 @@ const currentSymbol = computed(() => props.result?.symbol || '')
 const symbols = ref<Array<{ symbol: string; file_path: string }>>([])
 const isAnalysisModalOpen = ref(false)
 const { onPairDataRefresh } = useDataRefresh()
-
-const unsubscribe = onPairDataRefresh(() => {
-  store.loadSymbols()
-})
+const unsubscribe = onPairDataRefresh(() => { store.loadSymbols() })
 
 onMounted(async () => {
   try {
     symbols.value = props.symbols || await invoke('load_symbols')
-  } catch (err) {
-    // Erreur lors du chargement des symboles
-  }
+  } catch (err) {}
 })
 
-onBeforeUnmount(() => {
-  unsubscribe()
-})
+onBeforeUnmount(() => { unsubscribe() })
 
 watch(() => store.symbols, (newSymbols) => {
   symbols.value = newSymbols
 }, { deep: true })
 
 function onSymbolChange(newSymbol: string) {
-  if (newSymbol && newSymbol !== props.result?.symbol) {
-    emit('symbolSelected', newSymbol)
-  }
+  if (newSymbol && newSymbol !== props.result?.symbol) emit('symbolSelected', newSymbol)
 }
 
 function formatRecommendation(rec: string): string {
@@ -196,12 +192,12 @@ function formatRisk(risk: string): string {
   return map[risk] || risk
 }
 
+function formatCandlesCount(count: number): string {
+  return count.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+}
+
 function getRiskClass(risk: string): string {
-  const map: { [key: string]: string } = {
-    'Low': 'low',
-    'Medium': 'medium',
-    'High': 'high'
-  }
+  const map: { [key: string]: string } = { 'Low': 'low', 'Medium': 'medium', 'High': 'high' }
   return map[risk] || ''
 }
 
@@ -235,8 +231,11 @@ const recommendationClass = computed(() => {
 .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
 .header-title { display: flex; align-items: center; gap: 15px; }
 .header-title h2 { margin: 0; }
+.symbol-control { display: flex; align-items: center; gap: 20px; }
 .symbol-select { padding: 8px 12px; border: 2px solid #30363d; background: #1a202c; color: #000000; border-radius: 6px; cursor: pointer; font-weight: 600; }
 .symbol-select option { background: #ffffff; color: #000000; }
+.candles-info { display: flex; align-items: center; gap: 6px; padding: 10px 14px; background: rgba(59, 130, 246, 0.1); border-left: 3px solid #3b82f6; border-radius: 6px; font-size: 0.95em; color: #cbd5e0; white-space: nowrap; }
+.candles-value { font-size: 1.5em; font-weight: bold; color: #3b82f6; }
 .badges { display: flex; gap: 10px; }
 .badge { padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.9em; color: white; cursor: help; transition: all 0.2s; border: 2px solid transparent; }
 .badge:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }

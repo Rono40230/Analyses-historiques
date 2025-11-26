@@ -2,33 +2,26 @@ import { ref, watch } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import type { AnalysisResult } from '../stores/volatility'
 import type { SliceAnalysis } from '../utils/straddleAnalysis'
-import { analyzeTop3Slices, calculateBidiParameters } from '../utils/straddleAnalysis'
+import { analyzeTop3Slices, calculateBidiParameters, calculateStraddleScore, calculateTradingPlan } from '../utils/straddleAnalysis'
 
 interface MovementQuality {
   id?: number | null
   symbol: string
   event_type: string
-  directional_move_rate: number
-  whipsaw_rate: number
-  avg_pips_moved: number
-  success_rate: number
-  quality_score: number
-  sample_size: number
-  created_at: number
-  updated_at: number
-}
-
-interface EntryOffsetMetrics {
-  minutes_before_event: number
-  sample_count: number
-  winning_entries: number
-  losing_entries: number
-  win_rate: number
-  avg_pips_gained: number
-  avg_pips_lost: number
-  max_pips_gained: number
-  max_pips_lost: number
-  profit_factor: number
+  score?: number
+  label?: string
+  quality_score?: number
+  quality_label?: string
+  trend_score?: number
+  smoothness_score?: number
+  candle_consistency?: number
+  directional_move_rate?: number
+  whipsaw_rate?: number
+  avg_pips_moved?: number
+  success_rate?: number
+  sample_size?: number
+  created_at?: number
+  updated_at?: number
 }
 
 export interface VolatilityDuration {
@@ -47,29 +40,13 @@ export function useMetricsAnalysisData() {
   const tradingPlan = ref<any>(null)
   const entryWindowAnalysis = ref<any>({ optimal_offset: 0, optimal_win_rate: 0 })
 
-  async function loadMovementQuality(symbol: string, eventName: string) {
-    try {
-      const result = await invoke('get_movement_quality', { symbol, event_type: eventName })
-      if (result) {
-        movementQualities.value[eventName] = result as MovementQuality
-      }
-    } catch (err) {
-      // Erreur silencieuse
-    }
-  }
-
-  async function loadEntryWindowAnalysis(symbol: string, eventName: string) {
-    try {
-      const result = await invoke('get_entry_window_analysis', { symbol, event_type: eventName })
-      if (result) {
-        entryWindowAnalysis.value = result
-      }
-    } catch (err) {
-      // Erreur silencieuse
-    }
-  }
-
   async function updateAnalysis(analysisResult: AnalysisResult) {
+    sliceAnalyses.value = []
+    movementQualities.value = {}
+    volatilityDuration.value = null
+    tradingPlan.value = null
+    entryWindowAnalysis.value = { optimal_offset: 0, optimal_win_rate: 0 }
+
     const result = analysisResult
     analysisData.value = {
       globalMetrics: result.global_metrics,
@@ -80,57 +57,80 @@ export function useMetricsAnalysisData() {
     }
 
     if (result.stats_15min && result.stats_15min.length > 0) {
-      sliceAnalyses.value = analyzeTop3Slices(result.stats_15min)
+      const slices = analyzeTop3Slices(result.stats_15min)
+
+      for (const s of slices) {
+        if (s.slice) {
+          try {
+            const realMetrics = await invoke<any>('analyze_slice_metrics', {
+              symbol: result.symbol,
+              hour: s.slice.hour,
+              quarter: s.slice.quarter
+            })
+
+            if (s.slice.stats && realMetrics) {
+              Object.assign(s.slice.stats, {
+                atr_mean: realMetrics.atr_mean,
+                volatility_mean: realMetrics.volatility_mean,
+                range_mean: realMetrics.range_mean,
+                body_range_mean: realMetrics.body_range_mean,
+                noise_ratio_mean: realMetrics.noise_ratio_mean,
+                breakout_percentage: realMetrics.breakout_percentage,
+                volume_imbalance_mean: realMetrics.volume_imbalance_mean,
+                shadow_ratio_mean: realMetrics.shadow_ratio_mean,
+                candle_count: realMetrics.candle_count
+              })
+            }
+
+            s.slice.straddleScore = calculateStraddleScore(s.slice.stats)
+            s.tradingPlan = calculateTradingPlan(s.slice.stats, 100000, s.slice.straddleScore)
+
+            if (s.rank === 1) {
+              entryWindowAnalysis.value = {
+                optimal_offset: realMetrics.optimal_entry_offset,
+                optimal_win_rate: realMetrics.optimal_entry_win_rate
+              }
+
+              movementQualities.value = {
+                [s.slice.hour + '-' + s.slice.quarter]: {
+                  score: realMetrics.movement_quality_score,
+                  label: realMetrics.movement_quality_label,
+                  symbol: result.symbol,
+                  event_type: 'N/A'
+                }
+              }
+            }
+          } catch (error) {
+          }
+        }
+      }
+
+      sliceAnalyses.value = slices
 
       if (sliceAnalyses.value && sliceAnalyses.value.length > 0) {
         const bestSlice = sliceAnalyses.value[0]
-        tradingPlan.value = calculateBidiParameters(bestSlice.slice, sliceAnalyses.value.map(a => a.slice))
 
         try {
-          const stats15min = bestSlice.slice.stats
-          volatilityDuration.value = await invoke('analyze_volatility_duration', {
-            stats: {
-              hour: stats15min.hour,
-              quarter: stats15min.quarter,
-              candle_count: stats15min.candle_count,
-              atr_mean: stats15min.atr_mean,
-              atr_max: stats15min.atr_max,
-              volatility_mean: stats15min.volatility_mean,
-              range_mean: stats15min.range_mean,
-              body_range_mean: stats15min.body_range_mean,
-              shadow_ratio_mean: stats15min.shadow_ratio_mean,
-              volume_imbalance_mean: stats15min.volume_imbalance_mean,
-              noise_ratio_mean: stats15min.noise_ratio_mean,
-              breakout_percentage: stats15min.breakout_percentage,
-              events: stats15min.events || []
-            }
+          const durationResult = await invoke<any>('analyze_volatility_duration_for_slice', {
+            symbol: result.symbol,
+            hour: bestSlice.slice.hour,
+            quarter: bestSlice.slice.quarter
           })
-        } catch (error) {
-          const atr = bestSlice.slice.stats.atr_mean
-          const peakDuration = atr > 0.002 ? 120 : atr > 0.0015 ? 150 : atr > 0.001 ? 180 : 240
-          const halfLife = atr > 0.002 ? 45 : atr > 0.0015 ? 60 : atr > 0.001 ? 75 : 90
-          volatilityDuration.value = {
-            peak_duration_minutes: peakDuration,
-            volatility_half_life_minutes: halfLife,
-            recommended_trade_expiration_minutes: Math.max(peakDuration, halfLife * 2),
-            confidence_score: 50,
-            sample_size: bestSlice.slice.stats.candle_count
-          }
-        }
 
-        if (sliceAnalyses.value && sliceAnalyses.value.length > 0) {
-          for (const analysis of sliceAnalyses.value) {
-            if (analysis.slice.stats.events && analysis.slice.stats.events.length > 0) {
-              const eventName = analysis.slice.stats.events[0].event_name
-              await loadMovementQuality(result.symbol, eventName)
+          if (durationResult) {
+            volatilityDuration.value = {
+              peak_duration_minutes: durationResult.peak_duration_minutes,
+              volatility_half_life_minutes: durationResult.volatility_half_life_minutes,
+              recommended_trade_expiration_minutes: durationResult.recommended_trade_expiration_minutes,
+              confidence_score: durationResult.confidence_score,
+              sample_size: durationResult.sample_size
             }
           }
-
-          const firstEvent = sliceAnalyses.value[0].slice.stats.events[0]
-          if (firstEvent) {
-            await loadEntryWindowAnalysis(result.symbol, firstEvent.event_name)
-          }
+        } catch (error) {
+          volatilityDuration.value = null
         }
+
+        tradingPlan.value = bestSlice.tradingPlan
       }
     }
   }

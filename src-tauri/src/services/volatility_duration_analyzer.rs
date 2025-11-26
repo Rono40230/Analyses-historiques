@@ -212,11 +212,11 @@ mod tests {
     fn create_test_candle(hour: u8, minute: u8, close: f64, high: f64, low: f64) -> Candle {
         let mut dt = Utc::now()
             .with_hour(hour as u32)
-            .unwrap()
+            .expect("hour must be valid")
             .with_minute(minute as u32)
-            .unwrap()
+            .expect("minute must be valid")
             .with_second(0)
-            .unwrap();
+            .expect("second must be valid");
         
         Candle {
             id: None,
@@ -253,7 +253,7 @@ mod tests {
         let candle_refs: Vec<&Candle> = candles.iter().collect();
         let result = VolatilityDurationAnalyzer::analyze_from_candles(14, 0, &candle_refs);
         assert!(result.is_ok());
-        let vd = result.unwrap();
+        let vd = result.expect("should be ok");
         assert!(vd.is_valid());
         assert!(vd.peak_duration_minutes > 0);
         assert!(vd.volatility_half_life_minutes < vd.peak_duration_minutes);

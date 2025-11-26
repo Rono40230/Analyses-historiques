@@ -1,28 +1,22 @@
 <template>
-  <MetricTooltip :title="metric.label">
-    <div class="metric-item">
-      <span class="metric-name">{{ metric.label }}</span>
-      <div class="metric-values">
-        <span :class="['value15', getMetricClass(metric.value15, metric.goodThreshold, metric.excellentThreshold)]">
-          {{ formatNumber(metric.value15, metric.decimals ?? 5) }}{{ metric.suffix }}
-        </span>
-        <span class="separator">|</span>
-        <span class="valueglobal">{{ formatNumber(metric.valueGlobal, metric.decimals ?? 5) }}{{ metric.suffix }}</span>
-        <span class="separator">|</span>
-        <span class="threshold">>{{ metric.excellentThreshold }}</span>
-      </div>
-      <span :class="['status', getMetricStatus(metric.value15, metric.excellentThreshold)]">
-        {{ getMetricStatusText(metric.value15, metric.excellentThreshold) }}
+  <div class="metric-item">
+    <span class="metric-name">{{ metric.label }}</span>
+    <div class="metric-values">
+      <span :class="['value15', getMetricClass(metric.value15, metric.goodThreshold, metric.excellentThreshold)]">
+        {{ formatNumber(metric.value15, metric.decimals ?? 5) }}{{ metric.suffix }}
       </span>
+      <span class="separator">|</span>
+      <span class="valueglobal">{{ formatNumber(metric.valueGlobal, metric.decimals ?? 5) }}{{ metric.suffix }}</span>
+      <span class="separator">|</span>
+      <span class="threshold">>{{ metric.excellentThreshold }}</span>
     </div>
-    <template #definition>{{ metric.definition }}</template>
-    <template #usage>{{ metric.usage }}</template>
-    <template #scoring>{{ metric.scoring }}</template>
-  </MetricTooltip>
+    <span :class="['status', getMetricStatus(metric.value15, metric.excellentThreshold)]">
+      {{ getMetricStatusText(metric.value15, metric.excellentThreshold) }}
+    </span>
+  </div>
 </template>
 
 <script setup lang="ts">
-import MetricTooltip from '../MetricTooltip.vue'
 
 interface Metric {
   label: string

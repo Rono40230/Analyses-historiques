@@ -227,7 +227,7 @@ mod tests {
             datetime: DateTime::<Utc>::from_timestamp_millis(
                 1609459200000 + (offset_minutes as i64 * 60000),
             )
-            .unwrap()
+            .expect("timestamp must be valid")
             .into(),
             open: price,
             high: price + high_delta,
@@ -268,7 +268,7 @@ mod tests {
         let result = MovementAnalyzer::analyze_movement_quality("EURUSD", "NFP", &candles, &config);
         assert!(result.is_ok());
 
-        let quality = result.unwrap();
+        let quality = result.expect("should be ok");
         assert_eq!(quality.symbol, "EURUSD");
         assert_eq!(quality.event_type, "NFP");
         assert!(quality.directional_move_rate > 0.0);

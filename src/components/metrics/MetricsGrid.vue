@@ -58,7 +58,7 @@ const getMetrics = computed(() => () => {
       valueGlobal: globals.mean_range ?? 0,
       goodThreshold: 0.0015,
       excellentThreshold: 0.0025,
-      definition: 'Max(High-Low, |High-Close[t-1]|, |Low-Close[t-1]|) : mouvement total exploitable.',
+      definition: 'Max(High-Low, |High-Close[t-1]|, |Low-Close[t-1]|) : mouvement total exploitable. Comparaison tranche 15-min vs moyenne jour.',
       usage: 'Score >2.5% = Excellent | 1.5-2.5% = Bon | <1.5% = Faible.',
       scoring: 'Capture les gaps contrairement au Range. Combine avec ATR pour breakouts.',
       decimals: 5
@@ -88,17 +88,6 @@ const getMetrics = computed(() => () => {
       decimals: 1
     },
     {
-      label: 'Noise Ratio',
-      value15: stats.noise_ratio_mean,
-      valueGlobal: globals.mean_noise_ratio ?? 0,
-      goodThreshold: 2.0,
-      excellentThreshold: 1.5,
-      definition: 'Ratio wicks/body : mesure du bruit vs vraie direction.',
-      usage: '<2.0 = Signal Excellent | 2.0-2.5 = Acceptable | >2.5 = Très Bruité.',
-      scoring: 'Bas = direction confirmée. Élevé = beaucoup de rejets.',
-      decimals: 2
-    },
-    {
       label: 'Direction Strength',
       value15: stats.volume_imbalance_mean * 100,
       valueGlobal: (globals.mean_volume_imbalance ?? 0) * 100,
@@ -109,6 +98,17 @@ const getMetrics = computed(() => () => {
       scoring: 'Combine directionnalité + cassures identifiées.',
       suffix: '%',
       decimals: 1
+    },
+    {
+      label: 'Noise Ratio',
+      value15: stats.noise_ratio_mean,
+      valueGlobal: globals.mean_noise_ratio ?? 0,
+      goodThreshold: 2.0,
+      excellentThreshold: 1.5,
+      definition: 'Ratio wicks/body : mesure du bruit vs vraie direction.',
+      usage: '<2.0 = Signal Excellent | 2.0-2.5 = Acceptable | >2.5 = Très Bruité.',
+      scoring: 'Bas = direction confirmée. Élevé = beaucoup de rejets.',
+      decimals: 2
     },
     {
       label: 'Breakout %',

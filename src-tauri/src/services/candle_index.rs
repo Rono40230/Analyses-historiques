@@ -201,6 +201,8 @@ impl CandleIndex {
         self.data.keys().cloned().collect()
     }
 
+
+
     /// Récupère les candles d'une HEURE SPÉCIFIQUE pour une paire
     /// Retourne les 60 candles (1 minute chacune) pour l'heure donnée d'une date
     pub fn get_candles_for_hour(
@@ -219,6 +221,32 @@ impl CandleIndex {
                     .cloned()
                     .collect()
             })
+    }
+
+    /// Récupère toutes les candles d'un créneau horaire (ex: 14h30-14h45) sur TOUT l'historique disponible
+    /// Optimisé pour éviter d'itérer sur des dates inexistantes
+    pub fn get_candles_for_slice_all_history(
+        &self,
+        symbol: &str,
+        hour: u32,
+        start_minute: u32,
+        end_minute: u32,
+    ) -> Vec<Candle> {
+        if let Some(date_map) = self.data.get(symbol) {
+            date_map
+                .values() // Itère sur Vec<Candle> de chaque jour
+                .flat_map(|day_candles| {
+                    day_candles.iter().filter(move |c| {
+                        let h = c.datetime.hour();
+                        let m = c.datetime.minute();
+                        h == hour && m >= start_minute && m < end_minute
+                    })
+                })
+                .cloned()
+                .collect()
+        } else {
+            Vec::new()
+        }
     }
 
     /// Stats pour debugging

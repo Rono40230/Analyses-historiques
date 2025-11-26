@@ -50,7 +50,8 @@ pub use movement_analysis_commands::{analyze_movement_quality, get_movement_qual
 pub use pair_data::import_pair_data;
 pub use session_commands::*;
 pub use volatility::{
-    analyze_straddle_metrics, analyze_symbol, calculate_offset_optimal, calculate_whipsaw_freq,
+    analyze_slice_metrics, analyze_straddle_metrics, analyze_symbol,
+    analyze_volatility_duration_for_slice, calculate_offset_optimal, calculate_whipsaw_freq,
     calculate_win_rate, get_best_hours, get_cached_candles_for_hour, get_hourly_stats,
     load_candles_for_hour, load_symbols, ping,
 };

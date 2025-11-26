@@ -185,8 +185,8 @@ const getBestTimeDisplay = () => {
 .bidi-parameters-section {
   margin-top: 20px;
   padding: 20px;
-  background: #1a1a2e;
-  border: 1px solid #16213e;
+  background: linear-gradient(135deg, rgba(45, 90, 123, 0.15) 0%, rgba(78, 205, 196, 0.1) 100%);
+  border: 1px solid #2d5a7b;
   border-radius: 8px;
 }
 

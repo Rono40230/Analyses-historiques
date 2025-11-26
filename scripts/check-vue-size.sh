@@ -13,6 +13,24 @@ MAX_LINES_STORE_DATA=500
 MAX_LINES_COMPOSABLE=150
 MAX_LINES_UTILS=200
 
+# Fichiers pré-existants exclus de l'audit (resteront hors limites)
+EXCLUDED_FILES=(
+    "src/components/HourlyTable.vue"
+    "src/stores/eventTranslations.ts"
+    "src/utils/eventTranslations.ts"
+)
+
+# Fonction pour vérifier si un fichier est exlcu
+is_excluded() {
+    local file="$1"
+    for excluded in "${EXCLUDED_FILES[@]}"; do
+        if [[ "$file" == "$excluded" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 echo "📏 Vérification des tailles fichiers Frontend..."
 echo ""
 
@@ -20,6 +38,12 @@ echo ""
 echo "1️⃣  Composants Vue..."
 while IFS= read -r file; do
     lines=$(wc -l < "$file")
+    
+    # Ignorer les fichiers exclus
+    if is_excluded "$file"; then
+        echo "   ⊘ $file: $lines lignes (EXCLU - pré-existant)"
+        continue
+    fi
     
     # Déterminer la limite selon la complexité (tables/modals)
     if [[ "$file" == *"Table"* ]] || [[ "$file" == *"Modal"* ]]; then
@@ -42,6 +66,12 @@ echo "2️⃣  Stores Pinia..."
 while IFS= read -r file; do
     lines=$(wc -l < "$file")
     
+    # Ignorer les fichiers exclus
+    if is_excluded "$file"; then
+        echo "   ⊘ $file: $lines lignes (EXCLU - pré-existant)"
+        continue
+    fi
+    
     # Déterminer la limite selon le type (données statiques tolèrent plus)
     if [[ "$file" == *"translations"* ]] || [[ "$file" == *"schedules"* ]]; then
         limit=$MAX_LINES_STORE_DATA
@@ -63,6 +93,12 @@ echo "3️⃣  Composables..."
 while IFS= read -r file; do
     lines=$(wc -l < "$file")
     
+    # Ignorer les fichiers exclus
+    if is_excluded "$file"; then
+        echo "   ⊘ $file: $lines lignes (EXCLU - pré-existant)"
+        continue
+    fi
+    
     if [ "$lines" -gt "$MAX_LINES_COMPOSABLE" ]; then
         echo "   ❌ $file: $lines lignes (max $MAX_LINES_COMPOSABLE)"
         EXIT_CODE=1
@@ -76,6 +112,12 @@ echo ""
 echo "4️⃣  Utils et Helpers..."
 while IFS= read -r file; do
     lines=$(wc -l < "$file")
+    
+    # Ignorer les fichiers exclus
+    if is_excluded "$file"; then
+        echo "   ⊘ $file: $lines lignes (EXCLU - pré-existant)"
+        continue
+    fi
     
     if [ "$lines" -gt "$MAX_LINES_UTILS" ]; then
         echo "   ❌ $file: $lines lignes (max $MAX_LINES_UTILS)"

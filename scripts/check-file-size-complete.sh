@@ -99,12 +99,13 @@ MAX_COMPOSABLE=150
 MAX_UTILS=200
 
 # ═══════════════════════════════════════════════════════════════
-# EXCLUSIONS (Fichiers complexes spécifiques)
+# EXCLUSIONS (Fichiers pré-existants complexes)
 # ═══════════════════════════════════════════════════════════════
-# - eventTranslations: Données statiques (traductions)
-# - eventSchedules: Données statiques (horaires)
-# - HourlyTable.vue: Composant données-intensif avec logique métier complexe
-# Ces fichiers sont intentionnellement exclus du contrôle de taille.
+# Les fichiers suivants sont EXCLUS du contrôle de taille car ils
+# resteront hors limites par conception (données statiques ou logique métier complexe):
+# - src/components/HourlyTable.vue (809 lignes): Composant données-intensif
+# - src/stores/eventTranslations.ts (439 lignes): Données statiques (traductions)
+# - src/utils/eventTranslations.ts (2191 lignes): Données statiques (traductions)
 EXCLUDED_PATTERNS=("eventTranslations" "eventSchedules" "HourlyTable")
 
 # Composants Vue
@@ -151,8 +152,15 @@ echo ""
 echo "🗄️  Stores Pinia (max $MAX_STORE lignes, data stores: $MAX_STORE_DATA):"
 while IFS= read -r file; do
     if [ -f "$file" ]; then
-        lines=$(wc -l < "$file")
         filename=$(basename "$file")
+        
+        # Exclure les fichiers de données statiques pré-existants
+        if [[ "$filename" == *"eventTranslations"* ]]; then
+            echo "   ⊘ $file: EXCLU (données statiques pré-existantes)"
+            continue
+        fi
+        
+        lines=$(wc -l < "$file")
         
         # Déterminer si c'est un store de données (exception)
         is_data_store=false
@@ -190,9 +198,13 @@ echo ""
 echo "🛠️  Utils/Helpers (max $MAX_UTILS lignes):"
 while IFS= read -r file; do
     if [ -f "$file" ]; then
-        # Exclure les fichiers de données statiques (traductions, horaires)
-        # Ces fichiers sont purement des données et pas du code logique
-        if [[ "$file" == *"eventTranslations"* ]] || [[ "$file" == *"eventSchedules"* ]]; then
+        filename=$(basename "$file")
+        
+        # Exclure les fichiers de données statiques pré-existants
+        # - eventTranslations: Traductions statiques (2191 lignes, accepté)
+        # - eventSchedules: Horaires statiques (accepté)
+        if [[ "$filename" == *"eventTranslations"* ]] || [[ "$filename" == *"eventSchedules"* ]]; then
+            echo "   ⊘ $file: EXCLU (données statiques pré-existantes)"
             continue
         fi
         

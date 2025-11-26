@@ -231,7 +231,7 @@ mod tests {
     #[test]
     fn test_get_standard_save_path() {
         let path = CalendarConverter::get_standard_save_path(&[]);
-        assert!(path.is_ok() && path.unwrap().contains("calendar.csv"));
+        assert!(path.as_ref().ok().map(|p| p.contains("calendar.csv")).unwrap_or(false));
     }
 
     #[test]

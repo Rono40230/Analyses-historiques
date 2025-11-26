@@ -8,75 +8,60 @@ use tauri::command;
 pub async fn analyze_straddle_metrics(
     symbol: String,
     hour: u8,
-    candles: Vec<serde_json::Value>,
+    quarter: u8,
 ) -> Result<StraddleMetricsResponse, String> {
-    if candles.is_empty() {
-        return Err("No candles for this hour".to_string());
-    }
-    if candles.len() < 16 {
-        return Err(format!("Insufficient data: {} candles (min 16)", candles.len()));
-    }
+    use crate::db;
+    use crate::services::candle_index::CandleIndex;
+    use crate::services::database_loader::DatabaseLoader;
+    use crate::services::slice_metrics_analyzer::analyze_slice_metrics;
 
-    // Extract wicks
-    let mut wicks: Vec<f64> = Vec::new();
-    for candle in &candles {
-        if let (Some(o), Some(h), Some(l), Some(c)) = (
-            candle.get("open").and_then(|v| v.as_f64()),
-            candle.get("high").and_then(|v| v.as_f64()),
-            candle.get("low").and_then(|v| v.as_f64()),
-            candle.get("close").and_then(|v| v.as_f64()),
-        ) {
-            let upper = (h - c.max(o)) * 10000.0;
-            let lower = (o.min(c) - l) * 10000.0;
-            if upper > 0.0 && upper < 1000.0 {
-                wicks.push(upper);
-            }
-            if lower > 0.0 && lower < 1000.0 {
-                wicks.push(lower);
-            }
-        }
-    }
+    // Créer le pool de connexions pour la BD paires
+    let data_dir = dirs::data_local_dir()
+        .ok_or_else(|| "Failed to get data directory".to_string())?;
+    let pairs_db_path = data_dir.join("volatility-analyzer").join("pairs.db");
+    let pairs_db_url = format!("sqlite://{}", pairs_db_path.display());
+    
+    let pairs_pool = db::create_pool(&pairs_db_url)
+        .map_err(|e| format!("Failed to create pairs DB pool: {}", e))?;
 
-    if wicks.is_empty() {
-        return Err("No wicks extracted".to_string());
-    }
+    // Créer un CandleIndex avec DatabaseLoader
+    let db_loader = DatabaseLoader::new(pairs_pool);
+    let mut candle_index = CandleIndex::with_db_loader(db_loader);
 
-    // Calculate P95
-    wicks.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-    let p95_idx = ((wicks.len() as f64) * 0.95).ceil() as usize;
-    let p95 = wicks[p95_idx.min(wicks.len() - 1)] * 10000.0;
+    // Charger les bougies pour ce symbole
+    candle_index
+        .load_pair_candles(&symbol)
+        .map_err(|e| format!("Failed to load candles for {}: {}", symbol, e))?;
 
-    // Win rate simulation
-    let trades = candles.len().saturating_sub(15);
-    let wins = (trades as f64 * 0.55) as usize;
-    let whipsaws = (trades as f64 * 0.1) as usize;
+    // Analyser les métriques du créneau et récupérer les bougies
+    let (metrics, candles) = analyze_slice_metrics(&candle_index, &symbol, hour as u32, quarter as u32)?;
 
-    // Risk level
-    let ws_pct = if trades > 0 { (whipsaws as f64 / trades as f64) * 100.0 } else { 0.0 };
-    let (risk_level, risk_color) = calculate_risk_level(ws_pct);
+    // Simuler la stratégie Straddle sur les bougies historiques
+    use crate::services::straddle_simulator::simulate_straddle;
+    let simulation = simulate_straddle(&candles, &symbol);
 
     Ok(StraddleMetricsResponse {
         symbol,
         hour,
-        candle_count: candles.len(),
+        candle_count: metrics.candle_count,
         offset_optimal: OptimalOffsetData {
-            offset_pips: p95,
-            percentile_95_wicks: p95,
-            with_margin: p95 * 1.1,
+            offset_pips: simulation.offset_optimal_pips,
+            percentile_95_wicks: simulation.percentile_95_wicks,
+            with_margin: simulation.offset_optimal_pips * 1.1,
         },
         win_rate: WinRateData {
-            total_trades: trades,
-            wins,
-            losses: trades - wins,
-            whipsaws,
-            win_rate_percentage: (wins as f64 / trades.max(1) as f64) * 100.0,
+            total_trades: simulation.total_trades,
+            wins: simulation.wins,
+            losses: simulation.losses,
+            whipsaws: simulation.whipsaws,
+            win_rate_percentage: simulation.win_rate_percentage,
         },
         whipsaw: WhipsawData {
-            total_trades: trades,
-            whipsaw_count: whipsaws,
-            whipsaw_frequency_percentage: ws_pct,
-            risk_level,
-            risk_color,
+            total_trades: simulation.total_trades,
+            whipsaw_count: simulation.whipsaws,
+            whipsaw_frequency_percentage: simulation.whipsaw_frequency_percentage,
+            risk_level: simulation.risk_level,
+            risk_color: simulation.risk_color,
         },
     })
 }

@@ -1,5 +1,6 @@
 // services/mod.rs - Exports publics des services
 pub mod archive_service;
+pub mod breakout_detector;
 pub mod calendar_converter;
 pub mod calendar_file_stats;
 pub mod calendar_scraper;
@@ -12,6 +13,7 @@ pub mod database_loader;
 pub mod economic_event_loader;
 pub mod entry_timing_optimizer;
 pub mod entry_window_analyzer;
+pub mod entry_window_optimizer;
 pub mod event_correlation;
 pub mod event_duration_analyzer;
 pub mod event_metrics_aggregator;
@@ -23,12 +25,16 @@ pub mod global_analyzer_straddle_calc;
 pub mod import_processor;
 pub mod metrics;
 pub mod movement_analyzer;
+pub mod movement_quality_analyzer;
 pub mod pair_data;
 pub mod pair_data_stats;
 pub mod session;
 pub mod session_analyzer;
+pub mod slice_metrics_analyzer;
+pub mod straddle_simulator;
 pub mod volatility;
 pub mod volatility_duration_analyzer;
+pub mod volatility_duration_calculator;
 pub mod win_rate_calculator;
 
 pub use archive_service::*;

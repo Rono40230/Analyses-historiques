@@ -48,10 +48,10 @@
         </div>
       </div>
 
-      <!-- Offset Optimal -->
+      <!-- Calcul du SL -->
       <div class="performance-metric">
         <div class="metric-label">
-          Offset Optimal
+          Calcul du SL
         </div>
         <div
           v-if="offsetOptimal"
@@ -82,16 +82,16 @@ defineProps<{
 
 <style scoped>
 .straddle-performance-section {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%);
-  border-left: 3px solid #a855f7;
-  padding: 14px;
-  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(45, 90, 123, 0.15) 0%, rgba(78, 205, 196, 0.1) 100%);
+  border: 1px solid #2d5a7b;
+  padding: 20px;
+  border-radius: 8px;
   margin-top: 12px;
 }
 
 .straddle-performance-section h4 {
-  color: #e9d5ff;
-  font-size: 13px;
+  color: #e0e7ff;
+  font-size: 14px;
   font-weight: 600;
   margin: 0 0 10px 0;
   text-transform: uppercase;
