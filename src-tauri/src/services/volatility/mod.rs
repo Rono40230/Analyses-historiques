@@ -2,7 +2,6 @@
 // Conforme .clinerules : < 300L, structure modulaire
 
 mod analyzer;
-mod best_hours_finder;
 mod best_quarter_finder;
 mod confidence_scorer;
 mod correlation;

@@ -131,7 +131,7 @@
                             v-if="isBestSliceInHour(stat.hour, quarter.quarter)"
                             class="top3-star"
                           >⭐</span>
-                          {{ String(stat.hour).padStart(2, '0') }}:{{ String(quarter.quarter * 15).padStart(2, '0') }}-{{ String(stat.hour).padStart(2, '0') }}:{{ String(Math.min(quarter.quarter * 15 + 15, 60)).padStart(2, '0') }}
+                          {{ formatQuarterLabel(stat.hour, quarter.quarter) }}
                         </td>
                         <td>{{ formatATR(quarter.atr_mean) }}</td>
                         <td>{{ formatATR(quarter.range_mean) }}</td>
@@ -230,6 +230,19 @@ function formatATR(atr: number): string {
   const price = getEstimatedPrice()
   const atrPercent = (atr / price) * 100
   return `${atrPercent.toFixed(2)}%`
+}
+
+// Formate le label de quarter avec gestion du changement d'heure
+function formatQuarterLabel(hour: number, quarter: number): string {
+  const startMin = quarter * 15
+  const endMin = startMin + 15
+  
+  if (endMin >= 60) {
+    const endHour = (hour + 1) % 24
+    return `${String(hour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}-${String(endHour).padStart(2, '0')}:00`
+  } else {
+    return `${String(hour).padStart(2, '0')}:${String(startMin).padStart(2, '0')}-${String(hour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`
+  }
 }
 
 // État du drawer

@@ -25,7 +25,6 @@ impl BestQuarterFinder {
         const VOLATILITY_IDEAL: f64 = 50.0; // 50% = volatilité cible pour Straddle
         const RANGE_IDEAL: f64 = 0.0025; // 25 pips = référence
         const NOISE_IDEAL: f64 = 2.0; // < 2.0 = signal propre
-        const BODY_RANGE_IDEAL: f64 = 40.0; // ~40% = marché indécis (idéal Straddle)
 
         if stats_15min.is_empty() {
             return None;
