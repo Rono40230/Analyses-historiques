@@ -469,24 +469,9 @@ function isInTop3Slice(hour: number, quarter: number): boolean {
 
 // NEW: Retourner le MEILLEUR créneau 15min de chaque heure (pas les 3 globaux)
 function isBestSliceInHour(hour: number, quarter: number): boolean {
-  if (!props.stats15min) return false
-  
-  // Trouver tous les quarters de cette heure
-  const quartersInHour = props.stats15min.filter(stat => stat.hour === hour)
-  if (quartersInHour.length === 0) return false
-  
-  // Calculer le score pour chaque et garder le meilleur
-  const scoredQuarters = quartersInHour.map(q => ({
-    quarter: q.quarter,
-    score: calculateSliceScore(q)
-  }))
-  
-  const bestQuarter = scoredQuarters.reduce((prev, curr) => 
-    curr.score > prev.score ? curr : prev
-  )
-  
-  // Retourner true SEULEMENT si c'est le meilleur de cette heure
-  return bestQuarter.quarter === quarter
+  // Comparer directement avec le meilleur quarter global
+  // props.bestQuarter est [hour, quarter]
+  return props.bestQuarter[0] === hour && props.bestQuarter[1] === quarter
 }
 
 function getTop3SliceRank(hour: number, quarter: number): number {
