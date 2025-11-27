@@ -14,7 +14,7 @@
         <tr class="value-row">
           <td class="row-label">Valeur pour la période</td>
           <td v-for="metric in displayedMetrics" :key="`value-${metric.label}`" class="metric-value">
-            <span :class="['value-cell', getMetricClass(metric.value15, metric.goodThreshold, metric.excellentThreshold)]">
+            <span :class="['value-cell', getMetricStatus(metric.value15, metric.goodThreshold, metric.excellentThreshold)]">
               {{ formatNumber(metric.value15, metric.decimals ?? 2) }}<span class="suffix">{{ metric.suffix }}</span>
             </span>
           </td>
@@ -137,6 +137,11 @@ const displayedMetrics = computed(() => buildMetricsConfig(props.analysis, props
 .value-cell.good {
   color: #3b82f6;
   background: rgba(59, 130, 246, 0.1);
+}
+
+.value-cell.acceptable {
+  color: #eab308;
+  background: rgba(234, 179, 8, 0.1);
 }
 
 .value-cell.poor {

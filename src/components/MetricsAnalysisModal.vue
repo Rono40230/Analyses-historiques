@@ -8,7 +8,6 @@
             <MetricsGrid :analysis="analysis" :analysis-data="analysisData" />
             <VolatilityDurationSection :volatility-duration="volatilityDuration" :trading-plan="tradingPlan" />
             <BidiParametersSection :slice-analyses="sliceAnalyses" :entry-window-analysis="entryWindowAnalysis" :analysis="analysis" />
-            <ObservationsSection :analysis="analysis" :analysis-data="analysisData" :movement-qualities="movementQualities" :volatility-duration="volatilityDuration" />
             <StraddlePerformanceSection :win-rate="winRate" :whipsaw-analysis="whipsawAnalysis" :offset-optimal="offsetOptimal" :win-rate-color="winRateColor" />
             <VolatilityDecayChart 
               v-if="tradingPlan && volatilityDuration"
@@ -39,7 +38,6 @@ import MetricsGrid from './metrics/MetricsGrid.vue'
 import MovementQualitySection from './metrics/MovementQualitySection.vue'
 import VolatilityDurationSection from './metrics/VolatilityDurationSection.vue'
 import BidiParametersSection from './metrics/BidiParametersSection.vue'
-import ObservationsSection from './metrics/ObservationsSection.vue'
 import StraddlePerformanceSection from './metrics/StraddlePerformanceSection.vue'
 import VolatilityDecayChart from './VolatilityDecayChart.vue'
 

@@ -90,6 +90,25 @@ export async function loadVolatilityDuration(
   return null
 }
 
+export function buildVolatilityDuration(stats: Stats15Min): VolatilityDuration | null {
+  // Récupère les valeurs déjà calculées du créneau élu
+  if (!stats.peak_duration_minutes || !stats.volatility_half_life_minutes) {
+    return null
+  }
+
+  const peak = stats.peak_duration_minutes
+  const halfLife = stats.volatility_half_life_minutes
+  const tradeDuration = Math.max(peak, halfLife * 2)
+
+  return {
+    peak_duration_minutes: peak,
+    volatility_half_life_minutes: halfLife,
+    recommended_trade_expiration_minutes: tradeDuration,
+    confidence_score: 100, // Valeurs du créneau = 100% confiance
+    sample_size: 1 // Une seule occurrence (le créneau élu)
+  }
+}
+
 export function createBestSlice(
   bestSliceStats: Stats15Min,
   hour: number,

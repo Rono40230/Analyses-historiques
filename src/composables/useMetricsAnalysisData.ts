@@ -4,7 +4,7 @@ import type { SliceAnalysis } from '../utils/straddleAnalysis'
 import {
   formatSliceTime,
   loadMovementQuality,
-  loadVolatilityDuration,
+  buildVolatilityDuration,
   createBestSlice,
   type MovementQuality,
   type VolatilityDuration
@@ -53,8 +53,11 @@ export function useMetricsAnalysisData() {
     sliceAnalyses.value = [bestSlice]
     tradingPlan.value = bestSlice.tradingPlan
 
-    // Load volatility duration
-    volatilityDuration.value = await loadVolatilityDuration(result.symbol, bestHour, bestQuarter)
+    // Extract volatility duration from the elected quarter stats (no API call)
+    const volatilityDurationValue = buildVolatilityDuration(bestSliceStats)
+    if (volatilityDurationValue) {
+      volatilityDuration.value = volatilityDurationValue
+    }
   }
 
   return {
