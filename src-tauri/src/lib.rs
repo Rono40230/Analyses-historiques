@@ -158,6 +158,7 @@ pub fn run() {
             analyze_slice_metrics,                    // NEW: Analyse métriques d'un créneau 15min
             analyze_straddle_metrics,                 // NEW: Analyse complète avec VRAIES données
             analyze_volatility_duration_for_slice,    // NEW: Durée de volatilité réelle
+            analyze_quarter_entry_timing,             // NEW: Meilleur moment d'entrée par minute
             load_candles_for_hour,                    // NEW: Charger 60 candles pour une heure
             get_cached_candles_for_hour,              // NEW: Récupérer candles en cache
             // Calendar commands (Phase 2 MVP)

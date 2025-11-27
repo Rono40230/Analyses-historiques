@@ -27,7 +27,9 @@
           </div>
           <div class="tooltip-body">
             <slot name="definition" />
+            <slot name="interpretation" />
             <slot name="usage" />
+            <slot name="color-scale" />
             <slot name="scoring" />
             <slot name="realUseCases" />
           </div>

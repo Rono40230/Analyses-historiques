@@ -68,44 +68,48 @@ export async function loadMovementQuality(
   return { qualities: {} }
 }
 
-export async function loadVolatilityDuration(
+export async function loadEntryWindowAnalysis(
   symbol: string,
   hour: number,
   quarter: number
-): Promise<VolatilityDuration | null> {
+): Promise<{ optimal_offset: number; optimal_win_rate: number } | null> {
   try {
-    const result = await invoke<any>('analyze_volatility_duration_for_slice', { symbol, hour, quarter })
+    const result = await invoke<any>('analyze_quarter_entry_timing', { 
+      symbol, 
+      hour: Math.floor(hour),
+      quarter: Math.floor(quarter)
+    })
+    
     if (result) {
       return {
-        peak_duration_minutes: result.peak_duration_minutes,
-        volatility_half_life_minutes: result.volatility_half_life_minutes,
-        recommended_trade_expiration_minutes: result.recommended_trade_expiration_minutes,
-        confidence_score: result.confidence_score,
-        sample_size: result.sample_size
+        optimal_offset: result.optimal_offset_minutes ?? 0,
+        optimal_win_rate: result.optimal_win_rate ?? 0
       }
     }
   } catch (error) {
-    // Ignore
+    // Erreur silencieuse (fallback à valeurs par défaut)
   }
   return null
 }
 
-export function buildVolatilityDuration(stats: Stats15Min): VolatilityDuration | null {
-  // Récupère les valeurs déjà calculées du créneau élu
-  if (!stats.peak_duration_minutes || !stats.volatility_half_life_minutes) {
+export function extractVolatilityDuration(bestSliceStats: Stats15Min): VolatilityDuration | null {
+  if (!bestSliceStats) return null
+
+  // Récupère les valeurs du créneau élu
+  const peak = bestSliceStats.peak_duration_minutes ?? 0
+  const halfLife = bestSliceStats.volatility_half_life_minutes ?? 0
+  const tradeDuration = bestSliceStats.recommended_trade_expiration_minutes ?? 0
+
+  if (peak === 0 && halfLife === 0 && tradeDuration === 0) {
     return null
   }
-
-  const peak = stats.peak_duration_minutes
-  const halfLife = stats.volatility_half_life_minutes
-  const tradeDuration = Math.max(peak, halfLife * 2)
 
   return {
     peak_duration_minutes: peak,
     volatility_half_life_minutes: halfLife,
     recommended_trade_expiration_minutes: tradeDuration,
-    confidence_score: 100, // Valeurs du créneau = 100% confiance
-    sample_size: 1 // Une seule occurrence (le créneau élu)
+    confidence_score: 100, // Valeurs du tableau = 100% confiance
+    sample_size: 1
   }
 }
 

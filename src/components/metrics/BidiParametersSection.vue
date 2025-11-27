@@ -2,48 +2,49 @@
   <div class="bidi-parameters-section">
     <h4>⚙️ PARAMÈTRES BIDI OPTIMISÉS</h4>
     <div class="metrics-grid">
-      <MetricTooltip
-        title="Meilleur Moment"
-        direction="top"
-      >
-        <div class="metric-card">
-          <div class="metric-label">
-            Meilleur Moment
-          </div>
-          <div class="metric-value">
-            {{ getBestTimeDisplay() }}
-          </div>
+      <div class="metric-card">
+        <div class="metric-label">
+          Meilleur Moment
         </div>
-        <template #definition>
-          L'heure exacte d'entrée optimale pour le straddle basée sur l'analyse historique des créneau horaires.
-        </template>
-        <template #usage>
-          Entrée au-delà de 14:00 avec ≥ 3 créneau optimaux et un taux de succès ≥ 55%.
-        </template>
-        <template #scoring>
-          Sélectionné parmi les 3 meilleurs créneau horaires du jour avec le plus haut taux de succès ajusté.
-        </template>
-      </MetricTooltip>
+        <div class="metric-value" style="color: #fff;">
+          {{ getBestTimeDisplay() }}
+        </div>
+      </div>
       <MetricTooltip
-        title="Taux de Succès"
+        title="Winrate"
         direction="top"
       >
         <div class="metric-card">
           <div class="metric-label">
-            Taux de Succès
+            Winrate
           </div>
-          <div class="metric-value">
+          <div class="metric-value" :style="{ color: getWinrateColor(entryWindowAnalysis.optimal_win_rate * 100) }">
             {{ (entryWindowAnalysis.optimal_win_rate * 100).toFixed(0) }}% <span class="unit">événement</span>
           </div>
         </div>
         <template #definition>
-          Pourcentage de fois où le créneau horaire a produit un mouvement straddle gagnant (atteint TP avant SL).
+          <div class="tooltip-section">
+            <div class="tooltip-section-title">📖 Définition</div>
+            <div class="tooltip-section-text">Pourcentage de fois où le créneau horaire élu a produit un mouvement straddle gagnant (atteint TP avant SL), calculé sur l'historique complet.</div>
+          </div>
         </template>
-        <template #usage>
-          Critère crucial : minimum 55% pour un biais positif. ≥65% = excellent signal. &lt;50% = dangereux.
+        <template #interpretation>
+          <div class="tooltip-section">
+            <div class="tooltip-section-title">📊 Interprétation du Score</div>
+            <div class="interpretation-item"><strong>🟢 Excellent:</strong> ≥65% → Biais fortement positif, très fiable</div>
+            <div class="interpretation-item"><strong>🔵 Bon:</strong> 55-64% → Biais positif clair, profitable long terme</div>
+            <div class="interpretation-item"><strong>🟡 Acceptable:</strong> 50-54% → Légèrement positif, margin serré</div>
+            <div class="interpretation-item"><strong>🔴 Faible:</strong> &lt;50% → Biais négatif, dangereux à trader</div>
+          </div>
         </template>
-        <template #scoring>
-          Calculé sur l'historique complet du créneau avec ajustement volatilité/range/body-range.
+        <template #color-scale>
+          <div class="tooltip-section">
+            <div class="tooltip-section-title">🎨 Échelle de Couleurs</div>
+            <div class="color-item excellent">🟢 Excellent: ≥65%</div>
+            <div class="color-item good">🔵 Bon: 55-64%</div>
+            <div class="color-item acceptable">🟡 Acceptable: 50-54%</div>
+            <div class="color-item poor">🔴 Faible: &lt;50%</div>
+          </div>
         </template>
       </MetricTooltip>
       <MetricTooltip
@@ -54,62 +55,33 @@
           <div class="metric-label">
             Stop Loss
           </div>
-          <div class="metric-value">
-            {{ analysis.tradingPlan.slPips }} <span class="unit">pips</span>
+          <div class="metric-value" :style="{ color: getSlColor(analysis.tradingPlan.slPoints, analysis.tradingPlan.atrPoints) }">
+            {{ Math.ceil(analysis.tradingPlan.slPoints) }} <span class="unit">points, soit {{ Math.ceil(analysis.tradingPlan.slPoints) }} pips</span>
           </div>
         </div>
         <template #definition>
-          Distance en pips entre l'entrée et le niveau de stop loss (limite de perte).
-        </template>
-        <template #usage>
-          Calculé dynamiquement : SL = (Score/100 × Range_actuelle) / 1.5. Exemple : score 60 = ±20 pips de range.
-        </template>
-        <template #scoring>
-          Formula: SL_pips = (Score/100) × (ATR × 2.5). Augmente avec la volatilité, diminue si score faible (&lt;50).
-        </template>
-      </MetricTooltip>
-      <MetricTooltip
-        title="Win Rate"
-        direction="top"
-      >
-        <div class="metric-card">
-          <div class="metric-label">
-            Win Rate
+          <div class="tooltip-section">
+            <div class="tooltip-section-title">📖 Définition</div>
+            <div class="tooltip-section-text">Distance en points entre l'entrée et le niveau de stop loss (limite maximale de perte). Adapté dynamiquement selon la volatilité réelle du créneau.</div>
           </div>
-          <div class="metric-value">
-            {{ analysis.tradingPlan.winProbability }}% <span class="unit">histo</span>
+        </template>
+        <template #interpretation>
+          <div class="tooltip-section">
+            <div class="tooltip-section-title">📊 Interprétation du Score</div>
+            <div class="interpretation-item"><strong>🟢 Excellent:</strong> SL ≤0.8×ATR → Très serré, marché calme, peu de bruit</div>
+            <div class="interpretation-item"><strong>🔵 Bon:</strong> SL ≈1.0×ATR → Standard, volatilité normale, straddle symétrique</div>
+            <div class="interpretation-item"><strong>🟡 Acceptable:</strong> SL ≈1.2×ATR → Élargi, volatilité augmente, plus de marge</div>
+            <div class="interpretation-item"><strong>🔴 Faible:</strong> SL ≥1.5×ATR → Très large, volatilité extrême, risque augmenté</div>
           </div>
-        </div>
-        <template #definition>
-          Pourcentage de trades théoriques gagnants selon l'historique des mouvements (atteint TP avant SL).
         </template>
-        <template #usage>
-          Basé sur les histogrammes de distribution des mouvements du créneau. &gt;55% = profitable à long terme. &lt;50% = stop trading.
-        </template>
-        <template #scoring>
-          Calculé à partir de : success_rate du créneau + volatility_score + body_range_score. Ajustement variance inclus.
-        </template>
-      </MetricTooltip>
-      <MetricTooltip
-        title="Avg Gain"
-        direction="top"
-      >
-        <div class="metric-card">
-          <div class="metric-label">
-            Avg Gain
+        <template #color-scale>
+          <div class="tooltip-section">
+            <div class="tooltip-section-title">🎨 Échelle de Couleurs</div>
+            <div class="color-item excellent">🟢 Excellent: &lt;0.8×ATR</div>
+            <div class="color-item good">🔵 Bon: 0.8-1.1×ATR</div>
+            <div class="color-item acceptable">🟡 Acceptable: 1.1-1.3×ATR</div>
+            <div class="color-item poor">🔴 Faible: ≥1.3×ATR</div>
           </div>
-          <div class="metric-value">
-            {{ analysis.tradingPlan.avgGainR.toFixed(1) }}R <span class="unit">moyen</span>
-          </div>
-        </div>
-        <template #definition>
-          Espérance mathématique moyenne en "R" (risque unitaire). Exemple : 0.5R = 50% du risque en gain moyen.
-        </template>
-        <template #usage>
-          Critère clé : Avg Gain = (Win% × Win_avg) - (Loss% × Loss_avg) × Risk. &gt;0.3R = très bon. &lt;0 = à éviter.
-        </template>
-        <template #scoring>
-          Formula: AvgGain = (win_rate × avg_win_pips - (1-win_rate) × avg_loss_pips) / SL_pips. Mesure la profitabilité nette.
         </template>
       </MetricTooltip>
       <MetricTooltip
@@ -120,42 +92,31 @@
           <div class="metric-label">
             Trailing Stop
           </div>
-          <div class="metric-value">
-            {{ analysis.tradingPlan.trailingStopCoefficient.toFixed(2) }}x <span class="unit">ATR</span>
+          <div class="metric-value" style="color: #fff;">
+            {{ analysis.tradingPlan.trailingStopCoefficient.toFixed(2) }}x <span class="unit">SL</span>
           </div>
         </div>
         <template #definition>
-          Multiplicateur ATR pour recalculer dynamiquement le stop loss en hausse (protection des gains). Fixe le SL à [prix bas × (1.5 + volatilité_ratio)].
+          <div class="tooltip-section">
+            <div class="tooltip-section-title">📖 Définition</div>
+            <div class="tooltip-section-text">Multiplicateur du SL utilisé pour placer un stop dynamique qui monte avec le prix, protégeant les gains tout en laissant la position croître. S'active après TP initial touché.</div>
+          </div>
         </template>
-        <template #usage>
-          Trailing = 1.5x ATR + (ATR_current/ATR_avg - 1) × 0.5. Exemple : ATR_actuel 0.002 = 1.8x. Permet de sécuriser les gains sans bloquer.
-        </template>
-        <template #scoring>
-          Formula: Coefficient = 1.5 + (ATR_current/ATR_moyenne - 1) × 0.5. Plage 1.5-2.5x. Volatilité haute = coefficient plus bas (plus serré).
+        <template #interpretation>
+          <div class="tooltip-section">
+            <div class="tooltip-section-title">📊 Explication</div>
+            <div class="tooltip-section-text">La valeur est calculée de manière optimale en fonction de la volatilité réelle du créneau. Elle représente le multiplicateur du SL : une valeur de 0.9x signifie que le trailing stop sera placé à 90% du SL initial, protégeant les gains tout en permettant une croissance potentielle.</div>
+          </div>
         </template>
       </MetricTooltip>
-      <MetricTooltip
-        title="Trade Expiration"
-        direction="top"
-      >
-        <div class="metric-card">
-          <div class="metric-label">
-            Expiration
-          </div>
-          <div class="metric-value">
-            {{ analysis.tradingPlan.tradeExpiration || '—' }} <span class="unit">min</span>
-          </div>
+      <div class="metric-card">
+        <div class="metric-label">
+          Timeout Recommandé
         </div>
-        <template #definition>
-          Limite de temps maximale avant fermeture automatique du trade (dans le robot Bidi). Basée sur la volatilité et remplace les 300min fixes.
-        </template>
-        <template #usage>
-          Entrée à 14h30 + expiration 180min = fermer avant 16h30. Si TP non atteint à l'expiration, fermer à market. Évite les whipsaws post-peak.
-        </template>
-        <template #scoring>
-          Formula: max(peak_duration, half_life × 2). Ajustée selon ATR. Volatilité haute = expiration courte (120-150min). Volatilité faible = expiration longue (240-270min). Max 300min.
-        </template>
-      </MetricTooltip>
+        <div class="metric-value" style="color: #fff;">
+          {{ Math.round((volatilityDuration?.peak_duration_minutes || 21) * 1.5) }} <span class="unit">min</span>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -163,11 +124,19 @@
 <script setup lang="ts">
 import MetricTooltip from '../MetricTooltip.vue'
 import { useMetricsFormatting } from '../../composables/useMetricsFormatting'
+import {
+  getWinrateColor,
+  getSlColor,
+  getTsColor,
+  getOffsetColor,
+  getTimeoutColor
+} from './BidiParametersSection.helpers'
 
 const props = defineProps<{
   sliceAnalyses: any[]
   entryWindowAnalysis: any
   analysis: any
+  volatilityDuration: any
 }>()
 
 const { calculateExactTime } = useMetricsFormatting()
@@ -229,4 +198,16 @@ const getBestTimeDisplay = () => {
   color: #888;
   font-size: 11px;
 }
+
+.interpretation-item { margin: 8px 0; font-size: 12px; line-height: 1.4; color: #cbd5e1; padding: 6px; border-left: 2px solid #4ecdc4; }
+.interpretation-item strong { color: #e2e8f0; }
+.color-item { display: inline-block; padding: 4px 8px; margin: 4px; border-radius: 3px; font-size: 11px; font-weight: 600; border: 1px solid; }
+.color-item.excellent { background: rgba(16, 185, 129, 0.15); color: #10b981; border-color: #10b981; }
+.color-item.good { background: rgba(59, 130, 246, 0.15); color: #3b82f6; border-color: #3b82f6; }
+.color-item.acceptable { background: rgba(234, 179, 8, 0.15); color: #eab308; border-color: #eab308; }
+.color-item.poor { background: rgba(239, 68, 68, 0.15); color: #ef4444; border-color: #ef4444; }
+.tooltip-section { margin-bottom: 12px; }
+.tooltip-section:last-child { margin-bottom: 0; }
+.tooltip-section-title { font-weight: 600; color: #58a6ff; margin-bottom: 8px; font-size: 0.9em; text-transform: uppercase; letter-spacing: 0.5px; }
+.tooltip-section-text { color: #cbd5e0; font-size: 0.9em; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; }
 </style>

@@ -1,63 +1,39 @@
 // Calculateurs spécialisés pour l'analyse STRADDLE
 import type { Stats15Min } from '../stores/volatility'
 import type { GoldenCombo, DetectedTrap, TradingPlan } from './straddleTypes'
+import {
+  estimatePrice,
+  calculateVolatilityMetrics,
+  calculateSlCoefficient,
+  calculateTsCoefficient,
+  calculateRiskMetrics
+} from './straddleCalculators.helpers'
 
 /**
  * Calcule la durée optimale du trade basée sur ATR, type d'événement et heure du jour
  */
-export function calculateTradeDuration(
-  atrMean: number,
-  eventType: string = 'AUTRE',
-  hourOfDay: number = 12
-): number {
-  // Base duration from ATR (en points)
-  let baseDuration = 240 // 4h default
-  if (atrMean > 0.005) baseDuration = 120       // ATR > 50 pips
-  else if (atrMean > 0.004) baseDuration = 150  // ATR > 40 pips
-  else if (atrMean > 0.0025) baseDuration = 180 // ATR > 25 pips
-  
-  // Adjust for event type
-  const eventFactors: Record<string, number> = {
-    'nfp': 0.5,           // Pic court, intense
-    'cpi': 0.7,           // Pic moyen
-    'interest rate': 0.8, // Pic long
-    'gdp': 1.0,           // Pic très long
-    'jobless claims': 0.6,
-    'pce': 0.7,
-    'autre': 1.0          // Default
-  }
-  const normalizedEventType = eventType.toLowerCase()
+export function calculateTradeDuration(atrMean: number, eventType: string = 'AUTRE', hourOfDay: number = 12): number {
+  let duration = atrMean > 0.005 ? 120 : atrMean > 0.004 ? 150 : atrMean > 0.0025 ? 180 : 240
+  const eventFactors: Record<string, number> = { 'nfp': 0.5, 'cpi': 0.7, 'interest rate': 0.8, 'gdp': 1.0, 'jobless claims': 0.6, 'pce': 0.7, 'autre': 1.0 }
   let eventFactor = 1.0
   for (const [key, factor] of Object.entries(eventFactors)) {
-    if (normalizedEventType.includes(key)) {
-      eventFactor = factor
-      break
-    }
+    if (eventType.toLowerCase().includes(key)) { eventFactor = factor; break }
   }
-  
-  // Adjust for hour of day
-  const hourFactors: Record<number, number> = {
-    8: 0.8,   // London open - pic court
-    13: 0.6,  // NY open - pic très court
-    14: 0.7,  // Overlap - pic court
-    // Autres heures: 1.0 (normal)
-  }
-  const hourFactor = hourFactors[hourOfDay] ?? 1.0
-  
-  return Math.round(baseDuration * eventFactor * hourFactor)
+  const hourFactor = { 8: 0.8, 13: 0.6, 14: 0.7 }[hourOfDay] ?? 1.0
+  return Math.round(duration * eventFactor * hourFactor)
 }
 
 export function calculateStraddleScore(slice: Stats15Min, movementQualityScore?: number): number {
   if (slice.candle_count === 0) return 0
   
-  // Estimer le prix pour normaliser les valeurs
-  const price = estimatePrice(slice)
-  const atrPercent = (slice.atr_mean / price) * 100
-  const rangePercent = (slice.range_mean / price) * 100
-  const bodyRange = slice.body_range_mean
-  const noiseRatio = slice.noise_ratio_mean
-  const volumeImbalance = (slice.volume_imbalance_mean * 100)
-  const breakoutPercent = slice.breakout_percentage
+  const estimatedPriceValue = estimatePrice(slice)
+  const metrics = calculateVolatilityMetrics(slice, estimatedPriceValue)
+  const atrPercent = metrics.atrPercent
+  const rangePercent = metrics.rangePercent
+  const bodyRange = metrics.bodyRange
+  const noiseRatio = metrics.noiseRatio
+  const volumeImbalance = metrics.volumeImbalance
+  const breakoutPercent = metrics.breakoutPercent
   
   let score = 0
   
@@ -100,14 +76,6 @@ export function calculateStraddleScore(slice: Stats15Min, movementQualityScore?:
   }
   
   return Math.min(score, 100)
-}
-
-// Helper function pour estimer le prix
-function estimatePrice(slice: Stats15Min): number {
-  // Utiliser l'ATR pour estimer l'ordre de grandeur du prix
-  if (slice.atr_mean > 1000) return 100000 // Crypto
-  if (slice.atr_mean > 10) return 10000    // Indices
-  return 1.0                                // Forex
 }
 
 export function detectGoldenCombos(slice: Stats15Min): GoldenCombo[] {
@@ -160,36 +128,49 @@ export function detectTraps(slice: Stats15Min): DetectedTrap[] {
   return traps
 }
 
-export function calculateTradingPlan(slice: Stats15Min, estimatedPrice: number, confidenceScore: number): TradingPlan {
+export function calculateTradingPlan(slice: Stats15Min, estimatedPriceValue: number, confidenceScore: number): TradingPlan {
   const atrPoints = slice.atr_mean
-  const rangePoints = slice.range_mean
-  const slPips = Math.round((atrPoints * 1.5) * 10000)
-  const tpPips = Math.round((atrPoints * 2.5) * 10000)
+  const metrics = calculateVolatilityMetrics(slice, estimatedPriceValue)
+  const atrPercent = metrics.atrPercent
+  
+  // SL adaptatif basé sur volatilité
+  const slCoefficient = calculateSlCoefficient(atrPercent)
+  const tpCoefficient = slCoefficient * 1.67
+  
+  // Distances en points
+  const slPoints = atrPoints * slCoefficient
+  const tpPoints = atrPoints * tpCoefficient
+  
+  // USD
+  const slUsd = Math.round(slPoints * estimatedPriceValue)
+  const tpUsd = Math.round(tpPoints * estimatedPriceValue)
+  
+  // Risk metrics
   const winProb = confidenceScore / 100
-  const avgGainPips = tpPips * winProb
-  const avgLossPips = slPips * (1 - winProb)
+  const riskMetrics = calculateRiskMetrics(tpPoints, slPoints, winProb)
   
-  // Déterminer le type d'événement principal de cette heure
+  // TS adaptatif
+  const tsCoeff = calculateTsCoefficient(atrPercent, tpPoints, slPoints)
+  
+  // Durée du trade
   const primaryEvent = slice.events?.[0]?.event_name ?? 'AUTRE'
-  
-  // Calculer la durée optimale du trade
   const tradeDurationMinutes = calculateTradeDuration(atrPoints, primaryEvent, slice.hour)
   
   return {
     entryTime: '—',
-    slPips,
-    slPoints: atrPoints * 1.5,
-    slUsd: Math.round((atrPoints * 1.5) * estimatedPrice),
-    tpPips,
-    tpPoints: atrPoints * 2.5,
-    tpUsd: Math.round((atrPoints * 2.5) * estimatedPrice),
-    tpRatio: tpPips / slPips,
-    atrPercentage: (atrPoints / estimatedPrice) * 100,
+    slPips: Math.round(slPoints * 10000),
+    slPoints: slPoints,
+    slUsd: slUsd,
+    tpPips: Math.round(tpPoints * 10000),
+    tpPoints: tpPoints,
+    tpUsd: tpUsd,
+    tpRatio: tpPoints / slPoints,
+    atrPercentage: atrPercent,
     atrPoints,
     winProbability: Math.round(winProb * 100),
-    avgGainR: (avgGainPips - avgLossPips) / slPips,
-    avgLossR: Math.max(0, avgLossPips / slPips),
-    trailingStopCoefficient: 1.5 + (Math.max(0, atrPoints - 0.0015) * 500),
+    avgGainR: riskMetrics.avgGainR,
+    avgLossR: riskMetrics.avgLossR,
+    trailingStopCoefficient: tsCoeff,
     recommendation: confidenceScore >= 75 ? 'TRADE' : 'CAUTION',
     confidence: confidenceScore,
     riskLevel: confidenceScore >= 75 ? 'LOW' : confidenceScore >= 50 ? 'MEDIUM' : 'HIGH',

@@ -2,29 +2,6 @@
   <div class="straddle-performance-section">
     <h4>📊 Performance Straddle Simulée</h4>
     <div class="performance-grid">
-      <!-- Win Rate -->
-      <div class="performance-metric">
-        <div class="metric-label">
-          Win Rate
-        </div>
-        <div
-          v-if="winRate"
-          class="metric-display"
-        >
-          <span
-            class="metric-value"
-            :style="{ color: winRateColor }"
-          >{{ winRate.win_rate_percentage.toFixed(1) }}%</span>
-          <span class="metric-subtext">({{ winRate.wins }}/{{ winRate.total_trades }} trades)</span>
-        </div>
-        <div
-          v-else
-          class="metric-loading"
-        >
-          <span>⏳ Calcul...</span>
-        </div>
-      </div>
-
       <!-- Whipsaw Frequency -->
       <div class="performance-metric">
         <div class="metric-label">
