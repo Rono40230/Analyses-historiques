@@ -273,10 +273,7 @@ function formatNumber(num: number, decimals: number): string {
 
 
 const bestSliceHour = computed(() => {
-  if (top3Slices.value && top3Slices.value.length > 0) {
-    return top3Slices.value[0].hour
-  }
-  return null
+  return props.bestQuarter[0] // L'heure qui contient le meilleur quarter
 })
 
 function isBestHour(hour: number): boolean {
