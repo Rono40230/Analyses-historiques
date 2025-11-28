@@ -2,7 +2,50 @@
   <div class="straddle-performance-section">
     <h4>📊 Performance Straddle Simulée</h4>
     <div class="performance-grid">
-      <!-- Whipsaw Frequency -->
+      <!-- Win Rate Ajusté -->
+      <div class="performance-metric">
+        <div class="metric-label">
+          Taux de Gain (ajusté)
+        </div>
+        <div
+          v-if="winRate"
+          class="metric-display"
+        >
+          <span
+            class="metric-value"
+            :style="{ color: winRateColor }"
+          >{{ winRate.win_rate_adjusted.toFixed(1) }}%</span>
+          <span class="metric-subtext">(pondéré par whipsaw)</span>
+        </div>
+        <div
+          v-else
+          class="metric-loading"
+        >
+          <span>⏳ Calcul...</span>
+        </div>
+      </div>
+
+      <!-- Stop Loss Ajusté -->
+      <div class="performance-metric">
+        <div class="metric-label">
+          Stop Loss (ajusté)
+        </div>
+        <div
+          v-if="offsetOptimal"
+          class="metric-display"
+        >
+          <span class="metric-value">{{ offsetOptimal.sl_adjusted_pips.toFixed(1) }} pips</span>
+          <span class="metric-subtext">(pondéré par whipsaw)</span>
+        </div>
+        <div
+          v-else
+          class="metric-loading"
+        >
+          <span>⏳ Calcul...</span>
+        </div>
+      </div>
+
+      <!-- Fréquence Whipsaw -->
       <div class="performance-metric">
         <div class="metric-label">
           Fréquence Whipsaw
@@ -16,26 +59,6 @@
             :style="{ color: whipsawAnalysis.risk_color }"
           >{{ whipsawAnalysis.whipsaw_frequency_percentage.toFixed(1) }}%</span>
           <span class="metric-subtext">({{ whipsawAnalysis.risk_level }})</span>
-        </div>
-        <div
-          v-else
-          class="metric-loading"
-        >
-          <span>⏳ Calcul...</span>
-        </div>
-      </div>
-
-      <!-- Calcul du SL -->
-      <div class="performance-metric">
-        <div class="metric-label">
-          Calcul du SL
-        </div>
-        <div
-          v-if="offsetOptimal"
-          class="metric-display"
-        >
-          <span class="metric-value">{{ offsetOptimal.offset_pips.toFixed(1) }} pips</span>
-          <span class="metric-subtext">(P95: {{ offsetOptimal.percentile_95_wicks.toFixed(1) }})</span>
         </div>
         <div
           v-else

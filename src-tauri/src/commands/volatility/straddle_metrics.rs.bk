@@ -48,6 +48,7 @@ pub async fn analyze_straddle_metrics(
             offset_pips: simulation.offset_optimal_pips,
             percentile_95_wicks: simulation.percentile_95_wicks,
             with_margin: simulation.offset_optimal_pips * 1.1,
+            sl_adjusted_pips: simulation.sl_adjusted_pips,
         },
         win_rate: WinRateData {
             total_trades: simulation.total_trades,
@@ -55,6 +56,7 @@ pub async fn analyze_straddle_metrics(
             losses: simulation.losses,
             whipsaws: simulation.whipsaws,
             win_rate_percentage: simulation.win_rate_percentage,
+            win_rate_adjusted: simulation.win_rate_adjusted,
         },
         whipsaw: WhipsawData {
             total_trades: simulation.total_trades,
@@ -62,6 +64,8 @@ pub async fn analyze_straddle_metrics(
             whipsaw_frequency_percentage: simulation.whipsaw_frequency_percentage,
             risk_level: simulation.risk_level,
             risk_color: simulation.risk_color,
+            trailing_stop_adjusted: simulation.trailing_stop_adjusted,
+            timeout_adjusted_minutes: simulation.timeout_adjusted_minutes,
         },
     })
 }

@@ -52,12 +52,12 @@
 
       <!-- Trade Duration (NEW PARAM) -->
       <MetricTooltip
-        title="Durée du Trade"
+        title="Fin du Pic"
         direction="top"
       >
         <div class="metric-card">
           <div class="metric-label">
-            Durée Trade
+            Fin du Pic
           </div>
           <div class="metric-value">
             {{ volatilityDuration?.recommended_trade_expiration_minutes || tradingPlan?.tradeDurationMinutes || '—' }} <span class="unit">min</span>
@@ -71,30 +71,6 @@
         </template>
         <template #scoring>
           Formula : max(peak_duration, half_life × 2). Protège contre surtemps = perte. Exemple: pic 150min + half-life 60min → max(150, 120) = 150min de trading.
-        </template>
-      </MetricTooltip>
-
-      <!-- Confidence Score -->
-      <MetricTooltip
-        title="Score de Confiance"
-        direction="top"
-      >
-        <div class="metric-card">
-          <div class="metric-label">
-            Confiance
-          </div>
-          <div class="metric-value">
-            {{ volatilityDuration?.confidence_score || '—' }} <span class="unit">%</span>
-          </div>
-        </div>
-        <template #definition>
-          Fiabilité des métriques de durée basée sur la taille de l'échantillon historique du créneau.
-        </template>
-        <template #usage>
-          Score ≥90% = métriques très fiables (données abondantes). Score 50-75% = données partielles, variance possible. Influence la position size et le stop loss.
-        </template>
-        <template #scoring>
-          Basé sur le sample_size du créneau : ≥100 occurrences = 100%, 50-99 = 90%, 30-49 = 75%, 15-29 = 60%, &lt;15 = 50%.
         </template>
       </MetricTooltip>
     </div>

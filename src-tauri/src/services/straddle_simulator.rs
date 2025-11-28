@@ -4,6 +4,7 @@
 
 use crate::models::Candle;
 use chrono::Timelike;
+use super::straddle_adjustments::AdjustedMetrics;
 
 #[derive(Debug, Clone)]
 pub struct StraddleSimulationResult {
@@ -17,6 +18,11 @@ pub struct StraddleSimulationResult {
     pub percentile_95_wicks: f64,
     pub risk_level: String,
     pub risk_color: String,
+    // Valeurs pondérées par le whipsaw (Option B - affichage direct)
+    pub win_rate_adjusted: f64,           // Win Rate pondéré par whipsaw
+    pub sl_adjusted_pips: f64,            // SL ajusté par whipsaw
+    pub trailing_stop_adjusted: f64,      // Trailing Stop réduit
+    pub timeout_adjusted_minutes: i32,    // Timeout réduit
 }
 
 /// Normalise une valeur en pips selon le symbole
@@ -67,6 +73,10 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
             percentile_95_wicks: 0.0,
             risk_level: "N/A".to_string(),
             risk_color: "#6b7280".to_string(),
+            win_rate_adjusted: 0.0,
+            sl_adjusted_pips: 0.0,
+            trailing_stop_adjusted: 0.0,
+            timeout_adjusted_minutes: 0,
         };
     }
 
@@ -174,6 +184,13 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
 
     let (risk_level, risk_color) = calculate_risk_level(whipsaw_frequency_percentage);
 
+    // === CALCUL DES VALEURS PONDÉRÉES PAR LE WHIPSAW (Option B) ===
+    let adjusted = AdjustedMetrics::new(
+        win_rate_percentage,
+        offset_optimal_pips,
+        whipsaw_frequency_percentage,
+    );
+
     StraddleSimulationResult {
         total_trades,
         wins,
@@ -185,6 +202,11 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
         percentile_95_wicks: normalize_to_pips(p95_wick, symbol),
         risk_level,
         risk_color,
+        // Valeurs pondérées
+        win_rate_adjusted: adjusted.win_rate_adjusted,
+        sl_adjusted_pips: adjusted.sl_adjusted_pips,
+        trailing_stop_adjusted: adjusted.trailing_stop_adjusted,
+        timeout_adjusted_minutes: adjusted.timeout_adjusted_minutes,
     }
 }
 

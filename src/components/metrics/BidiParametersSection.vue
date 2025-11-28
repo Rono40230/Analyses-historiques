@@ -18,23 +18,48 @@
           <div class="metric-label">
             Winrate
           </div>
-          <div class="metric-value" :style="{ color: getWinrateColor(entryWindowAnalysis.optimal_win_rate * 100) }">
-            {{ (entryWindowAnalysis.optimal_win_rate * 100).toFixed(0) }}% <span class="unit">événement</span>
+          <div class="metric-value" :style="{ color: getWinrateColor(props.winRate?.win_rate_adjusted || 0) }">
+            {{ props.winRate?.win_rate_adjusted?.toFixed(1) ?? 'N/A' }}% <span class="unit">(pondéré)</span>
           </div>
         </div>
         <template #definition>
           <div class="tooltip-section">
             <div class="tooltip-section-title">📖 Définition</div>
-            <div class="tooltip-section-text">Pourcentage de fois où le créneau horaire élu a produit un mouvement gagnant, calculé sur l'historique complet du quarter.</div>
+            <div class="tooltip-section-text">Taux de gain réaliste ajusté pour tenir compte de la fréquence whipsaw. Formule: Win Rate × (1 - whipsaw_frequency)</div>
           </div>
         </template>
         <template #interpretation>
           <div class="tooltip-section">
             <div class="tooltip-section-title">📊 Interprétation</div>
-            <div class="interpretation-item"><strong>🟢 Excellent:</strong> ≥60% → Très fiable</div>
-            <div class="interpretation-item"><strong>🔵 Bon:</strong> 55-59% → Profitable</div>
-            <div class="interpretation-item"><strong>🟡 Acceptable:</strong> 50-54% → Margin serré</div>
-            <div class="interpretation-item"><strong>🔴 Faible:</strong> &lt;50% → Risqué</div>
+            <div class="interpretation-item"><strong>🟢 Excellent:</strong> ≥50% → Très fiable</div>
+            <div class="interpretation-item"><strong>🔵 Bon:</strong> 40-49% → Profitable</div>
+            <div class="interpretation-item"><strong>🟡 Acceptable:</strong> 30-39% → Margin serré</div>
+            <div class="interpretation-item"><strong>🔴 Faible:</strong> &lt;30% → Risqué</div>
+          </div>
+        </template>
+      </MetricTooltip>
+      <MetricTooltip
+        title="Stop Loss"
+        direction="top"
+      >
+        <div class="metric-card">
+          <div class="metric-label">
+            Stop Loss
+          </div>
+          <div class="metric-value" style="color: #fff;">
+            {{ props.offsetOptimal?.sl_adjusted_pips?.toFixed(1) ?? 'N/A' }} <span class="unit">pips</span>
+          </div>
+        </div>
+        <template #definition>
+          <div class="tooltip-section">
+            <div class="tooltip-section-title">📖 Définition</div>
+            <div class="tooltip-section-text">Distance d'arrêt des pertes, ajustée pour compenser l'impact du whipsaw. Formule: SL × (1 + whipsaw_frequency × 0.3)</div>
+          </div>
+        </template>
+        <template #interpretation>
+          <div class="tooltip-section">
+            <div class="tooltip-section-title">📊 Explication</div>
+            <div class="tooltip-section-text">{{ props.offsetOptimal ? `Valeur pondérée pour ${props.whipsawAnalysis?.whipsaw_frequency_percentage?.toFixed(1) || 'N/A'}% de whipsaw` : 'En cours de calcul' }}. Plus le whipsaw est élevé, plus le SL doit être augmenté.</div>
           </div>
         </template>
       </MetricTooltip>
@@ -47,30 +72,47 @@
             Trailing Stop
           </div>
           <div class="metric-value" style="color: #fff;">
-            {{ analysis.tradingPlan.trailingStopCoefficient.toFixed(2) }}x <span class="unit">SL</span>
+            {{ props.whipsawAnalysis?.trailing_stop_adjusted?.toFixed(2) ?? props.analysis.tradingPlan.trailingStopCoefficient.toFixed(2) }}x <span class="unit">SL</span>
           </div>
         </div>
         <template #definition>
           <div class="tooltip-section">
             <div class="tooltip-section-title">📖 Définition</div>
-            <div class="tooltip-section-text">Multiplicateur du SL pour stop dynamique qui monte avec le prix, protégeant les gains.</div>
+            <div class="tooltip-section-text">Multiplicateur du SL pour stop dynamique, ajusté selon la fréquence whipsaw pour compenser la volatilité.</div>
           </div>
         </template>
         <template #interpretation>
           <div class="tooltip-section">
             <div class="tooltip-section-title">📊 Explication</div>
-            <div class="tooltip-section-text">Calculé en fonction de la volatilité du quarter. 0.9x = 90% du SL, 1.2x = 120% du SL (plus de risque/profit).</div>
+            <div class="tooltip-section-text">{{ props.whipsawAnalysis ? `Valeur pondérée par whipsaw (${props.whipsawAnalysis.whipsaw_frequency_percentage.toFixed(1)}%)` : 'Calculé en fonction de la volatilité du quarter' }}. Formule: 1.59 × (1 - whipsaw / 2)</div>
           </div>
         </template>
       </MetricTooltip>
-      <div class="metric-card">
-        <div class="metric-label">
-          Timeout Recommandé
+      <MetricTooltip
+        title="Timeout"
+        direction="top"
+      >
+        <div class="metric-card">
+          <div class="metric-label">
+            Timeout
+          </div>
+          <div class="metric-value" style="color: #fff;">
+            {{ props.whipsawAnalysis?.timeout_adjusted_minutes ?? Math.round((props.volatilityDuration?.peak_duration_minutes || 21) * 1.5) }} <span class="unit">min</span>
+          </div>
         </div>
-        <div class="metric-value" style="color: #fff;">
-          {{ Math.round((volatilityDuration?.peak_duration_minutes || 21) * 1.5) }} <span class="unit">min</span>
-        </div>
-      </div>
+        <template #definition>
+          <div class="tooltip-section">
+            <div class="tooltip-section-title">📖 Définition</div>
+            <div class="tooltip-section-text">Durée maximale du trade, ajustée pour tenir compte du whipsaw et éviter les fermetures prématurées.</div>
+          </div>
+        </template>
+        <template #interpretation>
+          <div class="tooltip-section">
+            <div class="tooltip-section-title">📊 Explication</div>
+            <div class="tooltip-section-text">{{ props.whipsawAnalysis ? `Valeur pondérée par whipsaw (${props.whipsawAnalysis.whipsaw_frequency_percentage.toFixed(1)}%)` : 'Calculé sur la durée de volatilité du quarter' }}. Formule: 32 min × (1 - whipsaw × 0.5)</div>
+          </div>
+        </template>
+      </MetricTooltip>
     </div>
   </div>
 </template>
@@ -85,6 +127,9 @@ const props = defineProps<{
   entryWindowAnalysis: any
   analysis: any
   volatilityDuration: any
+  whipsawAnalysis?: any
+  offsetOptimal?: any
+  winRate?: any
 }>()
 
 const { calculateExactTime } = useMetricsFormatting()

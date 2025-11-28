@@ -16,6 +16,8 @@ pub struct OptimalOffsetData {
     pub offset_pips: f64,
     pub percentile_95_wicks: f64,
     pub with_margin: f64,
+    /// Stop Loss ajusté par whipsaw: SL × (1 + whipsaw_frequency × 0.3)
+    pub sl_adjusted_pips: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -25,6 +27,8 @@ pub struct WinRateData {
     pub losses: usize,
     pub whipsaws: usize,
     pub win_rate_percentage: f64,
+    /// Win Rate ajusté par la fréquence whipsaw: WR × (1 - whipsaw_frequency)
+    pub win_rate_adjusted: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -34,6 +38,10 @@ pub struct WhipsawData {
     pub whipsaw_frequency_percentage: f64,
     pub risk_level: String,
     pub risk_color: String,
+    /// Trailing Stop ajusté par whipsaw: 1.59 × (1 - whipsaw_frequency / 2)
+    pub trailing_stop_adjusted: f64,
+    /// Timeout ajusté par whipsaw: 32 min × (1 - whipsaw_frequency × 0.5)
+    pub timeout_adjusted_minutes: i32,
 }
 
 /// Calcule le risque et la couleur basé sur la fréquence whipsaw

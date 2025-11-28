@@ -5,9 +5,9 @@
  * Détermine la couleur du Winrate (0-100%)
  */
 export function getWinrateColor(winrate: number): string {
-  if (winrate >= 65) return '#10b981'   // Green - Excellent
-  if (winrate >= 55) return '#3b82f6'   // Blue - Good
-  if (winrate >= 50) return '#eab308'   // Orange - Acceptable
+  if (winrate >= 50) return '#22c55e'   // Green - Excellent
+  if (winrate >= 40) return '#3b82f6'   // Blue - Good
+  if (winrate >= 30) return '#eab308'   // Yellow - Acceptable
   return '#ef4444'                      // Red - Poor
 }
 

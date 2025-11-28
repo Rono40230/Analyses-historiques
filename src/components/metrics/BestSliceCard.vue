@@ -6,9 +6,9 @@
     <!-- Rang + Heure + Recommandation -->
     <div
       class="slice-header"
-      style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px;"
+      style="display: flex; justify-content: space-between; align-items: center; gap: 20px;"
     >
-      <div style="display: flex; gap: 12px; align-items: flex-start;">
+      <div style="display: flex; gap: 12px; align-items: center;">
         <div
           class="rank-badge"
           :class="`rank-${analysis.rank}`"
@@ -19,28 +19,76 @@
           <div class="time">
             {{ analysis.slice.startTime }}
           </div>
-          <div
-            class="score"
-            :class="`score-${getScoreSeverity(analysis.slice.straddleScore)}`"
-          >
-            Score: {{ analysis.slice.straddleScore.toFixed(0) }}/100
-          </div>
         </div>
       </div>
 
-      <!-- Qualité du Mouvement -->
-      <div style="flex: 0 0 auto; padding: 12px 16px; background: rgba(45, 90, 123, 0.15); border: 1px solid #2d5a7b; border-radius: 6px; font-size: 12px; min-width: 180px;">
-        <div style="color: #64a5d8; margin-bottom: 6px; font-weight: bold;">
-          💫 QUALITÉ
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <div style="font-size: 20px; font-weight: bold; color: #e0e7ff;">
-            {{ (movementQualities[getMovementQualityKey(analysis)]?.score || 0).toFixed(0) }}
+      <!-- Score & Whipsaw Blocs -->
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <!-- Score Bloc -->
+        <MetricTooltip
+          title="Score"
+          direction="bottom"
+          style="max-width: 250px;"
+        >
+          <div style="flex: 0 0 auto; padding: 12px 16px; background: rgba(45, 90, 123, 0.15); border: 1px solid #2d5a7b; border-radius: 6px; font-size: 12px; min-width: 140px;">
+            <div style="color: #64a5d8; margin-bottom: 6px; font-weight: bold;">
+              ⭐ SCORE
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="font-size: 18px; font-weight: bold;" :style="{ color: getScoreColor(adjustedScore) }">
+                {{ adjustedScore.toFixed(0) }}/100
+              </div>
+            </div>
           </div>
-          <span :class="['quality-badge', getQualityStatus(movementQualities[getMovementQualityKey(analysis)]?.score || 0)]">
-            {{ getQualityStatusText(movementQualities[getMovementQualityKey(analysis)]?.score || 0) }}
-          </span>
-        </div>
+          <template #definition>
+            <div class="tooltip-section">
+              <div class="tooltip-section-title">📖 Définition</div>
+              <div class="tooltip-section-text">Score de viabilité du Straddle ajusté par la fréquence whipsaw. Reflète la qualité réelle du setup en tenant compte des retournements.</div>
+            </div>
+          </template>
+          <template #interpretation>
+            <div class="tooltip-section">
+              <div class="tooltip-section-title">📊 Interprétation</div>
+              <div class="interpretation-item"><strong>🟢 Excellent:</strong> ≥75/100 → Setup optimal</div>
+              <div class="interpretation-item"><strong>🔵 Bon:</strong> 60-74/100 → Setup viable</div>
+              <div class="interpretation-item"><strong>🟡 Acceptable:</strong> 45-59/100 → À considérer</div>
+              <div class="interpretation-item"><strong>🔴 Faible:</strong> &lt;45/100 → À éviter</div>
+            </div>
+          </template>
+        </MetricTooltip>
+
+        <!-- Fréquence Whipsaw -->
+        <MetricTooltip
+          title="Fréquence Whipsaw"
+          direction="bottom"
+        >
+          <div style="flex: 0 0 auto; padding: 12px 16px; background: rgba(45, 90, 123, 0.15); border: 1px solid #2d5a7b; border-radius: 6px; font-size: 12px; min-width: 160px;">
+            <div style="color: #64a5d8; margin-bottom: 6px; font-weight: bold;">
+              📊 WHIPSAW
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="font-size: 18px; font-weight: bold;" :style="{ color: getWhipsawColor(props.whipsawAnalysis?.whipsaw_frequency_percentage || 0) }">
+                {{ props.whipsawAnalysis?.whipsaw_frequency_percentage?.toFixed(1) ?? 'N/A' }}%
+              </div>
+            </div>
+          </div>
+          <template #definition>
+            <div class="tooltip-section">
+              <div class="tooltip-section-title">📖 Définition</div>
+              <div class="tooltip-section-text">Fréquence des retournements rapides (whipsaws) dans le quarter. Mesure la volatilité et l'instabilité du mouvement.</div>
+            </div>
+          </template>
+          <template #interpretation>
+            <div class="tooltip-section">
+              <div class="tooltip-section-title">📊 Interprétation</div>
+              <div class="interpretation-item"><strong>🟢 Très Bas:</strong> &lt;5% → Excellent, très stable</div>
+              <div class="interpretation-item"><strong>🔵 Bas:</strong> 5-10% → Bon, acceptable</div>
+              <div class="interpretation-item"><strong>🟡 Modéré:</strong> 10-20% → Attention requise</div>
+              <div class="interpretation-item"><strong>🟠 Élevé:</strong> 20-30% → Risqué</div>
+              <div class="interpretation-item"><strong>🔴 Très Élevé:</strong> &gt;30% → À éviter</div>
+            </div>
+          </template>
+        </MetricTooltip>
       </div>
 
       <!-- Recommandation inline -->
@@ -49,14 +97,14 @@
           🎯 RECOMMANDATION
         </div>
         <div style="color: #e0e0e0; line-height: 1.5;">
-          <span v-if="analysis.slice.straddleScore >= 75 && (!volatilityDuration || volatilityDuration.confidence_score >= 50)">
-            ✅ <strong>TRADER</strong> ({{ analysis.slice.straddleScore.toFixed(0) }}/100) - Straddle optimal. Risque: <strong>1% par jambe</strong>.
+          <span v-if="adjustedScore >= 75 && (!volatilityDuration || volatilityDuration.confidence_score >= 50)">
+            ✅ <strong>TRADER</strong> ({{ adjustedScore.toFixed(0) }}/100) - Straddle optimal. Risque: <strong>1% par jambe</strong>.
           </span>
-          <span v-else-if="analysis.slice.straddleScore >= 60 && (!volatilityDuration || volatilityDuration.confidence_score >= 30)">
-            ⚠️ <strong>TRADER</strong> ({{ analysis.slice.straddleScore.toFixed(0) }}/100) - Setup viable. Risque: <strong>1% par jambe</strong>.
+          <span v-else-if="adjustedScore >= 60 && (!volatilityDuration || volatilityDuration.confidence_score >= 30)">
+            ⚠️ <strong>TRADER</strong> ({{ adjustedScore.toFixed(0) }}/100) - Setup viable. Risque: <strong>1% par jambe</strong>.
           </span>
           <span v-else>
-            ❌ <strong>ATTENDRE</strong> ({{ analysis.slice.straddleScore.toFixed(0) }}/100) - Setup insuffisant. Ne pas trader.
+            ❌ <strong>ATTENDRE</strong> ({{ adjustedScore.toFixed(0) }}/100) - Setup insuffisant. Ne pas trader.
           </span>
         </div>
       </div>
@@ -69,42 +117,28 @@
 
 <script setup lang="ts">
 import { useMetricsFormatting } from '../../composables/useMetricsFormatting'
+import MetricTooltip from '../MetricTooltip.vue'
+import { computed } from 'vue'
+import {
+  getScoreColor,
+  getWhipsawColor,
+  calculateAdjustedScore,
+  getMovementQualityKey
+} from './BestSliceCard.helpers'
 
-defineProps<{
+const props = defineProps<{
   analysis: any
   volatilityDuration: any
   movementQualities?: Record<string, any>
+  whipsawAnalysis?: any
 }>()
 
 const { getRankClass, getScoreSeverity } = useMetricsFormatting()
 
-/**
- * Helper: construit la clé pour accéder une qualité de mouvement
- */
-const getMovementQualityKey = (analysis: any): string => {
-  if (!analysis?.slice) return ''
-  return `${analysis.slice.hour}-${analysis.slice.quarter}`
-}
-
-/**
- * Détermine le statut d'appréciation basé sur le score (échelle 0-100)
- */
-const getQualityStatus = (score: number): string => {
-  if (score > 80) return 'excellent'
-  if (score > 60) return 'good'
-  if (score > 40) return 'acceptable'
-  return 'poor'
-}
-
-/**
- * Retourne le texte d'appréciation avec emoji
- */
-const getQualityStatusText = (score: number): string => {
-  if (score > 80) return '🟢 Excellent'
-  if (score > 60) return '🔵 Bon'
-  if (score > 40) return '🟡 Acceptable'
-  return '🔴 Faible'
-}
+const adjustedScore = computed(() => {
+  const brut = props.analysis?.slice?.straddleScore || 0
+  return calculateAdjustedScore(brut, props.whipsawAnalysis?.whipsaw_frequency_percentage)
+})
 </script>
 
 <style scoped>
