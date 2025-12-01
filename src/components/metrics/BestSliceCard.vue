@@ -97,15 +97,7 @@
           🎯 RECOMMANDATION
         </div>
         <div style="color: #e0e0e0; line-height: 1.5;">
-          <span v-if="adjustedScore >= 75 && (!volatilityDuration || volatilityDuration.confidence_score >= 50)">
-            ✅ <strong>TRADER</strong> ({{ adjustedScore.toFixed(0) }}/100) - Straddle optimal. Risque: <strong>1% par jambe</strong>.
-          </span>
-          <span v-else-if="adjustedScore >= 60 && (!volatilityDuration || volatilityDuration.confidence_score >= 30)">
-            ⚠️ <strong>TRADER</strong> ({{ adjustedScore.toFixed(0) }}/100) - Setup viable. Risque: <strong>1% par jambe</strong>.
-          </span>
-          <span v-else>
-            ❌ <strong>ATTENDRE</strong> ({{ adjustedScore.toFixed(0) }}/100) - Setup insuffisant. Ne pas trader.
-          </span>
+          {{ recommendation.emoji }} <strong>{{ recommendation.decision }}</strong> — {{ recommendation.advice }}
         </div>
       </div>
     </div>
@@ -116,14 +108,15 @@
 </template>
 
 <script setup lang="ts">
-import { useMetricsFormatting } from '../../composables/useMetricsFormatting'
+import { useMetricsCalculations } from '../../composables/useMetricsCalculations'
 import MetricTooltip from '../MetricTooltip.vue'
 import { computed } from 'vue'
 import {
   getScoreColor,
   getWhipsawColor,
   calculateAdjustedScore,
-  getMovementQualityKey
+  getMovementQualityKey,
+  generateRecommendation
 } from './BestSliceCard.helpers'
 
 const props = defineProps<{
@@ -133,11 +126,19 @@ const props = defineProps<{
   whipsawAnalysis?: any
 }>()
 
-const { getRankClass, getScoreSeverity } = useMetricsFormatting()
+const { getRankClass } = useMetricsCalculations()
 
 const adjustedScore = computed(() => {
   const brut = props.analysis?.slice?.straddleScore || 0
   return calculateAdjustedScore(brut, props.whipsawAnalysis?.whipsaw_frequency_percentage)
+})
+
+const recommendation = computed(() => {
+  const adjustedWinRate = props.analysis?.slice?.win_rate_adjusted || 0
+  const whipsawFreq = props.whipsawAnalysis?.whipsaw_frequency_percentage || 0
+  const confidence = props.volatilityDuration?.confidence_score || 0
+  
+  return generateRecommendation(adjustedScore.value, whipsawFreq, adjustedWinRate, confidence)
 })
 </script>
 

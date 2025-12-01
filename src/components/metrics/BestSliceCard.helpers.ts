@@ -38,9 +38,70 @@ export function calculateAdjustedScore(
 }
 
 /**
- * Helper: construit la clé pour accéder une qualité de mouvement
+ * Génère un conseil de trading global basé sur toutes les métriques
  */
-export function getMovementQualityKey(analysis: any): string {
-  if (!analysis?.slice) return ''
-  return `${analysis.slice.hour}-${analysis.slice.quarter}`
+export interface RecommendationData {
+  decision: 'TRADER' | 'ATTENDRE' | 'PRUDENT'
+  emoji: string
+  advice: string
+}
+
+export function generateRecommendation(
+  adjustedScore: number,
+  whipsawFrequency: number,
+  adjustedWinRate: number,
+  volatilityConfidence?: number
+): RecommendationData {
+  let decision: 'TRADER' | 'ATTENDRE' | 'PRUDENT' = 'ATTENDRE'
+  let emoji = '❌'
+  let advice = 'Setup insuffisant. Attendre une meilleure opportunité.'
+
+  // Décision basée sur le Score ajusté (principal indicateur)
+  if (adjustedScore >= 75) {
+    decision = 'TRADER'
+    emoji = '✅'
+    advice = 'Straddle optimal. Conditions excellentes pour trader.'
+  } else if (adjustedScore >= 60) {
+    decision = 'TRADER'
+    emoji = '✅'
+    advice = 'Setup viable. Conditions suffisantes pour trader avec prudence.'
+  } else if (adjustedScore >= 45) {
+    decision = 'PRUDENT'
+    emoji = '⚠️'
+    advice = 'Setup acceptable mais marginal. À considérer avec attention.'
+  } else {
+    decision = 'ATTENDRE'
+    emoji = '❌'
+    advice = 'Setup insuffisant. Risques trop élevés. Attendre.'
+  }
+
+  // Dégradation si whipsaw très élevé
+  if (whipsawFrequency >= 30) {
+    if (decision === 'TRADER') decision = 'PRUDENT'
+    if (decision === 'PRUDENT') {
+      advice = 'Whipsaw très élevé. À éviter dans les conditions actuelles.'
+      decision = 'ATTENDRE'
+    }
+  }
+
+  // Dégradation si winrate ajusté trop faible
+  if (adjustedWinRate < 30) {
+    advice = 'Taux de gain insuffisant. Risque économique trop élevé.'
+    decision = 'ATTENDRE'
+  } else if (adjustedWinRate < 40 && decision === 'TRADER') {
+    decision = 'PRUDENT'
+    advice = 'Taux de gain serré. À trader avec gestion de risque stricte.'
+  }
+
+  // Dégradation si confiance volatilité faible
+  if (volatilityConfidence !== undefined && volatilityConfidence < 30 && decision === 'TRADER') {
+    decision = 'PRUDENT'
+    advice = 'Confiance de volatilité faible. Trader avec prudence.'
+  }
+
+  return {
+    decision,
+    emoji,
+    advice
+  }
 }

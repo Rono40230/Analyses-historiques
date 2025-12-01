@@ -33,7 +33,8 @@ export function useMetricsAnalysisData() {
       symbol: result.symbol,
       confidence: Math.round(result.confidence_score),
       strategy: 'SCALPING STANDARD',
-      bestHours: `${bestHour}:${bestQuarter * 15}-${bestHour}:${(bestQuarter + 1) * 15}`
+      bestHours: `${bestHour}:${bestQuarter * 15}-${bestHour}:${(bestQuarter + 1) * 15}`,
+      stats_15min: result.stats_15min ?? []
     }
 
     if (!result.stats_15min?.length) return
@@ -64,6 +65,45 @@ export function useMetricsAnalysisData() {
     }
   }
 
+  async function updateAnalysisForQuarter(analysisResult: AnalysisResult, selectedHour: number, selectedQuarter: number) {
+    const result = analysisResult
+    analysisData.value = {
+      globalMetrics: result.global_metrics,
+      symbol: result.symbol,
+      confidence: Math.round(result.confidence_score),
+      strategy: 'SCALPING STANDARD',
+      bestHours: `${selectedHour}:${selectedQuarter * 15}-${selectedHour}:${(selectedQuarter + 1) * 15}`,
+      stats_15min: result.stats_15min ?? []
+    }
+
+    if (!result.stats_15min?.length) return
+
+    const selectedSliceStats = result.stats_15min.find(s => s.hour === selectedHour && s.quarter === selectedQuarter)
+    if (!selectedSliceStats) return
+
+    // Load movement quality for selected quarter
+    const { score: movementQualityScore, qualities } = await loadMovementQuality(
+      result.symbol,
+      selectedHour,
+      selectedQuarter
+    )
+    movementQualities.value = qualities
+
+    // Create slice for selected quarter
+    const selectedSlice = createBestSlice(selectedSliceStats, selectedHour, selectedQuarter, movementQualityScore)
+    sliceAnalyses.value = [selectedSlice]
+    tradingPlan.value = selectedSlice.tradingPlan
+
+    // Extract volatility duration
+    volatilityDuration.value = extractVolatilityDuration(selectedSliceStats)
+
+    // Load entry window analysis for selected quarter
+    const entryAnalysis = await loadEntryWindowAnalysis(result.symbol, selectedHour, selectedQuarter)
+    if (entryAnalysis) {
+      entryWindowAnalysis.value = entryAnalysis
+    }
+  }
+
   return {
     analysisData,
     sliceAnalyses,
@@ -71,6 +111,7 @@ export function useMetricsAnalysisData() {
     volatilityDuration,
     tradingPlan,
     entryWindowAnalysis,
-    updateAnalysis
+    updateAnalysis,
+    updateAnalysisForQuarter
   }
 }

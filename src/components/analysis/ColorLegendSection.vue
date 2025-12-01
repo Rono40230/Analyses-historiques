@@ -32,6 +32,8 @@
         </div>
       </div>
     </div>
+    <!-- Bouton masqué: Analyse des métriques du meilleur créneau horaire -->
+    <!-- 
     <button
       class="analysis-btn"
       title="Ouvrir l'analyse détaillée des métriques"
@@ -39,6 +41,7 @@
     >
       📊 Analyse des métriques<br><span style="font-size: 0.85em">du meilleur créneau horaire</span>
     </button>
+    -->
   </div>
 </template>
 

@@ -1,0 +1,110 @@
+// services/straddle_simulator_helpers.rs - Helpers pour simulation Straddle
+// Contient les fonctions utilitaires pour éviter de dépasser 300 lignes
+
+use crate::models::Candle;
+
+/// Calcule l'ATR moyen (Average True Range) pour une liste de candles
+pub fn calculate_atr_mean(candles: &[Candle]) -> f64 {
+    let mut atr_values: Vec<f64> = Vec::new();
+    for i in 0..candles.len() {
+        let high = candles[i].high;
+        let low = candles[i].low;
+        let close = if i > 0 { candles[i - 1].close } else { candles[i].close };
+
+        let tr = (high - low).max((high - close).abs()).max((low - close).abs());
+        atr_values.push(tr);
+    }
+
+    if !atr_values.is_empty() {
+        atr_values.iter().sum::<f64>() / atr_values.len() as f64
+    } else {
+        0.0
+    }
+}
+
+/// Retourne le coefficient de pondération selon la durée du whipsaw
+pub fn get_whipsaw_coefficient(minutes: i32) -> f64 {
+    match minutes {
+        0 => 1.0,      // Immédiat = coefficient 1.0 (très grave)
+        1..=2 => 0.8,  // 1-2 min = coefficient 0.8
+        3..=5 => 0.6,  // 3-5 min = coefficient 0.6
+        6..=10 => 0.3, // 6-10 min = coefficient 0.3
+        _ => 0.1,      // 11-15 min = coefficient 0.1 (très léger)
+    }
+}
+
+/// Calcule le risque et la couleur basé sur la fréquence whipsaw
+pub fn calculate_risk_level(whipsaw_freq_pct: f64) -> (String, String) {
+    if whipsaw_freq_pct < 10.0 {
+        ("Faible".to_string(), "#22c55e".to_string())
+    } else if whipsaw_freq_pct < 20.0 {
+        ("Moyen".to_string(), "#eab308".to_string())
+    } else if whipsaw_freq_pct < 30.0 {
+        ("Élevé".to_string(), "#f97316".to_string())
+    } else {
+        ("Critique".to_string(), "#ef4444".to_string())
+    }
+}
+
+/// Cherche la résolution d'un trade (TP, SL ou timeout)
+pub fn find_trade_resolution(
+    candles: &[Candle],
+    start_idx: usize,
+    entry_time: chrono::DateTime<chrono::Utc>,
+    tp_level: f64,
+    sl_level: f64,
+    is_buy: bool,
+) -> (bool, bool, i32) {
+    // Chercher dans les 15 MINUTES, pas dans les 15 indices suivants
+    let max_time = entry_time + chrono::Duration::minutes(15);
+
+    for check_idx in (start_idx + 1)..candles.len() {
+        let candle = &candles[check_idx];
+        
+        if candle.datetime > max_time {
+            break;
+        }
+        
+        let duration = candle.datetime.signed_duration_since(entry_time);
+        let duration_minutes = duration.num_minutes() as i32;
+
+        if is_buy {
+            if candle.high >= tp_level {
+                return (true, false, 0);
+            }
+            if candle.low <= sl_level {
+                return (false, true, duration_minutes);
+            }
+        } else {
+            if candle.low <= tp_level {
+                return (true, false, 0);
+            }
+            if candle.high >= sl_level {
+                return (false, true, duration_minutes);
+            }
+        }
+    }
+
+    // Non résolu = loss
+    (false, false, 15)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_whipsaw_coefficient() {
+        assert_eq!(get_whipsaw_coefficient(0), 1.0);
+        assert_eq!(get_whipsaw_coefficient(2), 0.8);
+        assert_eq!(get_whipsaw_coefficient(5), 0.6);
+    }
+
+    #[test]
+    fn test_risk_level() {
+        let (level, _) = calculate_risk_level(5.0);
+        assert_eq!(level, "Faible");
+        let (level, _) = calculate_risk_level(25.0);
+        assert_eq!(level, "Élevé");
+    }
+}

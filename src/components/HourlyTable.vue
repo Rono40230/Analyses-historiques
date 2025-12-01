@@ -117,6 +117,7 @@
                           Trade Exp (min)
                         </th>
                         <th>Événements</th>
+                        <th style="width: 140px;">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -180,6 +181,15 @@
                             class="no-event"
                           >—</span>
                         </td>
+                        <td class="actions-cell">
+                          <button
+                            class="btn-bidi-params"
+                            :title="`Ouvrir l'analyse pour ${formatQuarterLabel(stat.hour, quarter.quarter)}`"
+                            @click="openBidiParams(stat.hour, quarter.quarter)"
+                          >
+                            ⚙️ Paramètres Bidi
+                          </button>
+                        </td>
                       </tr>
                     </tbody>
                   </table>
@@ -211,6 +221,10 @@ const props = defineProps<{
   bestQuarter: [number, number]  // [hour, quarter] - meilleur quarter de la journée
   stats15min?: any[]  // Stats 15-minutes optionnels
   globalMetrics?: any // Pour normalisation (ATR, Tick Quality)
+}>()
+
+const emit = defineEmits<{
+  'open-bidi-params': [{ hour: number; quarter: number }]
 }>()
 
 // Fonction helper pour estimer le prix moyen (pour normalisation)
@@ -303,6 +317,9 @@ function selectHour(hour: number, events: EventInHour[]) {
   drawerOpen.value = true
 }
 
+function openBidiParams(hour: number, quarter: number) {
+  emit('open-bidi-params', { hour, quarter })
+}
 
 
 function normalizeImpact(impact: string): string {
@@ -799,6 +816,39 @@ tbody tr:hover {
 
 .scalping-row:hover .trade-exp-cell {
   color: #e6edf3;
+}
+
+.actions-cell {
+  text-align: center;
+  padding: 8px !important;
+}
+
+.btn-bidi-params {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #58a6ff;
+  background: rgba(88, 166, 255, 0.1);
+  color: #58a6ff;
+  font-size: 0.85em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-bidi-params:hover {
+  background: rgba(88, 166, 255, 0.2);
+  border-color: #79c0ff;
+  color: #79c0ff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(88, 166, 255, 0.2);
+}
+
+.btn-bidi-params:active {
+  transform: translateY(0);
 }
 </style>
 

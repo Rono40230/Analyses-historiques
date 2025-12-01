@@ -137,9 +137,11 @@ const { calculateExactTime } = useMetricsFormatting()
 const getBestTimeDisplay = () => {
   if (props.sliceAnalyses && props.sliceAnalyses.length > 0) {
     const bestSlice = props.sliceAnalyses[0]
-    return calculateExactTime(bestSlice.slice.startTime, props.entryWindowAnalysis.optimal_offset)
+    // Utiliser le meilleur moment d'entrée calculé par le backend (basé sur whipsaws)
+    const offset = props.whipsawAnalysis?.optimal_entry_minutes ?? props.entryWindowAnalysis?.optimal_offset ?? 0
+    return calculateExactTime(bestSlice.slice.startTime, offset)
   }
-  return props.entryWindowAnalysis.optimal_offset + ' min'
+  return props.entryWindowAnalysis?.optimal_offset + ' min'
 }
 </script>
 

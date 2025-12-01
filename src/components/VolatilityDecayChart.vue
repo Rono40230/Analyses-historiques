@@ -6,6 +6,7 @@
         :peak-volatility="peakVolatility"
         :half-life-minutes="halfLifeMinutes"
         :recommended-duration="recommendedDuration"
+        :max-time="maxTime"
         :start-hour="startHour"
         :start-minute="startMinute"
       />
@@ -32,7 +33,7 @@ interface Props {
 }
 
 withDefaults(defineProps<Props>(), {
-  maxTime: 240,
+  maxTime: 15,
   startHour: 13,
   startMinute: 0
 })
@@ -58,8 +59,9 @@ withDefaults(defineProps<Props>(), {
 .chart-container {
   display: flex;
   justify-content: center;
-  margin-bottom: 20px;
-  overflow-x: auto;
+  margin: 0 auto 20px auto;
+  width: 100%;
+  max-width: 900px;
 }
 
 @media (max-width: 768px) {

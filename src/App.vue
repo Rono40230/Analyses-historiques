@@ -6,6 +6,7 @@ import { useVolatilityStore } from './stores/volatility'
 import SymbolSelector from './components/SymbolSelector.vue'
 import AnalysisPanel from './components/AnalysisPanel.vue'
 import HourlyTable from './components/HourlyTable.vue'
+import MetricsAnalysisModal from './components/MetricsAnalysisModal.vue'
 import ImportHub from './components/ImportHub.vue'
 import EventCorrelationView from './components/EventCorrelationView.vue'
 import ArchivesView from './views/ArchivesView.vue'
@@ -30,6 +31,11 @@ const activeTab = ref<'volatility' | 'calendar' | 'correlation' | 'archives'>('v
 const selectedSymbolLocal = ref('')
 const activeCalendarId = ref<number | null>(null)
 
+// Gestion de la modal Bidi depuis le tableau
+const showBidiModal = ref(false)
+const bidiModalHour = ref(0)
+const bidiModalQuarter = ref(0)
+
 async function handleSymbolSelected(symbol: string) {
   await store.analyzeSymbol(symbol)
 }
@@ -38,6 +44,12 @@ async function handleSymbolChange() {
   if (selectedSymbolLocal.value) {
     await store.analyzeSymbol(selectedSymbolLocal.value)
   }
+}
+
+function handleOpenBidiParams(data: { hour: number; quarter: number }) {
+  bidiModalHour.value = data.hour
+  bidiModalQuarter.value = data.quarter
+  showBidiModal.value = true
 }
 
 function switchTab(tab: 'volatility' | 'calendar' | 'correlation' | 'archives') {
@@ -87,7 +99,7 @@ function switchTab(tab: 'volatility' | 'calendar' | 'correlation' | 'archives') 
               v-if="loading"
               class="loading"
             >
-              <div class="spinner" />
+              <div class="hourglass">⏳</div>
               <p>Analyse en cours...</p>
             </div>
 
@@ -140,6 +152,7 @@ function switchTab(tab: 'volatility' | 'calendar' | 'correlation' | 'archives') 
                 :best-quarter="analysisResult.best_quarter"
                 :stats15min="analysisResult.stats_15min"
                 :global-metrics="analysisResult.global_metrics"
+                @open-bidi-params="handleOpenBidiParams"
               />
             </template>
           </div>
@@ -158,6 +171,17 @@ function switchTab(tab: 'volatility' | 'calendar' | 'correlation' | 'archives') 
         <ArchivesView />
       </template>
     </main>
+
+    <!-- Modal des paramètres Bidi -->
+    <MetricsAnalysisModal 
+      v-if="showBidiModal"
+      :is-open="showBidiModal"
+      :analysis-result="analysisResult"
+      :selected-symbol="selectedSymbol || ''"
+      :pre-selected-hour="bidiModalHour"
+      :pre-selected-quarter="bidiModalQuarter"
+      @close="showBidiModal = false"
+    />
 
     <footer class="app-footer">
       <p>Powered by Rust + Tauri 2.0 + Vue 3</p>
@@ -388,6 +412,25 @@ body {
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 20px;
+}
+
+.hourglass {
+  font-size: 60px;
+  margin: 0 auto 20px;
+  animation: hourglassFlip 1s ease-in-out infinite;
+  display: inline-block;
+}
+
+@keyframes hourglassFlip {
+  0% {
+    transform: scaleX(1) rotateY(0deg);
+  }
+  50% {
+    transform: scaleX(-1) rotateY(180deg);
+  }
+  100% {
+    transform: scaleX(1) rotateY(360deg);
+  }
 }
 
 @keyframes spin {

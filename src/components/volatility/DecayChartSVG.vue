@@ -1,7 +1,9 @@
 <template>
   <svg
-    :width="chartWidth"
-    :height="chartHeight"
+    :viewBox="`0 0 ${chartWidth} ${chartHeight}`"
+    width="100%"
+    height="100%"
+    preserveAspectRatio="xMidYMid meet"
     class="decay-chart-svg"
   >
     <!-- Gradients -->
@@ -33,8 +35,9 @@
     <line v-for="i in 4" :key="`grid-h-${i}`" :x1="padding" :x2="chartWidth - padding" :y1="chartHeight - padding - (i * (chartHeight - 2 * padding) / 4)" :y2="chartHeight - padding - (i * (chartHeight - 2 * padding) / 4)" class="grid-line" />
 
     <!-- Zones -->
-    <rect v-if="recommendedX > 0" :x="padding" :y="padding" :width="recommendedX - padding" :height="chartHeight - 2 * padding" fill="url(#profitGradient)" />
-    <rect v-if="halfLifeX > recommendedX" :x="recommendedX" :y="padding" :width="halfLifeX - recommendedX" :height="chartHeight - 2 * padding" fill="url(#cautionGradient)" />
+    <!-- Zones -->
+    <rect v-if="recommendedX > padding" :x="padding" :y="padding" :width="Math.min(recommendedX, chartWidth - padding) - padding" :height="chartHeight - 2 * padding" fill="url(#profitGradient)" />
+    <rect v-if="halfLifeX > recommendedX && recommendedX < chartWidth - padding" :x="recommendedX" :y="padding" :width="Math.min(halfLifeX, chartWidth - padding) - recommendedX" :height="chartHeight - 2 * padding" fill="url(#cautionGradient)" />
     <rect v-if="halfLifeX < chartWidth - padding" :x="halfLifeX" :y="padding" :width="chartWidth - padding - halfLifeX" :height="chartHeight - 2 * padding" fill="url(#riskGradient)" />
 
     <!-- Courbe -->
@@ -56,10 +59,12 @@
     <text v-if="halfLifeX > padding" :x="halfLifeX - 70" :y="halfLifeY + 5" class="marker-value">{{ halfLifeMinutes }}m</text>
 
     <!-- Étiquettes axes -->
-    <text v-for="t in [0, 60, 120, 180, 240]" :key="`time-${t}`" :x="xScale(t)" :y="chartHeight - padding + 25" class="axis-label" text-anchor="middle">{{ formatTime(t) }}</text>
-    <text :x="chartWidth / 2" :y="chartHeight - 5" class="axis-title">Heure de clôture</text>
+    <!-- Étiquettes axes -->
+    <!-- Étiquettes axes -->
+    <text v-for="t in ticks" :key="`time-${t}`" :x="xScale(t)" :y="chartHeight - padding + 25" class="axis-label" text-anchor="middle" font-size="10">{{ formatTime(t) }}</text>
+    <text :x="chartWidth / 2" :y="chartHeight - 5" class="axis-title">Heure</text>
 
-    <text v-for="(label, i) in [100, 75, 50, 25, 0]" :key="`vol-${label}`" :x="padding - 15" :y="chartHeight - padding - (i * (chartHeight - 2 * padding) / 4) + 5" class="axis-label" text-anchor="end">{{ label }}%</text>
+    <text v-for="(label, i) in [0, 25, 50, 75, 100]" :key="`vol-${label}`" :x="padding - 15" :y="chartHeight - padding - (i * (chartHeight - 2 * padding) / 4) + 5" class="axis-label" text-anchor="end">{{ label }}%</text>
     <text :x="20" :y="chartHeight / 2" class="axis-title" text-anchor="middle" transform="rotate(-90 20 400)">Volatilité résiduelle</text>
   </svg>
 </template>
@@ -77,7 +82,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  maxTime: 240,
+  maxTime: 15,
   startHour: 13,
   startMinute: 0
 })
@@ -87,6 +92,15 @@ const chartHeight = 400
 const padding = 50
 
 const lambda = Math.log(2) / props.halfLifeMinutes
+
+const ticks = computed(() => {
+  const t = []
+  // Générer un tick par minute
+  for (let i = 0; i <= props.maxTime; i++) {
+    t.push(i)
+  }
+  return t
+})
 
 const formatTime = (minutes: number): string => {
   const totalMinutes = props.startMinute + minutes
@@ -103,7 +117,7 @@ const getVolatilityAt = (t: number) => Math.exp(-lambda * t)
 const curvePathD = computed(() => {
   const points: string[] = []
   points.push(`M ${xScale(0)} ${yScale(1)}`)
-  for (let t = 0; t <= props.maxTime; t += 5) {
+  for (let t = 0; t <= props.maxTime; t += 1) {
     const vol = getVolatilityAt(t)
     points.push(`L ${xScale(t)} ${yScale(vol)}`)
   }

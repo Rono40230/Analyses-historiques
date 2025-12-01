@@ -1,10 +1,21 @@
 // services/straddle_simulator.rs
 // Simule une stratégie Straddle sur l'historique complet d'un créneau
-// AVEC pondération temporelle du whipsaw (Option B)
 
 use crate::models::Candle;
-use chrono::Timelike;
 use super::straddle_adjustments::AdjustedMetrics;
+use super::straddle_simulator_helpers::{
+    calculate_atr_mean, get_whipsaw_coefficient, calculate_risk_level, find_trade_resolution,
+};
+
+#[derive(Debug, Clone)]
+pub struct WhipsawDetail {
+    pub entry_index: usize,
+    pub entry_price: f64,
+    pub buy_stop: f64,
+    pub sell_stop: f64,
+    pub buy_trigger_index: usize,
+    pub sell_trigger_index: usize,
+}
 
 #[derive(Debug, Clone)]
 pub struct StraddleSimulationResult {
@@ -23,6 +34,7 @@ pub struct StraddleSimulationResult {
     pub sl_adjusted_pips: f64,            // SL ajusté par whipsaw
     pub trailing_stop_adjusted: f64,      // Trailing Stop réduit
     pub timeout_adjusted_minutes: i32,    // Timeout réduit
+    pub whipsaw_details: Vec<WhipsawDetail>, // Détails de chaque whipsaw
 }
 
 /// Normalise une valeur en pips selon le symbole
@@ -77,6 +89,7 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
             sl_adjusted_pips: 0.0,
             trailing_stop_adjusted: 0.0,
             timeout_adjusted_minutes: 0,
+            whipsaw_details: Vec::new(),
         };
     }
 
@@ -104,12 +117,16 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
     let offset_optimal = p95_wick * 1.1;
     let offset_optimal_pips = normalize_to_pips(offset_optimal, symbol);
 
+    // === CALCUL DE L'ATR (VOLATILITÉ) POUR DÉTERMINER LE TIMEOUT ===
+    let atr_mean = calculate_atr_mean(candles);
+
     // Simuler les trades avec pondération temporelle du whipsaw
     let mut total_trades = 0;
     let mut wins = 0;
     let mut losses = 0;
     let mut whipsaws = 0;
     let mut whipsaw_weight_sum = 0.0;
+    let mut whipsaw_details_vec: Vec<WhipsawDetail> = Vec::new();
 
     let tp_distance = offset_optimal * 2.0;
     let sl_distance = offset_optimal;
@@ -118,7 +135,7 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
         let open = candle.open;
         let high = candle.high;
         let low = candle.low;
-        let close = candle.close;
+        let _close = candle.close;
         let entry_time = candle.datetime;
 
         let buy_stop = open + offset_optimal;
@@ -165,6 +182,33 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
                     whipsaws += 1;
                     let coefficient = get_whipsaw_coefficient(whipsaw_duration_minutes);
                     whipsaw_weight_sum += coefficient;
+                    
+                    // Enregistrer le détail du whipsaw
+                    let buy_stop_detail = open + offset_optimal;
+                    let sell_stop_detail = open - offset_optimal;
+                    
+                    // Chercher les indices de déclenchement réels
+                    let max_look = std::cmp::min(i + 15, candles.len());
+                    let mut buy_trigger_idx = candles.len();
+                    let mut sell_trigger_idx = candles.len();
+                    
+                    for check_idx in (i + 1)..max_look {
+                        if buy_trigger_idx == candles.len() && candles[check_idx].high >= buy_stop_detail {
+                            buy_trigger_idx = check_idx;
+                        }
+                        if sell_trigger_idx == candles.len() && candles[check_idx].low <= sell_stop_detail {
+                            sell_trigger_idx = check_idx;
+                        }
+                    }
+                    
+                    whipsaw_details_vec.push(WhipsawDetail {
+                        entry_index: i,
+                        entry_price: open,
+                        buy_stop: buy_stop_detail,
+                        sell_stop: sell_stop_detail,
+                        buy_trigger_index: buy_trigger_idx,
+                        sell_trigger_index: sell_trigger_idx,
+                    });
                 }
             }
         }
@@ -184,11 +228,12 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
 
     let (risk_level, risk_color) = calculate_risk_level(whipsaw_frequency_percentage);
 
-    // === CALCUL DES VALEURS PONDÉRÉES PAR LE WHIPSAW (Option B) ===
+    // === CALCUL DES VALEURS PONDÉRÉES PAR LE WHIPSAW + VOLATILITÉ ===
     let adjusted = AdjustedMetrics::new(
         win_rate_percentage,
         offset_optimal_pips,
         whipsaw_frequency_percentage,
+        atr_mean,
     );
 
     StraddleSimulationResult {
@@ -207,72 +252,7 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
         sl_adjusted_pips: adjusted.sl_adjusted_pips,
         trailing_stop_adjusted: adjusted.trailing_stop_adjusted,
         timeout_adjusted_minutes: adjusted.timeout_adjusted_minutes,
-    }
-}
-
-/// Trouve la résolution d'un trade sur les candles suivantes
-/// Retourne: (is_win, is_whipsaw, whipsaw_duration_minutes)
-fn find_trade_resolution(
-    candles: &[Candle],
-    start_idx: usize,
-    entry_time: chrono::DateTime<chrono::Utc>,
-    tp_level: f64,
-    sl_level: f64,
-    is_buy: bool,
-) -> (bool, bool, i32) {
-    use chrono::Duration;
-    
-    let max_lookforward = std::cmp::min(start_idx + 15, candles.len());
-
-    for check_idx in (start_idx + 1)..max_lookforward {
-        let candle = &candles[check_idx];
-        
-        // Calculer la durée en minutes de manière précise
-        let duration = candle.datetime.signed_duration_since(entry_time);
-        let duration_minutes = duration.num_minutes() as i32;
-
-        if is_buy {
-            if candle.high >= tp_level {
-                return (true, false, 0);
-            }
-            if candle.low <= sl_level {
-                return (false, true, duration_minutes);
-            }
-        } else {
-            if candle.low <= tp_level {
-                return (true, false, 0);
-            }
-            if candle.high >= sl_level {
-                return (false, true, duration_minutes);
-            }
-        }
-    }
-
-    // Non résolu = loss
-    (false, false, 15)
-}
-
-/// Retourne le coefficient de pondération selon la durée du whipsaw
-/// Option B: Pondération par durée
-fn get_whipsaw_coefficient(minutes: i32) -> f64 {
-    match minutes {
-        0 => 1.0,      // Immédiat = coefficient 1.0 (très grave)
-        1..=2 => 0.8,  // 1-2 min = coefficient 0.8
-        3..=5 => 0.6,  // 3-5 min = coefficient 0.6
-        6..=10 => 0.3, // 6-10 min = coefficient 0.3
-        _ => 0.1,      // 11-15 min = coefficient 0.1 (très léger)
-    }
-}
-
-fn calculate_risk_level(whipsaw_freq_pct: f64) -> (String, String) {
-    if whipsaw_freq_pct < 10.0 {
-        ("Faible".to_string(), "#22c55e".to_string())
-    } else if whipsaw_freq_pct < 20.0 {
-        ("Moyen".to_string(), "#eab308".to_string())
-    } else if whipsaw_freq_pct < 30.0 {
-        ("Élevé".to_string(), "#f97316".to_string())
-    } else {
-        ("Critique".to_string(), "#ef4444".to_string())
+        whipsaw_details: whipsaw_details_vec,
     }
 }
 
