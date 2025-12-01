@@ -12,6 +12,7 @@ pub mod deletion_commands;
 pub mod economic_commands;
 pub mod entry_window_analysis_commands;
 pub mod event_metrics;
+pub mod export_pdf_commands;
 pub mod file_listing;
 pub mod global_analysis_commands;
 pub mod import_clean;
@@ -39,6 +40,7 @@ pub use entry_window_analysis_commands::analyze_entry_window;
 pub use event_metrics::{
     calculate_event_metrics, clear_candles, get_available_symbols, load_candles_for_metrics,
 };
+pub use export_pdf_commands::exporter_formules_pdf;
 pub use file_listing::*;
 pub use global_analysis_commands::*;
 pub use import_clean::import_and_clean_files;

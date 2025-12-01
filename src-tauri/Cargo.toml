@@ -64,6 +64,10 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 # Parallélisme pour optimisations
 rayon = "1.10"
 
+# PDF generation
+printpdf = "0.7"
+lopdf = "0.32"
+
 [dev-dependencies]
 mockall = "0.13"
 tempfile = "3.8"
