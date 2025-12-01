@@ -16,6 +16,11 @@
         <p>{{ formule.definition }}</p>
       </section>
 
+      <section v-if="formule.explication_litterale" class="formule-section explanation-section">
+        <h4>✨ Comprendre en simple</h4>
+        <p class="literal-explanation">{{ formule.explication_litterale }}</p>
+      </section>
+
       <section class="formule-section">
         <h4>🧮 Formule</h4>
         <div class="formula-box">

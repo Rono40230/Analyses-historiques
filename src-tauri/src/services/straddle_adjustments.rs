@@ -14,10 +14,15 @@ impl AdjustedMetrics {
     /// 
     /// Formules:
     /// 1. Win Rate ajusté = WR brut × (1 - whipsaw_frequency)
-    /// 2. SL ajusté = SL brut × (1 + whipsaw_frequency × 0.3)
+    /// 2. SL ajusté = SL brut × Ratio(whipsaw_frequency)
+    ///    - Whipsaw 30%+ → ratio 1.5× (peu d'espace, beaucoup de faux mouvements)
+    ///    - Whipsaw 20-30% → ratio 1.8× (équilibre)
+    ///    - Whipsaw 10-20% → ratio 2.2× (plus d'espace)
+    ///    - Whipsaw 5-10% → ratio 2.5× (SL large)
+    ///    - Whipsaw <5% → ratio 2.8× (SL très large, peu de whipsaws)
     /// 3. Trailing Stop ajusté = 1.59 × (1 - whipsaw_frequency / 2)
     /// 4. Timeout ajusté = Basé sur ATR (volatilité)
-    ///    - ATR élevé = timeout court (20 min) - volatilité décline vite
+    ///    - ATR élevé = timeout court (18 min) - volatilité décline vite
     ///    - ATR faible = timeout long (32 min) - volatilité décline lentement
     pub fn new(
         win_rate_percentage: f64,
@@ -29,7 +34,18 @@ impl AdjustedMetrics {
 
         let win_rate_adjusted = win_rate_percentage * (1.0 - whipsaw_factor);
 
-        let sl_adjusted_pips = offset_optimal_pips * (1.0 + whipsaw_factor * 0.3);
+        // === FORMULE SL CORRIGÉE ===
+        // Logique: Plus whipsaw est élevé, plus le SL doit être RÉDUIT (moins d'espace)
+        // Plus whipsaw est bas, plus le SL peut être LARGE (plus d'espace pour capturer mouvements)
+        let whipsaw_adjusted_ratio = match whipsaw_factor {
+            w if w > 0.30 => 1.5,    // Whipsaw 30%+ → ratio 1.5× (trop de faux mouvements)
+            w if w > 0.20 => 1.8,    // Whipsaw 20-30% → ratio 1.8× (équilibre)
+            w if w > 0.10 => 2.2,    // Whipsaw 10-20% → ratio 2.2× (augmente SL)
+            w if w > 0.05 => 2.5,    // Whipsaw 5-10% → ratio 2.5× (SL large)
+            _ => 2.8,                // Whipsaw <5% → ratio 2.8× (SL très large, peu de whipsaws)
+        };
+        // Arrondir à l'unité supérieure (pas de décimales pour les pips)
+        let sl_adjusted_pips = (offset_optimal_pips * whipsaw_adjusted_ratio).ceil();
 
         let trailing_stop_brut = 1.59;
         let trailing_stop_adjusted = trailing_stop_brut * (1.0 - whipsaw_factor / 2.0);

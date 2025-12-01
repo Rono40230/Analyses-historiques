@@ -7,6 +7,7 @@ export interface Formule {
   id: string
   titre: string
   definition: string
+  explication_litterale?: string
   formule: string
   inputs: string[]
   output: {
@@ -41,7 +42,7 @@ export const categories: Categorie[] = [
     titre: 'Paramètres Straddle',
     emoji: '🎯',
     description: 'Configuration optimale du Straddle',
-    formules: ['offset', 'offset_ajuste', 'meilleur_moment', 'win_rate_ajuste', 'trailing_stop', 'timeout']
+    formules: ['offset', 'take_profit', 'offset_ajuste', 'risk_level', 'meilleur_moment', 'win_rate_ajuste', 'trailing_stop', 'timeout']
   },
   {
     id: 'whipsaw',
@@ -69,7 +70,7 @@ export const categories: Categorie[] = [
     titre: 'Scores & Recommandations',
     emoji: '🔢',
     description: 'Scores finaux et recommandations',
-    formules: ['score_brut', 'score_ajuste', 'recommendation']
+    formules: ['score_brut', 'score_ajuste', 'recommendation', 'meilleure_heure']
   }
 ]
 
@@ -81,6 +82,7 @@ export const formules: Record<string, Formule> = {
     titre: 'ATR (Average True Range)',
     categorieId: 'volatilite',
     definition: 'Mesure de la volatilité réelle incluant les gaps. Le True Range est le max de 3 valeurs, puis lissé avec une EMA Wilder sur 14 périodes.',
+    explication_litterale: 'Cette formule mesure à quel point le marché bouge vraiment. Elle regarde la plus grande variation entre le haut et le bas d\'une chandelle, puis elle moyenne ces variations sur 14 chandelles. Plus l\'ATR est grand, plus le marché est volatil (bouge beaucoup). Plus l\'ATR est petit, plus le marché est calme (bouge peu).',
     formule: 'TR = max(H-L, |H-Cₚₚₚ|, |L-Cₚₚₚ|)\nATR = EMA(TR, 14)',
     inputs: ['High', 'Low', 'Close (précédent)', 'Période: 14 candles'],
     output: {
@@ -101,6 +103,7 @@ export const formules: Record<string, Formule> = {
     titre: 'Range Moyen',
     categorieId: 'volatilite',
     definition: 'Amplitude moyenne des candles pour une période donnée (heure ou 15min).',
+    explication_litterale: 'Cette formule mesure la distance moyenne entre le haut et le bas des chandelles. C\'est simple: on prend chaque chandelle, on regarde sa hauteur (haut - bas), puis on en fait la moyenne. Plus le range est grand, plus les chandelles sont grosses (marché actif). Plus le range est petit, plus les chandelles sont minces (marché calme).',
     formule: 'Range = Σ(High - Low) / n',
     inputs: ['High (n candles)', 'Low (n candles)', 'n = nombre candles'],
     output: {
@@ -120,6 +123,7 @@ export const formules: Record<string, Formule> = {
     titre: 'Volatilité %',
     categorieId: 'volatilite',
     definition: 'ATR normalisé en pourcentage du prix. Permet de comparer volatilité Forex vs Crypto vs Indices.',
+    explication_litterale: 'Cette formule convertit l\'ATR en pourcentage du prix pour pouvoir comparer des marchés différents. Par exemple, si l\'ATR=30 pips et le prix=1.1000, on divise pour obtenir un pourcentage comparable. Utile pour voir: \"est-ce que l\'EUR est plus volatil que l\'OR?\"',
     formule: 'Vol% = (ATR / Close) × 100',
     inputs: ['ATR moyen', 'Close price estimé'],
     output: {
@@ -139,6 +143,7 @@ export const formules: Record<string, Formule> = {
     titre: 'Body % (Directionalité)',
     categorieId: 'volatilite',
     definition: 'Ratio du corps de la candle par rapport au range total. Mesure la directionalité: >50% = fort mouvement directionnel.',
+    explication_litterale: 'Cette formule regarde la force d\'une chandelle. Elle mesure: combien du mouvement total a-t-il été "concluant"? Si la chandelle monte de 100 pips du bas au haut (range=100), mais le corps (ouverture à fermeture) ne bouge que de 10 pips, alors Body%=10% (peu directionnel). Si le corps=90 pips, alors Body%=90% (très directionnel).',
     formule: 'Body% = |Close - Open| / (High - Low) × 100',
     inputs: ['Open', 'Close', 'High', 'Low'],
     output: {
@@ -159,6 +164,7 @@ export const formules: Record<string, Formule> = {
     titre: 'Noise Ratio',
     categorieId: 'mouvement',
     definition: 'Ratio Range / Body. Mesure le "bruit" (mèches) vs signal (direction). >3 = trop de bruit.',
+    explication_litterale: 'Cette formule regarde si une chandelle a beaucoup de "queues" (wicks) par rapport à son corps. Si beaucoup de queues = marché bruyant (faux mouvements). Si peu de queues et corps gros = marché directionnel (vrai mouvement). Ratio > 3 = très bruyant (mauvais pour trader). Ratio < 1.5 = très directionnel (bon pour trader).',
     formule: 'Noise = (High - Low) / |Close - Open|',
     inputs: ['High', 'Low', 'Close', 'Open'],
     output: {
@@ -180,6 +186,7 @@ export const formules: Record<string, Formule> = {
     titre: 'Shadow Ratio (Mèches)',
     categorieId: 'mouvement',
     definition: 'Ratio des mèches (wicks) par rapport au range. Mesure l\'indécision du marché.',
+    explication_litterale: 'Cette formule mesure les "mèches" (queues) des chandelles. Si une chandelle a de longues mèches en haut et en bas, c\'est que le marché a changé d\'avis plusieurs fois = indécision. Plus les mèches sont longues, plus le marché est indécis. Moins de mèches = décision claire.',
     formule: 'Upper_wick = High - max(Close, Open)\nLower_wick = min(Close, Open) - Low\nShadow = (Upper + Lower) / Range × 100',
     inputs: ['High', 'Low', 'Open', 'Close'],
     output: {
@@ -199,6 +206,7 @@ export const formules: Record<string, Formule> = {
     titre: 'Volume Imbalance',
     categorieId: 'mouvement',
     definition: 'Déséquilibre entre acheteurs et vendeurs (Bid/Ask). Prédit la direction du prochain mouvement.',
+    explication_litterale: 'Cette formule regarde s\'il y a plus d\'acheteurs ou plus de vendeurs. Quand beaucoup plus de gens veulent acheter que vendre, les prix montent généralement. Si beaucoup plus vendent que n\'achètent, les prix baissent. Ce déséquilibre nous dit où le marché veut aller.',
     formule: 'Imbalance = (Bid_Volume - Ask_Volume) / Total × 100',
     inputs: ['Bid Volume', 'Ask Volume'],
     output: {
@@ -219,6 +227,7 @@ export const formules: Record<string, Formule> = {
     titre: 'Breakout %',
     categorieId: 'mouvement',
     definition: 'Pourcentage de candles cassant la moyenne mobile. Mesure l\'agressivité du mouvement.',
+    explication_litterale: 'Cette formule compte combien de chandelles "sortent des sentiers battus" (sortent de la moyenne mobile). Si 80% des chandelles sont au-dessus de la moyenne, le marché pousse fort vers le haut. Si c\'est seulement 20%, le marché hésite. Plus de breakouts = plus d\'agressivité dans une direction.',
     formule: 'Breakout% = (Nombre candles > MA) / Total × 100',
     inputs: ['Close', 'MA (période 20)'],
     output: {
@@ -238,19 +247,67 @@ export const formules: Record<string, Formule> = {
     id: 'offset',
     titre: 'Offset (Distance ordres)',
     categorieId: 'straddle',
-    definition: 'Distance des ordres Buy Stop et Sell Stop par rapport au prix actuel. Basé sur ATR pour adapter à la volatilité.',
-    formule: 'Offset = ATR × Multiplicateur\nMultiplicateur = 1.5-2.0 (adaptatif)',
-    inputs: ['ATR local', 'Volatilité du quarter'],
+    definition: 'Distance des ordres Buy Stop et Sell Stop par rapport au prix d\'entrée. Basé sur ATR pour adapter à la volatilité. Fondation de tous les autres calculs (TP, SL, entrée).',
+    explication_litterale: 'Cette formule calcule à quelle distance on place nos ordres d\'achat et de vente par rapport au prix actuel. On utilise la volatilité (ATR) pour adapter la distance: si le marché est très volatil, on met les ordres plus loin (pour éviter les faux déclenchements), si le marché est calme, on les met plus près (pour déclencher plus souvent).',
+    formule: 'Offset = ATR_mean × 1.75\n\nArrondissement: .ceil() (pas de décimales)',
+    inputs: ['ATR mean (moyenne volatilité 1h)', 'Arrondir vers le haut'],
     output: {
       type: 'float',
       range: '0.0 - ∞',
       unite: 'pips'
     },
-    exemple: 'ATR=12.5 pips, Multiplicateur=1.75 → Offset = 21.9 pips',
+    exemple: 'ATR=24.5 pips → Offset = 24.5 × 1.75 = 42.875 → arrondi = 43 pips',
     notes: [
-      'ATR faible → Offset réduit (moins de mouvement attendu)',
-      'ATR élevé → Offset augmenté (volatilité haute)',
-      'Fondation pour SL, TP, entrée'
+      'Multiplicateur 1.75 = balance optimal entre:',
+      '  - Activations fréquentes (offset petit → mieux)',
+      '  - SL/TP non trop serrés (offset grand → mieux)',
+      'ATR faible → Offset petit (marché calme)',
+      'ATR élevé → Offset grand (marché volatil)',
+      'Fondation pour: TP (offset×2), SL (offset×ratio), Risk Level'
+    ]
+  },
+
+  take_profit: {
+    id: 'take_profit',
+    titre: 'Take Profit (TP)',
+    categorieId: 'straddle',
+    definition: 'Distance du Take Profit depuis l\'entrée. Fixé à 2× l\'offset pour Straddle (rapport Risk:Reward 1:2).',
+    explication_litterale: 'Cette formule décide à quel niveau on ferme notre position en profit. On double la distance de l\'offset: si nos ordres sont à 43 pips, on ferme le profit à 86 pips. C\'est simple: on risque 43 pips (avec le SL) pour gagner 86 pips. C\'est un rapport 1 contre 2, ce qui est équitable.',
+    formule: 'TP = Offset × 2.0\n\nArrondissement: .ceil() (pas de décimales)',
+    inputs: ['Offset calculé'],
+    output: {
+      type: 'float',
+      range: '0.0 - ∞',
+      unite: 'pips'
+    },
+    exemple: 'Offset=43 pips → TP = 43 × 2.0 = 86 pips (arrondi)',
+    notes: [
+      'Ratio 1:2 = Risk:Reward classique pour Straddle',
+      'Risk (SL) doit être ≥ Offset (pour absorber whipsaws)',
+      'Reward (TP) = 2× Offset (pour équilibre)',
+      'Exemple complet: Offset=43, SL=77, TP=86'
+    ]
+  },
+
+  risk_level: {
+    id: 'risk_level',
+    titre: 'Risk Level (Niveau de risque)',
+    categorieId: 'straddle',
+    definition: 'Niveau de risque basé sur le ratio SL/Offset. Mesure l\'adéquation du Stop Loss par rapport à la distance d\'activation.',
+    explication_litterale: 'Cette formule regarde si notre stop-loss (ligne de perte) est assez loin de l\'offset (distance des ordres). On divise le stop-loss par l\'offset pour voir le ratio. Si le ratio est grand (2.0+), le stop est très loin = peu de risque = vert 🟢. Si le ratio est moyen (1.5-2.0), c\'est acceptable = orange 🟡. Si le ratio est petit (<1.5), le stop est trop proche = beaucoup de risque = rouge 🔴.',
+    formule: 'Ratio = SL_ajusté / Offset\n\nIF Ratio > 2.0 → 🟢 LOW\nELSE IF Ratio > 1.5 → 🟡 MEDIUM\nELSE → 🔴 HIGH',
+    inputs: ['SL ajusté', 'Offset'],
+    output: {
+      type: 'enum',
+      range: '{LOW, MEDIUM, HIGH}',
+      unite: 'risk_level'
+    },
+    exemple: 'Offset=43, SL=77 → Ratio=77/43=1.79 → 🟡 MEDIUM',
+    notes: [
+      'Ratio > 2.0 = SL très large, peu de risque (vert)',
+      'Ratio 1.5-2.0 = SL adéquat, risque modéré (orange)',
+      'Ratio < 1.5 = SL trop serré, risque élevé (rouge)',
+      'Exemples: Whipsaw 33% → 1.8 = MEDIUM | Whipsaw 8% → 2.5 = LOW'
     ]
   },
 
@@ -258,19 +315,22 @@ export const formules: Record<string, Formule> = {
     id: 'offset_ajuste',
     titre: 'SL Ajusté (Stop Loss)',
     categorieId: 'straddle',
-    definition: 'Stop Loss augmenté pour compenser l\'impact du whipsaw. Plus la fréquence whipsaw est élevée, plus le SL doit être large.',
-    formule: 'SL_ajusté = SL_brut × (1 + whipsaw_freq × 0.3)',
+    definition: 'Stop Loss pondéré par la fréquence whipsaw. Plus whipsaw est élevé, plus le SL est réduit (peu d\'espace). Plus whipsaw est bas, plus le SL est large (plus d\'espace).',
+    explication_litterale: 'Cette formule calcule où on met notre \"cut-loss\" (niveau auquel on accepte la perte). On part de l\'offset, puis on le multiplie par un nombre qui dépend des faux déclenchements (whipsaw). Si beaucoup de faux déclenchements (33%), on multiplie par 1.8 seulement (stop plus proche). Si peu de faux déclenchements (3%), on multiplie par 2.8 (stop très loin). Logique: avec beaucoup de faux déclenchements, on n\'a pas besoin d\'un stop loin. Avec peu de faux déclenchements, on peut mettre un stop loin sans peur.',
+    formule: 'SL_ajusté = Offset × ratio(whipsaw_freq)\n\nRatio par whipsaw:\n- Whipsaw >30% → ratio 1.5× (trop de faux déclenchements)\n- Whipsaw 20-30% → ratio 1.8× (équilibre)\n- Whipsaw 10-20% → ratio 2.2× (augmente SL)\n- Whipsaw 5-10% → ratio 2.5× (SL large)\n- Whipsaw <5% → ratio 2.8× (SL très large, peu de whipsaws)',
     inputs: ['SL brut (= Offset)', 'Whipsaw frequency %'],
     output: {
       type: 'float',
       range: '0.0 - ∞',
       unite: 'pips'
     },
-    exemple: 'SL=20 pips, Whipsaw=25% → SL_ajusté = 20 × (1 + 0.25 × 0.3) = 21.5 pips',
+    exemple: 'Offset=43 pips, Whipsaw=33.4% → ratio=1.8 → SL_ajusté = 43 × 1.8 = 77 pips (arrondi)',
     notes: [
-      'Whipsaw nul → SL = SL brut',
-      'Whipsaw 50% → +15% sur SL',
-      'Logique: whipsaw = faux déclenchements → besoin plus d\'espace'
+      'LOGIQUE: Whipsaw HAUT (30%+) → SL RÉDUIT (1.5×) car trop de faux déclenchements',
+      'LOGIQUE: Whipsaw BAS (<5%) → SL AUGMENTÉ (2.8×) car peu de faux déclenchements',
+      'Arrondi toujours vers le haut (.ceil()) = pas de décimales',
+      'Exemple ancien: 20 × (1 + 0.25×0.3) = 21.5 ❌ OBSOLÈTE',
+      'Maintenant: 20 × 2.2 = 44 pips ✅ PLUS RÉALISTE'
     ]
   },
 
@@ -279,6 +339,7 @@ export const formules: Record<string, Formule> = {
     titre: 'Meilleur Moment (Entry Timing)',
     categorieId: 'straddle',
     definition: 'Minutes avant le début du quarter pour entrer. Basé sur analyse des moments de déclenchement whipsaw (trigger_minutes).',
+    explication_litterale: 'Cette formule dit QUAND entrer exactement (à quel nombre de minutes). On regarde quand les faux déclenchements se produisent habituellement (par exemple à 8 minutes), puis on entre 60% plus tôt (à 5 minutes). C\'est notre assurance: on entre en avance pour éviter les pièges.',
     formule: 'Optimal = mean(whipsaw_trigger_minutes) × 0.6\nClamped: [0, quarter_end]',
     inputs: ['Whipsaw trigger times (par jour)', 'Quarter boundaries'],
     output: {
@@ -299,6 +360,7 @@ export const formules: Record<string, Formule> = {
     titre: 'Win Rate Ajusté',
     categorieId: 'straddle',
     definition: 'Taux de gain réaliste après pénalité whipsaw. Reflète la vraie probabilité de profit.',
+    explication_litterale: 'Cette formule calcule combien de fois on gagne réellement. On commence avec un pourcentage de victoires théoriques, puis on le réduit en fonction des faux déclenchements. Si on gagne 55% en théorie mais qu\'il y a 20% de faux déclenchements, on réduit: 55 × (1 - 0.20) = 44%. C\'est plus réaliste et honnête.',
     formule: 'WR_ajusté = WR_brut × (1 - whipsaw_freq)',
     inputs: ['Win Rate brut (simulation)', 'Whipsaw frequency %'],
     output: {
@@ -319,6 +381,7 @@ export const formules: Record<string, Formule> = {
     titre: 'Trailing Stop (Coefficient)',
     categorieId: 'straddle',
     definition: 'Multiplicateur du SL pour stop dynamique. Ajusté selon whipsaw pour adapter la traîne.',
+    explication_litterale: 'Cette formule calcule un "stop qui suit le profit". Au lieu d\'un stop fixe, le stop se rapproche du prix au fur et à mesure que le profit augmente. On part d\'une valeur de base (1.59), puis on la réduit si beaucoup de faux déclenchements (pour être plus prudent). Si peu de faux déclenchements, on garde le stop plus agressif.',
     formule: 'TS = 1.59 × (1 - whipsaw_freq / 2)',
     inputs: ['Baseline: 1.59', 'Whipsaw frequency %'],
     output: {
@@ -339,6 +402,7 @@ export const formules: Record<string, Formule> = {
     titre: 'Timeout (Durée position)',
     categorieId: 'straddle',
     definition: 'Durée maximale pour tenir la position. Inversement proportionnel à ATR (volatilité haute = décline vite).',
+    explication_litterale: 'Cette formule dit combien de minutes on peut tenir notre position. Si le marché est très volatil (beaucoup de mouvement), la volatilité va baisser vite, donc on ferme rapidement (18 minutes). Si le marché est calme (peu de mouvement), la volatilité va baisser lentement, donc on peut rester plus longtemps (32 minutes). C\'est logique: quand ça bouge beaucoup, ça se calme vite. Quand ça bouge peu, ça prend du temps.',
     formule: 'ATR_norm = (ATR / 0.0008) capped at 1.0\nTimeout = 32 - (ATR_norm × 14)',
     inputs: ['ATR moyen du quarter', 'Référence: 0.0008'],
     output: {
@@ -360,6 +424,7 @@ export const formules: Record<string, Formule> = {
     titre: 'Whipsaw Frequency %',
     categorieId: 'whipsaw',
     definition: 'Pourcentage de trades où BOTH Buy Stop ET Sell Stop se déclenchent dans 15min (perte garantie).',
+    explication_litterale: 'Whipsaw = ton Straddle se déclenche dans DEUX directions en même temps = perte garantie. Cette formule compte combien de fois ça arrive. Si 5% des trades sont whipsaws = excellent. Si 30% = problématique. Un Straddle fiable doit avoir peu de whipsaws.',
     formule: 'Whipsaw% = (whipsaw_count / total_trades) × 100',
     inputs: ['Nombre whipsaws détectés', 'Total trades simulés'],
     output: {
@@ -382,6 +447,7 @@ export const formules: Record<string, Formule> = {
     titre: 'Whipsaw Risk Level',
     categorieId: 'whipsaw',
     definition: 'Catégorisation du risque basée sur la fréquence whipsaw.',
+    explication_litterale: 'C\'est mon jugement sur le RISQUE de whipsaw à cette heure. "Very Low" = presque aucun risque. "High" = beaucoup de risque. Elle te dit: comment prudent dois-tu être cette heure? Si Risk="Very High", ça veut dire quasiment 1 fois sur 3, ton Straddle va se déclencher dans les deux sens = perdu.',
     formule: 'Risk = "Very Low" if % < 5\n      = "Low" if % < 10\n      = "Medium" if % < 20\n      = "High" if % < 35\n      = "Very High" if % ≥ 35',
     inputs: ['Whipsaw frequency %'],
     output: {
@@ -401,6 +467,7 @@ export const formules: Record<string, Formule> = {
     titre: 'Total Trades Simulés',
     categorieId: 'whipsaw',
     definition: 'Nombre total d\'entrées potentielles analysées pour déterminer whipsaw frequency.',
+    explication_litterale: 'C\'est le nombre de Straddles que je "teste" virtuellement dans les données historiques. Avec 100 données = 85 possibilités d\'entrée (100 - 15min fenêtre). Plus de données testées = plus confiance dans mes calculs de whipsaw. 1000+ trades = données solides. 50 trades = données faibles.',
     formule: 'Total = Nombre de candles - 15',
     inputs: ['Candles analysées (60 min minimum)'],
     output: {
@@ -421,6 +488,7 @@ export const formules: Record<string, Formule> = {
     titre: 'Peak Duration',
     categorieId: 'timing',
     definition: 'Minutes jusqu\'au pic de volatilité après le début du quarter. Identifie le moment de la plus grande amplitude.',
+    explication_litterale: 'Cette formule regarde QUAND le marché bouge le plus après un événement. Si c\'est à 3 minutes = le gros mouvement arrive vite. Si c\'est à 30 minutes = le marché prend du temps à réagir. C\'est utile pour savoir quand placer ton Straddle pour attraper le bon moment.',
     formule: 'Peak_min = argmax(ATR[i]) où i ∈ [0, quarter_duration]',
     inputs: ['ATR par minute', 'Time series'],
     output: {
@@ -440,6 +508,7 @@ export const formules: Record<string, Formule> = {
     titre: 'Volatility Half-life',
     categorieId: 'timing',
     definition: 'Temps jusqu\'à moitié du pic de volatilité. Mesure la décroissance exponentielle.',
+    explication_litterale: 'Cette formule mesure combien de temps il faut pour que la volatilité descende à la moitié du maximum. Si peak=100 pips, half-life=5 minutes = à 5 minutes le marché bouge encore 50 pips en moyenne. À 10 minutes = 25 pips. Elle te dit quand ta position perd de la valeur.',
     formule: 'Half_life = t où ATR(t) = peak_ATR / 2',
     inputs: ['ATR decay curve', 'Peak ATR value'],
     output: {
@@ -459,6 +528,7 @@ export const formules: Record<string, Formule> = {
     titre: 'Recommended Trade Expiration',
     categorieId: 'timing',
     definition: 'Durée totale recommandée du trade. Basée sur peak_duration avec buffer.',
+    explication_litterale: 'C\'est le temps total que tu devrais garder ouvert ton Straddle. Si le pic arrive à 5 minutes et que la volatilité dure 10 minutes, je te recommande de fermer à 15 minutes pour attraper le mouvement mais avant que la volatilité ne disparaisse. Trop long = pertes. Trop court = pas assez de profit.',
     formule: 'Expiration = peak_duration × 1.5 (approximatif)\nOu: peak + 2 × half_life',
     inputs: ['Peak Duration', 'Half-life'],
     output: {
@@ -478,6 +548,7 @@ export const formules: Record<string, Formule> = {
     titre: 'Confidence Score',
     categorieId: 'timing',
     definition: 'Score de confiance (0-100%) basé sur sample size et variance des mesures.',
+    explication_litterale: 'Cette formule dit à quel point je suis "sûr" de mes calculs. Si j\'ai analysé 10 ans de données avec peu de variation, ma confiance est très haute (90%). Si j\'ai peu de données ou beaucoup de variation, ma confiance est basse (30%). Plus la confiance est haute, plus tu peux faire confiance à mes recommandations.',
     formule: 'Confidence = min(100, (sample_size / min_required) × 100 × variance_factor)',
     inputs: ['Sample size (jours analysés)', 'Variance ATR'],
     output: {
@@ -499,6 +570,7 @@ export const formules: Record<string, Formule> = {
     titre: 'Straddle Score (Brut)',
     categorieId: 'scores',
     definition: 'Score pondéré avant ajustement whipsaw. Agrège 5 métriques clés pour viabilité Straddle.',
+    explication_litterale: 'Cette formule combiner 5 points importants pour le Straddle: volatilité, range, directionalité, bruit, et agressivité. Elle donne un note de 0 à 100. Score élevé (80+) = conditions excellentes. Score bas (20-) = mauvaises conditions.',
     formule: 'Score = (w1×ATR_norm + w2×Range_norm + w3×Body% + w4×Noise + w5×Breakout) / sum(weights)',
     inputs: ['ATR%', 'Range%', 'Body%', 'Noise Ratio', 'Breakout%'],
     output: {
@@ -518,6 +590,7 @@ export const formules: Record<string, Formule> = {
     titre: 'Straddle Score (Ajusté)',
     categorieId: 'scores',
     definition: 'Score final après pénalité whipsaw. C\'est le vrai score de viabilité.',
+    explication_litterale: 'C\'est le score réel après correction pour les faux signaux (whipsaw). Si le score brut est 80 mais il y a 30% de whipsaw, la note finale baisse pour être plus réaliste (56 au lieu de 80). Ce score te dit vraiment à quel point tu peux compter sur le Straddle à cette heure.',
     formule: 'Score_ajusté = Score_brut × (1 - whipsaw_freq / 100)',
     inputs: ['Score brut', 'Whipsaw frequency %'],
     output: {
@@ -539,6 +612,7 @@ export const formules: Record<string, Formule> = {
     titre: 'Trading Recommendation',
     categorieId: 'scores',
     definition: 'Recommandation finale basée sur le score ajusté et conditions additionnelles.',
+    explication_litterale: 'Voilà mon conseil final: dois-tu faire un Straddle à cette heure? "Optimal" = oui, conditions parfaites. "Good" = oui, conditions correctes. "Cautious" = oui, mais sois prudent. "Risky" = non, attends une meilleure heure. Ma recommandation se base sur tous mes autres calculs.',
     formule: 'IF score ≥ 75 AND whipsaw < 10 → "Optimal"\nELSE IF score ≥ 60 → "Good"\nELSE IF score ≥ 45 → "Cautious"\nELSE → "Risky"',
     inputs: ['Score ajusté', 'Whipsaw frequency', 'Win rate ajusté'],
     output: {
@@ -550,6 +624,34 @@ export const formules: Record<string, Formule> = {
     notes: [
       'Decision tree: priorité score puis whipsaw',
       'Affichée avec emoji et couleur correspondante'
+    ]
+  },
+
+  meilleure_heure: {
+    id: 'meilleure_heure',
+    titre: 'Meilleure Heure (Best Hour Ranking)',
+    categorieId: 'scores',
+    definition: 'Classement des 24 heures pour déterminer laquelle offre les meilleures conditions de trading Straddle. Basée sur 3 critères pondérés.',
+    explication_litterale: 'Cette formule classe les 24 heures de la journée pour trouver les meilleures pour trader. Elle combine 3 éléments: la confiance dans les données (plus c\'est fiable, mieux c\'est), le taux de gain (plus on gagne souvent, mieux), et les faux déclenchements (moins il y en a, mieux). Elle additionne confiance + gain, puis soustrait les faux déclenchements. L\'heure avec le score le plus élevé est la meilleure.',
+    formule: 'Score_heure = Confidence_Score + Win_Rate_ajusté - Whipsaw_Frequency\n\nRanking: ARGSORT(descending, Score_heure)',
+    inputs: [
+      'Confidence Score (0-100) - qualité des données',
+      'Win Rate ajusté (%) - probabilité de profit',
+      'Whipsaw Frequency (%) - fréquence des faux déclenchements'
+    ],
+    output: {
+      type: 'ranking',
+      range: '1-24',
+      unite: 'heure (0-23)'
+    },
+    exemple: 'Heure 08:00 → Conf=78 + WR=45 - Whipsaw=15 = 108 ✅ 1st\nHeure 09:00 → Conf=68 + WR=40 - Whipsaw=22 = 86 (2nd)\nHeure 10:00 → Conf=55 + WR=35 - Whipsaw=30 = 60 (3rd)',
+    notes: [
+      'Calcul INDÉPENDANT du SL (SL ne change pas le ranking)',
+      'Calcul INDÉPENDANT des arrondis .ceil()',
+      'Meilleure heure = celle avec SCORE LE PLUS ÉLEVÉ',
+      'Confidence = ATR + Body% + Volatilité + Noise + Breakout (0-100)',
+      'Win Rate ajusté = WR brut × (1 - Whipsaw%)',
+      'Whipsaw impact: Freq=0% → pas pénalité, Freq=33% → perte 33 points'
     ]
   }
 }

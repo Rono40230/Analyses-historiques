@@ -62,7 +62,21 @@ defineEmits<{
 .welcome-select-container { display: flex; justify-content: center; margin: 20px 0; }
 .dropdown-group { display: flex; flex-direction: column; gap: 10px; align-items: center; }
 .dropdown-group label { color: #e6edf3; font-weight: 600; }
-.welcome-symbol-select, .inline-select { padding: 8px 12px; border-radius: 6px; border: 1px solid #30363d; background: #0d1117; color: #e6edf3; font-size: 0.95em; }
+.welcome-symbol-select, .inline-select { 
+  padding: 8px 12px; 
+  border-radius: 6px; 
+  border: 1px solid #30363d; 
+  background: #ffffff; 
+  color: #000000; 
+  font-size: 0.95em;
+  font-weight: 500;
+}
+
+.welcome-symbol-select option, .inline-select option { 
+  color: #000000; 
+  background: #ffffff;
+  padding: 2px 5px;
+}
 .event-info-card { padding: 20px; background: rgba(56, 139, 253, 0.05); border-radius: 12px; border: 1px solid #30363d; margin-bottom: 20px; }
 .event-header { display: flex; justify-content: space-between; align-items: center; }
 .event-title-with-selector { display: flex; gap: 15px; align-items: center; flex: 1; }

@@ -155,6 +155,28 @@
   line-height: 1.6;
 }
 
+.explanation-section {
+  background: rgba(168, 85, 247, 0.08);
+  border-left: 4px solid #a855f7;
+  padding: 16px;
+  border-radius: 6px;
+}
+
+.explanation-section h4 {
+  color: #d8b4fe;
+  margin-bottom: 8px !important;
+}
+
+.literal-explanation {
+  color: #e9d5ff !important;
+  font-size: 15px !important;
+  line-height: 1.7 !important;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 12px;
+  border-radius: 4px;
+  margin: 0 !important;
+}
+
 .formule-navigation {
   display: flex;
   justify-content: space-between;

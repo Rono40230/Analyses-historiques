@@ -154,9 +154,9 @@ fn calculate_metrics_from_candles(candles: &[Candle], symbol: &str) -> Result<Sl
     let breakout_percentage = calculate_breakout_percentage(candles);
 
     // Normaliser ATR et Range en pips
-    let atr_mean_pips = normalize_to_pips(atr_mean, symbol);
-    let atr_max_pips = normalize_to_pips(atr_max, symbol);
-    let range_mean_pips = normalize_to_pips(range_mean, symbol);
+    let atr_mean_pips = normalize_to_pips(atr_mean, symbol).ceil();
+    let atr_max_pips = normalize_to_pips(atr_max, symbol).ceil();
+    let range_mean_pips = normalize_to_pips(range_mean, symbol).ceil();
 
     Ok(SliceMetrics {
         candle_count: count,

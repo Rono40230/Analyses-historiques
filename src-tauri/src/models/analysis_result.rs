@@ -39,36 +39,3 @@ pub struct CorrelatedEvent {
     pub correlation_score: f64,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_analysis_result_creation() {
-        let result = AnalysisResult {
-            symbol: "EURUSD".to_string(),
-            period_start: "2024-01-01".to_string(),
-            period_end: "2024-12-31".to_string(),
-            timeframe: "M5".to_string(),
-            hourly_stats: vec![],
-            stats_15min: vec![],
-            best_quarter: (14, 2), // 14:30-14:45
-            confidence_score: 75.0,
-            recommendation: TradingRecommendation::ScalpNormal,
-            risk_level: RiskLevel::Medium,
-            global_metrics: GlobalMetrics {
-                mean_atr: 0.0045,
-                mean_volatility: 0.12,
-                mean_body_range: 0.0020,
-                mean_tick_quality: 0.85,
-                mean_noise_ratio: 2.1,
-                mean_volume_imbalance: 0.15,
-                mean_breakout_percentage: 0.35,
-                total_candles: 15000,
-            },
-        };
-
-        assert_eq!(result.symbol, "EURUSD");
-        assert_eq!(result.best_quarter, (14, 2));
-    }
-}

@@ -137,7 +137,7 @@ pub fn optimize_entry_window(
     EntryWindowResult {
         optimal_offset_minutes: best_offset,
         optimal_win_rate: best_win_rate * 100.0,
-        avg_drawdown_pips: normalize_to_pips(best_avg_drawdown, symbol),
+        avg_drawdown_pips: normalize_to_pips(best_avg_drawdown, symbol).ceil(),
         confidence_score: if best_score > 0.0 { 80.0 } else { 0.0 },
     }
 }

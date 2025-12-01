@@ -115,7 +115,7 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
     };
 
     let offset_optimal = p95_wick * 1.1;
-    let offset_optimal_pips = normalize_to_pips(offset_optimal, symbol);
+    let offset_optimal_pips = normalize_to_pips(offset_optimal, symbol).ceil();
 
     // === CALCUL DE L'ATR (VOLATILITÉ) POUR DÉTERMINER LE TIMEOUT ===
     let atr_mean = calculate_atr_mean(candles);
@@ -244,7 +244,7 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
         win_rate_percentage,
         whipsaw_frequency_percentage,
         offset_optimal_pips,
-        percentile_95_wicks: normalize_to_pips(p95_wick, symbol),
+        percentile_95_wicks: normalize_to_pips(p95_wick, symbol).ceil(),
         risk_level,
         risk_color,
         // Valeurs pondérées

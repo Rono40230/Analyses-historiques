@@ -36,12 +36,19 @@ impl EventCorrelationService {
 
     /// Analyse la corrélation entre un événement et la volatilité observée
     /// NOTE: Méthode conservée pour usage futur (Phase 2 - analyses avancées)
+    /// 
+    /// CORRECTION PHASE 2: Filtre maintenant les événements LOW-impact
     #[allow(dead_code)]
     pub fn correlate_event_with_volatility(
         &self,
         event: &CalendarEvent,
         candles: &[Candle],
     ) -> Option<CorrelatedEvent> {
+        // ✅ CORRECTION: Ignorer les événements LOW-impact (bruit)
+        if event.impact == "LOW" {
+            return None;
+        }
+
         // Cherche les bougies autour de l'événement (1h avant, pendant, 1h après)
         let event_hour = event.event_time.hour() as u8;
 
@@ -72,6 +79,7 @@ impl EventCorrelationService {
                 let correlation_score = (increase_pct.abs() * impact_multiplier).min(100.0);
 
                 // Ne retourne que les corrélations significatives (> 10% d'augmentation)
+                // Et uniquement pour HIGH/MEDIUM impact (LOW déjà filtré en début)
                 if increase_pct > 10.0 {
                     return Some(CorrelatedEvent {
                         event: event.clone(),
@@ -154,50 +162,6 @@ impl EventCorrelationService {
         });
 
         Ok(correlations)
-    }
-
-    /// Statistiques de corrélation globales
-    /// NOTE: Méthode conservée pour usage futur (Phase 2 - analyses avancées)
-    #[allow(dead_code)]
-    pub fn get_correlation_stats(
-        &self,
-        symbol: &str,
-        candles: &[Candle],
-    ) -> Result<CorrelationStats, Box<dyn std::error::Error>> {
-        let correlations = self.analyze_correlations(symbol, candles)?;
-
-        let high_impact_count = correlations
-            .iter()
-            .filter(|c| c.event.impact == "HIGH")
-            .count();
-
-        let medium_impact_count = correlations
-            .iter()
-            .filter(|c| c.event.impact == "MEDIUM")
-            .count();
-
-        let avg_increase_high = correlations
-            .iter()
-            .filter(|c| c.event.impact == "HIGH")
-            .map(|c| c.volatility_increase)
-            .sum::<f64>()
-            / high_impact_count.max(1) as f64;
-
-        let avg_increase_medium = correlations
-            .iter()
-            .filter(|c| c.event.impact == "MEDIUM")
-            .map(|c| c.volatility_increase)
-            .sum::<f64>()
-            / medium_impact_count.max(1) as f64;
-
-        Ok(CorrelationStats {
-            total_events: correlations.len(),
-            high_impact_count,
-            medium_impact_count,
-            avg_volatility_increase_high: avg_increase_high,
-            avg_volatility_increase_medium: avg_increase_medium,
-            top_correlations: correlations.into_iter().take(10).collect(),
-        })
     }
 }
 

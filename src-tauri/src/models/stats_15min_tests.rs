@@ -22,6 +22,9 @@ mod tests {
             peak_duration_minutes: None,
             volatility_half_life_minutes: None,
             recommended_trade_expiration_minutes: None,
+            peak_duration_mean: None,
+            volatility_half_life_mean: None,
+            recommended_trade_expiration_mean: None,
         };
         assert_eq!(stats.time_label(), "14:00-14:15");
 
@@ -52,6 +55,9 @@ mod tests {
             peak_duration_minutes: None,
             volatility_half_life_minutes: None,
             recommended_trade_expiration_minutes: None,
+            peak_duration_mean: None,
+            volatility_half_life_mean: None,
+            recommended_trade_expiration_mean: None,
         };
 
         let score = stats.quality_score();
@@ -78,6 +84,9 @@ mod tests {
             peak_duration_minutes: None,
             volatility_half_life_minutes: None,
             recommended_trade_expiration_minutes: None,
+            peak_duration_mean: None,
+            volatility_half_life_mean: None,
+            recommended_trade_expiration_mean: None,
         };
 
         assert_eq!(stats.quality_score(), 0.0);
