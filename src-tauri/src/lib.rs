@@ -221,6 +221,12 @@ pub fn run() {
             delete_archive,
             // Global Analysis (Phase IA)
             analyze_all_archives,
+            // Retrospective analysis commands (Phase 7)
+            analyze_peak_delay,
+            analyze_decay_profile,
+            analyze_entry_timing,
+            analyze_directional_bias,
+            analyze_whipsaw_root_cause,
             // PDF export commands
             exporter_formules_pdf,
         ]);

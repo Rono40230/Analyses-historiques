@@ -5,11 +5,13 @@
     </div>
     <div v-if="peakDelayLoading" class="spinner">⏳</div>
     <div v-else-if="peakDelayError" class="error">{{ peakDelayError }}</div>
-    <div v-else-if="peakDelayResults.length === 0" class="empty">📭 Aucune donnée</div>
-    <table v-else>
-      <thead><tr><th>Événement</th><th>Délai</th><th>N</th><th>%</th></tr></thead>
-      <tbody><tr v-for="r in peakDelayResults" :key="r.event_type"><td>{{ r.event_type }}</td><td>{{ r.peak_delay_minutes }}</td><td>{{ r.sample_count }}</td><td>{{ r.consistency_percent.toFixed(1) }}</td></tr></tbody>
-    </table>
+    <div v-else-if="!peakDelayResults" class="empty">📭 Chargez une paire</div>
+    <div v-else class="result">
+      <div class="row"><span>Délai Peak:</span><strong>{{ peakDelayResults.peak_delay_minutes }} min</strong></div>
+      <div class="row"><span>ATR Peak:</span><strong>{{ peakDelayResults.peak_atr.toFixed(4) }}</strong></div>
+      <div class="row"><span>Minute Événement:</span><strong>{{ peakDelayResults.event_minute }}</strong></div>
+      <div class="row"><span>Confiance:</span><strong>{{ (peakDelayResults.confidence * 100).toFixed(0) }}%</strong></div>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
@@ -36,10 +38,9 @@ async function load() {
 .container { padding: 20px; background: #0d1117; border-radius: 8px; color: #e2e8f0; }
 .controls { margin-bottom: 15px; }
 .input { padding: 8px; background: #161b22; border: 1px solid #30363d; color: #e2e8f0; border-radius: 4px; }
-.spinner { text-align: center; padding: 30px; }
+.spinner, .empty { text-align: center; color: #8b949e; padding: 30px; }
 .error { background: #3d2626; color: #f85149; padding: 10px; border-radius: 4px; }
-.empty { text-align: center; color: #8b949e; padding: 30px; }
-table { width: 100%; border-collapse: collapse; background: #161b22; }
-th, td { padding: 10px; text-align: left; border-bottom: 1px solid #30363d; }
-th { color: #1f6feb; font-weight: 700; }
+.result { display: flex; flex-direction: column; gap: 10px; }
+.row { display: flex; justify-content: space-between; padding: 10px; background: #161b22; border-radius: 4px; }
+strong { color: #1f6feb; font-weight: 700; }
 </style>
