@@ -22,7 +22,5 @@ mod win_rate_calculator;
 pub use analyzer::VolatilityAnalyzer;
 pub use offset_calculator::calculate_optimal_offset;
 pub use volatility_duration_analyzer::VolatilityDurationAnalyzer;
-pub use volatility_heuristics::VolatilityHeuristics;
-pub use whipsaw_detector::{calculate_whipsaw_frequency, WhipsawAnalysis};
-pub use whipsaw_classifier::WhipsawRootCauseAnalysis;
+pub use whipsaw_detector::calculate_whipsaw_frequency;
 pub use win_rate_calculator::simulate_straddle_win_rate;

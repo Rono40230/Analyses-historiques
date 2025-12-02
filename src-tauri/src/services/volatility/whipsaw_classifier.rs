@@ -1,5 +1,5 @@
 // services/volatility/whipsaw_classifier.rs - Classification Early/Late
-use super::whipsaw_detector::{WhipsawDetail, WhipsawRiskLevel};
+use super::whipsaw_detector::WhipsawDetail;
 
 /// Classification Early/Late d'un whipsaw
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

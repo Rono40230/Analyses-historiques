@@ -51,10 +51,8 @@ pub use metadata::{
 };
 pub use movement_analysis_commands::{analyze_movement_quality, get_movement_qualities};
 pub use pair_data::import_pair_data;
-pub use retrospective_analysis_commands::{
-    analyze_decay_profile, analyze_directional_bias, analyze_entry_timing, analyze_peak_delay,
-    analyze_whipsaw_root_cause,
-};
+// Phase 7: Retrospective analysis commands (future integration)
+// pub use retrospective_analysis_commands::*;
 pub use session_commands::*;
 pub use volatility::{
     analyze_slice_metrics, analyze_straddle_metrics, analyze_symbol,

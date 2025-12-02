@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-/// Entry timing helper - group by offset and calculate metrics
 pub fn calculate_entry_timing_metrics(
     results: &[(i16, f64, bool)],
 ) -> HashMap<i16, (f64, f64, f64, usize)> {
@@ -34,13 +33,13 @@ pub fn calculate_quality_score(win_rate: f64, avg_profit: f64, whipsaw_rate: f64
 }
 
 /// Directional bias helper - calculate metrics from counts
-pub fn calculate_bias_metrics(up_wins: usize, down_wins: usize, total_events: usize) -> (f64, f64, &'static str) {
+pub fn calculate_bias_metrics(up_wins: usize, down_wins: usize, _total_events: usize) -> (f64, f64, &'static str) {
     let total_wins = up_wins + down_wins;
     if total_wins == 0 {
         return (0.0, 0.0, "Neutral");
     }
 
-    let bias_value = ((up_wins as f64 - down_wins as f64) / total_wins as f64);
+    let bias_value = (up_wins as f64 - down_wins as f64) / total_wins as f64;
     let asymmetry_percent = (bias_value.abs() * 100.0).round();
 
     let classification = if bias_value.abs() > 0.3 {
