@@ -93,8 +93,16 @@ export function useMetricsCalculations() {
     return 'avoid-quality'
   }
 
-  const getMovementQualityKey = (analysis: any, analysisData: any): string => {
-    if (!analysisData || !analysis.slice.stats.events || analysis.slice.stats.events.length === 0) return ''
+  interface AnalysisLike {
+    slice?: { stats?: { events?: Array<{ event_name: string }> } }
+  }
+
+  interface AnalysisDataLike {
+    symbol?: string
+  }
+
+  const getMovementQualityKey = (analysis: AnalysisLike, analysisData: AnalysisDataLike): string => {
+    if (!analysisData || !analysis.slice?.stats?.events || analysis.slice.stats.events.length === 0) return ''
     const symbol = analysisData.symbol || 'UNKNOWN'
     const eventName = analysis.slice.stats.events[0].event_name
     return `${symbol}_${eventName}`

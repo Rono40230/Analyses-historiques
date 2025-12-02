@@ -26,12 +26,16 @@ export const DIRECTION_STATUS_TEXTS = {
   none: '❌ Peu de direction'
 }
 
-export function getStatusClass(metrics: any): string {
+interface MetricsLike {
+  mean_atr?: number
+}
+
+export function getStatusClass(metrics: MetricsLike | null): string {
   if (!metrics) return 'unknown'
   const confidence = metrics.mean_atr
-  if (confidence > 0.0015) return 'excellent'
-  if (confidence > 0.001) return 'good'
-  if (confidence > 0.0005) return 'acceptable'
+  if (confidence && confidence > 0.0015) return 'excellent'
+  if (confidence && confidence > 0.001) return 'good'
+  if (confidence && confidence > 0.0005) return 'acceptable'
   return 'poor'
 }
 

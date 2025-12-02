@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+import { computed, type Ref } from 'vue'
 import type { EventInHour } from '../stores/volatility'
 import { getEventTranslation } from '../stores/eventTranslations'
 import { getEventSchedule } from '../utils/eventSchedules'
@@ -22,7 +22,7 @@ function normalizeImpact(impact: string): string {
   return 'UNKNOWN'
 }
 
-export function useEventSummary(allEvents: any) {
+export function useEventSummary(allEvents: Ref<EventInHour[]>) {
   const eventSummary = computed(() => {
     if (!allEvents?.value) return []
 

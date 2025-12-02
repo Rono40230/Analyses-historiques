@@ -1,7 +1,10 @@
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import type { GlobalAnalysisResult } from './globalAnalysisTypes'
 
-export interface GlobalAnalysisResult { total_analyses: number; total_days_analyzed: number; global_stats: any; best_pairs: any[]; golden_hours: any[]; tradable_events: any[]; pair_straddle_rates: any[]; optimal_time_windows: any[]; generated_at: string }
+export { type GlobalStats, type BestPairGlobal, type GoldenHourGlobal, type TradableEventGlobal, type PairStraddleRateGlobal, type OptimalTimeWindowGlobal, type GlobalAnalysisResult } from './globalAnalysisTypes'
+
+const AVAILABLE_PAIRS = ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'USDCHF', 'NZDUSD', 'EURGBP', 'EURJPY', 'GBPJPY', 'AUDJPY', 'XAUUSD', 'USAIDX', 'DEUIDX']
 
 export function useGlobalAnalysis() {
   const loading = ref(false)
@@ -13,10 +16,7 @@ export function useGlobalAnalysis() {
   const startDate = ref('')
   const endDate = ref('')
   const selectedPairs = ref<string[]>([])
-  const availablePairs = ref<string[]>([
-    'EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'USDCHF', 'NZDUSD',
-    'EURGBP', 'EURJPY', 'GBPJPY', 'AUDJPY', 'XAUUSD', 'USAIDX', 'DEUIDX'
-  ])
+  const availablePairs = ref<string[]>(AVAILABLE_PAIRS)
 
   const sortedGoldenHours = computed(() => {
     if (!result.value) return []
@@ -81,8 +81,8 @@ export function useGlobalAnalysis() {
       }
       const data = await invoke<GlobalAnalysisResult>('analyze_all_archives', { filters })
       result.value = data
-    } catch (e: any) {
-      error.value = typeof e === 'string' ? e : "Erreur inconnue lors de l'analyse"
+    } catch (e: Error | unknown) {
+      error.value = typeof e === 'string' ? e : (e instanceof Error ? e.message : "Erreur inconnue lors de l'analyse")
     } finally {
       loading.value = false
     }

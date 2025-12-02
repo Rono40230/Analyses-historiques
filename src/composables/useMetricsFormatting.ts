@@ -3,6 +3,7 @@
  * Les calculs sont dans useMetricsCalculations.ts
  */
 
+import { type GlobalMetrics } from '../stores/volatility'
 import { 
   STATUS_TEXTS, QUALITY_RECOMMENDATIONS, NOISE_STATUS_TEXTS, 
   DIRECTION_STATUS_TEXTS, getStatusClass, getNoiseStatus, 
@@ -13,7 +14,7 @@ import { useMetricsCalculations } from './useMetricsCalculations'
 export function useMetricsFormatting() {
   const { formatNumber, calculateExactTime, getScoreSeverity, getQualityRecommendation } = useMetricsCalculations()
 
-  const getStatusText = (metrics: any): string => {
+  const getStatusText = (metrics: GlobalMetrics | null): string => {
     const classe = getStatusClass(metrics)
     return STATUS_TEXTS[classe as keyof typeof STATUS_TEXTS] || STATUS_TEXTS.unknown
   }

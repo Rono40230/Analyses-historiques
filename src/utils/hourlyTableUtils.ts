@@ -1,7 +1,7 @@
 // Utilitaires pour HourlyTable
-import type { EventInHour } from '../stores/volatility'
+import type { EventInHour, GlobalMetrics, Stats15Min } from '../stores/volatility'
 
-export function getEstimatedPrice(globalMetrics?: any): number {
+export function getEstimatedPrice(globalMetrics?: GlobalMetrics): number {
   if (!globalMetrics) return 100000
   const atr = globalMetrics.mean_atr
   if (atr > 1000) return 100000
@@ -38,7 +38,7 @@ export function getDistinctEventCount(events: EventInHour[] | undefined): number
   return distinctPairs.size
 }
 
-export function calculateSliceScore(slice: any): number {
+export function calculateSliceScore(slice: Stats15Min): number {
   if (slice.candle_count === 0) return 0
   let score = 0
 
@@ -75,6 +75,6 @@ export function calculateSliceScore(slice: any): number {
   return Math.min(score, 100)
 }
 
-export function isTradeExpTooLong(slice: any): boolean {
-  return (slice.recommended_trade_expiration_mean ?? 0) > 150
+export function isTradeExpTooLong(slice: Stats15Min): boolean {
+  return (slice.recommended_trade_expiration_minutes ?? 0) > 150
 }

@@ -51,7 +51,7 @@ export function useMetricsModalLogic(props: ModalProps) {
 
   onMounted(loadAnalysis)
 
-  const openArchiveModal = (result: AnalysisResult, sliceAnalyses: any, movementQualities: any, volatilityDuration: any, tradingPlan: any, entryWindowAnalysis: any) => {
+  const openArchiveModal = (result: AnalysisResult, sliceAnalyses: Record<string, unknown>, movementQualities: Record<string, unknown>, volatilityDuration: Record<string, unknown>, tradingPlan: Record<string, unknown>, entryWindowAnalysis: Record<string, unknown>) => {
     if (result.period_start && result.period_end) {
       archivePeriodStart.value = result.period_start
       archivePeriodEnd.value = result.period_end
