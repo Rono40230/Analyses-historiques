@@ -1,38 +1,58 @@
 <template>
   <div class="main-container">
-    <AnalysisGroupTabs v-model="analysisGroup" />
-    
-    <div v-if="analysisGroup === 'correlation'" class="analysis-group">
-      <CorrelationViewModeTabs v-model="viewMode">
-        <CalendarFileSelector 
-          class="file-selector-right"
-          @file-selected="handleCalendarSelected"
-        />
-      </CorrelationViewModeTabs>
-      <div class="content-area">
-        <EventCorrelationByEvent
-          v-if="viewMode === 'by-event'"
-          :past-events="pastEvents"
-          :calendar-id="selectedCalendarId"
-        />
-        <EventCorrelationByPair
-          v-if="viewMode === 'by-pair'"
-          :available-pairs="availablePairs"
-        />
-        <EventCorrelationHeatmap
-          v-if="viewMode === 'heatmap'"
-          :calendar-id="selectedCalendarId"
-          :available-pairs="availablePairs"
-        />
+    <!-- Header et boutons : affichés SEULEMENT en mode standalone (sans prop viewMode) -->
+    <div v-if="!props.viewMode" class="header-section">
+      <div class="header-left">
+        <h1 class="main-title">
+          <span class="icon">📈</span>
+          Corrélation Événements - Paires
+        </h1>
+        <p class="main-subtitle">Visualisez la Heatmap ou analysez les métriques rétrospectives en détail</p>
       </div>
+      <CalendarFileSelector 
+        class="file-selector-right"
+        @file-selected="handleCalendarSelected"
+      />
     </div>
 
-    <div v-if="analysisGroup === 'retrospective'" class="analysis-group">
-      <RetrospectiveViewModeTabs v-model="retrospectiveView" />
-      <div class="content-area">
-        <PeakDelayAnalysis v-if="retrospectiveView === 'peak-delay'" />
-        <DecayProfileView v-if="retrospectiveView === 'decay'" />
-      </div>
+    <div v-if="!props.viewMode" class="view-modes">
+      <button 
+        class="mode-button" 
+        :class="{ active: viewMode === 'heatmap' }"
+        @click="viewMode = 'heatmap'"
+      >
+        🔥 Heatmap de Corrélation
+      </button>
+      <button 
+        class="mode-button" 
+        :class="{ active: viewMode === 'retrospective' }"
+        @click="viewMode = 'retrospective'"
+      >
+        📊 Métriques Rétrospectives
+      </button>
+    </div>
+
+    <!-- Sélecteur calendrier simplifié : affiché SEULEMENT en mode intégré (avec prop viewMode) et en mode heatmap -->
+    <div v-if="props.viewMode && viewMode === 'heatmap'" class="simple-calendar-selector">
+      <CalendarFileSelector 
+        class="file-selector-simple"
+        @file-selected="handleCalendarSelected"
+      />
+    </div>
+
+    <!-- Contenu principal : toujours affiché -->
+    <div class="content-area">
+      <EventCorrelationHeatmap
+        v-if="viewMode === 'heatmap'"
+        :calendar-id="selectedCalendarId"
+        :available-pairs="availablePairs"
+      />
+      <RetroactiveAnalysisView
+        v-if="viewMode === 'retrospective'"
+        :calendar-id="selectedCalendarId"
+        :show-calendar-selector="!!props.viewMode"
+        @calendar-selected="handleCalendarSelected"
+      />
     </div>
   </div>
 </template>
@@ -41,56 +61,56 @@
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { useVolatilityStore } from '../stores/volatility'
+import { useAnalysisStore } from '../stores/analysisStore'
 import { useDataRefresh } from '../composables/useDataRefresh'
-import AnalysisGroupTabs from './AnalysisGroupTabs.vue'
-import CorrelationViewModeTabs from './CorrelationViewModeTabs.vue'
-import RetrospectiveViewModeTabs from './RetrospectiveViewModeTabs.vue'
-import EventCorrelationByEvent from './EventCorrelationByEvent.vue'
-import EventCorrelationByPair from './EventCorrelationByPair.vue'
 import EventCorrelationHeatmap from './EventCorrelationHeatmap.vue'
 import CalendarFileSelector from './CalendarFileSelector.vue'
-import PeakDelayAnalysis from './PeakDelayAnalysis.vue'
-import DecayProfileView from './DecayProfileView.vue'
+import RetroactiveAnalysisView from './RetroactiveAnalysisView.vue'
 
-interface PastEvent { name: string; count: number }
+interface Props {
+  viewMode?: 'heatmap' | 'retrospective'
+}
 
-const store = useVolatilityStore()
-const analysisGroup = ref<'correlation' | 'retrospective'>('correlation')
-const viewMode = ref<'by-event' | 'by-pair' | 'heatmap'>('by-event')
-const retrospectiveView = ref<'peak-delay' | 'decay'>('peak-delay')
-const pastEvents = ref<PastEvent[]>([])
+const props = withDefaults(defineProps<Props>(), {
+  viewMode: undefined
+})
+
+const volatilityStore = useVolatilityStore()
+const analysisStore = useAnalysisStore()
+const viewMode = ref<'heatmap' | 'retrospective'>('heatmap')
 const availablePairs = ref<string[]>([])
 const selectedCalendarId = ref<number | null>(null)
+
+// Si une prop viewMode est passée, l'utiliser au montage
+watch(() => props.viewMode, (newViewMode) => {
+  if (newViewMode) {
+    viewMode.value = newViewMode
+  }
+}, { immediate: true })
+
+onMounted(async () => {
+  await loadAvailablePairs()
+})
 
 const { onPairDataRefresh } = useDataRefresh()
 const unsubscribe = onPairDataRefresh(loadAvailablePairs)
 onBeforeUnmount(() => unsubscribe())
 
-watch(() => store.dataRefreshTrigger, () => loadPastEvents())
-onMounted(async () => {
-  await loadAvailablePairs()
-  await loadPastEvents()
-})
+// Watcher pour reset heatmap quand calendrier change
+watch(() => selectedCalendarId.value, (newCalendarId) => {
+  analysisStore.resetHeatmapData()
+}, { immediate: false })
+
+// Watcher pour reset heatmap quand paires changent
+watch(() => availablePairs.value, (newPairs) => {
+  if (newPairs && newPairs.length > 0) {
+    analysisStore.resetHeatmapData()
+  }
+}, { deep: true })
 
 async function handleCalendarSelected(filename: string) {
   const calendarId = await invoke<number | null>('get_calendar_id_by_filename', { filename })
   selectedCalendarId.value = calendarId
-  await loadPastEvents()
-}
-
-async function loadPastEvents() {
-  if (!selectedCalendarId.value) {
-    pastEvents.value = []
-    return
-  }
-  try {
-    pastEvents.value = await invoke<PastEvent[]>('get_past_events', { 
-      monthsBack: 6,
-      calendarId: selectedCalendarId.value
-    })
-  } catch {
-    pastEvents.value = []
-  }
 }
 
 async function loadAvailablePairs() {
@@ -107,20 +127,104 @@ async function loadAvailablePairs() {
 .main-container {
   background: #161b22;
   border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   border: 1px solid #30363d;
   overflow: hidden;
   color: #e2e8f0;
+  display: flex;
+  flex-direction: column;
 }
 
-.analysis-group { width: 100%; }
+.header-section {
+  background: linear-gradient(135deg, #1c2128 0%, #161b22 100%);
+  padding: 30px;
+  border-bottom: 2px solid #30363d;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 30px;
+}
+
+.header-left {
+  flex: 1;
+}
+
+.main-title {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  color: #e6edf3;
+  font-size: 2em;
+  margin: 0 0 10px 0;
+  font-weight: 700;
+}
+
+.main-title .icon {
+  font-size: 1.2em;
+}
+
+.main-subtitle {
+  color: #8b949e;
+  font-size: 1.1em;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.view-modes {
+  display: flex;
+  gap: 15px;
+  padding: 20px;
+  background: #0d1117;
+  border-bottom: 1px solid #30363d;
+}
+
+.simple-calendar-selector {
+  padding: 15px 30px;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.mode-button {
+  flex: 1;
+  padding: 15px 20px;
+  border: 2px solid #30363d;
+  background: #161b22;
+  color: #8b949e;
+  border-radius: 8px;
+  font-size: 1.1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.mode-button:hover:not(:disabled) {
+  background: #1c2128;
+  border-color: #58a6ff;
+  color: #58a6ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(88, 166, 255, 0.3);
+}
+
+.mode-button.active {
+  background: linear-gradient(135deg, #1f6feb 0%, #388bfd 100%);
+  color: #ffffff;
+  border-color: #58a6ff;
+  box-shadow: 0 4px 12px rgba(88, 166, 255, 0.4);
+}
 
 .content-area {
   padding: 30px;
-  min-height: 400px;
+  flex: 1;
 }
 
 :deep(.file-selector-right) {
   margin-left: auto;
+}
+
+:deep(.file-selector-simple) {
+  margin: 0;
 }
 </style>

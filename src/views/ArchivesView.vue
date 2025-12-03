@@ -22,6 +22,40 @@
       @close="isGlobalAnalysisOpen = false"
     />
 
+    <!-- Modal de confirmation de suppression -->
+    <div v-if="showDeleteConfirmModal" class="delete-confirm-overlay">
+      <div class="delete-confirm-modal">
+        <div class="delete-confirm-header">
+          <div class="delete-confirm-icon">🗑️</div>
+          <h2>Supprimer cette archive ?</h2>
+        </div>
+        
+        <div class="delete-confirm-body">
+          <p v-if="archiveToDelete" class="archive-title">
+            <strong>{{ archiveToDelete.title }}</strong>
+          </p>
+          <p class="warning-text">
+            Cette action est <strong>irréversible</strong>. L'archive sera supprimée de manière permanente.
+          </p>
+        </div>
+        
+        <div class="delete-confirm-actions">
+          <button 
+            class="btn-cancel"
+            @click="cancelDelete"
+          >
+            ❌ Annuler
+          </button>
+          <button 
+            class="btn-confirm-delete"
+            @click="confirmArchiveDeletion"
+          >
+            🗑️ Supprimer définitivement
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div
       v-if="archiveStore.loading"
       class="loading"
@@ -138,14 +172,8 @@
           </button>
         </div>
         <div class="viewer-body scrollable">
-          <EventCorrelationByPair
-            v-if="selectedArchive?.archive_type === 'Corrélation paire/événement' || selectedArchive?.archive_type === 'PAIR_IMPACT'"
-            :archive-data="viewerData.pairCorrelation"
-            :is-archive-mode="true"
-          />
-           
           <EventCorrelationHeatmap
-            v-else-if="selectedArchive?.archive_type === 'Heatmap' || selectedArchive?.archive_type === 'HEATMAP'"
+            v-if="selectedArchive?.archive_type === 'Heatmap' || selectedArchive?.archive_type === 'HEATMAP'"
             :archive-data="viewerData.heatmapData"
             :is-archive-mode="true"
           />
@@ -166,7 +194,6 @@
 import { onMounted, ref } from 'vue'
 import { useArchiveStore, type Archive } from '../stores/archiveStore'
 import MetricsAnalysisModal from '../components/MetricsAnalysisModal.vue'
-import EventCorrelationByPair from '../components/EventCorrelationByPair.vue'
 import EventCorrelationHeatmap from '../components/EventCorrelationHeatmap.vue'
 import GlobalAnalysisModal from '../components/GlobalAnalysisModal.vue'
 
@@ -175,6 +202,8 @@ const selectedArchive = ref<Archive | null>(null)
 const showViewer = ref(false)
 const viewerData = ref<any>(null)
 const isGlobalAnalysisOpen = ref(false)
+const showDeleteConfirmModal = ref(false)
+const archiveToDelete = ref<Archive | null>(null)
 
 onMounted(async () => {
   await archiveStore.loadArchives()
@@ -259,11 +288,24 @@ async function exportPDF(archive: Archive) {
 }
 
 async function confirmDelete(archive: Archive) {
+  archiveToDelete.value = archive
+  showDeleteConfirmModal.value = true
+}
+
+async function confirmArchiveDeletion() {
+  if (!archiveToDelete.value) return
   try {
-    await archiveStore.deleteArchive(archive.id)
+    await archiveStore.deleteArchive(archiveToDelete.value.id)
+    showDeleteConfirmModal.value = false
+    archiveToDelete.value = null
   } catch (error) {
     // Erreur silencieuse - suppression échouée
   }
+}
+
+function cancelDelete() {
+  showDeleteConfirmModal.value = false
+  archiveToDelete.value = null
 }
 </script>
 
@@ -593,6 +635,144 @@ async function confirmDelete(archive: Archive) {
   padding: 40px;
   color: #8b949e;
   font-size: 1.2em;
+}
+
+/* Modal de confirmation de suppression - Stylisé */
+.delete-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.delete-confirm-modal {
+  background: linear-gradient(135deg, #1f1f2e 0%, #2a2a3e 100%);
+  border-radius: 16px;
+  border: 2px solid #f85149;
+  box-shadow: 0 20px 60px rgba(248, 81, 73, 0.3), 0 0 40px rgba(248, 81, 73, 0.1);
+  padding: 0;
+  max-width: 450px;
+  width: 90%;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.delete-confirm-header {
+  padding: 30px;
+  border-bottom: 2px solid rgba(248, 81, 73, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.delete-confirm-icon {
+  font-size: 32px;
+  animation: iconBounce 0.6s ease-in-out;
+}
+
+@keyframes iconBounce {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.1) rotate(-5deg); }
+}
+
+.delete-confirm-header h2 {
+  margin: 0;
+  color: #f85149;
+  font-size: 1.5em;
+  font-weight: 700;
+}
+
+.delete-confirm-body {
+  padding: 25px 30px;
+  color: #e6edf3;
+}
+
+.delete-confirm-body .archive-title {
+  background: rgba(248, 81, 73, 0.1);
+  border-left: 4px solid #f85149;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 0 0 15px 0;
+  color: #f85149;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.delete-confirm-body .warning-text {
+  margin: 0;
+  color: #cbd5e0;
+  line-height: 1.6;
+  font-size: 0.95em;
+}
+
+.delete-confirm-actions {
+  padding: 25px 30px;
+  border-top: 1px solid rgba(248, 81, 73, 0.2);
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.btn-cancel {
+  padding: 12px 24px;
+  background: #2a2a3e;
+  border: 2px solid #4a5568;
+  color: #cbd5e0;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.95em;
+}
+
+.btn-cancel:hover {
+  background: #3a3a4e;
+  border-color: #667eea;
+  color: #e6edf3;
+}
+
+.btn-cancel:active {
+  transform: scale(0.98);
+}
+
+.btn-confirm-delete {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #f85149 0%, #dc3545 100%);
+  border: 2px solid #f85149;
+  color: #ffffff;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.95em;
+  box-shadow: 0 4px 12px rgba(248, 81, 73, 0.3);
+}
+
+.btn-confirm-delete:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(248, 81, 73, 0.5);
+  background: linear-gradient(135deg, #f95950 0%, #e03e4f 100%);
+}
+
+.btn-confirm-delete:active {
+  transform: translateY(0) scale(0.98);
 }
 
 @media print {

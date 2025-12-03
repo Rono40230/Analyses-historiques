@@ -41,6 +41,17 @@ export interface EventImpactResult {
   observations: string[]
 }
 
+export interface HeatmapData {
+  pairs: string[]
+  event_types: Array<{ name: string; has_data?: boolean }>
+  data: Record<string, Record<string, number>>
+}
+
+export interface HeatmapLoadedFor {
+  pairs: string[]
+  calendarId: number | null
+}
+
 export interface AnalysisData {
   pair?: string
   events?: EventCorrelation[]
@@ -57,6 +68,8 @@ export const useAnalysisStore = defineStore('analysis', () => {
   const pairCorrelationData = ref<AnalysisData | null>(null)
   const eventCorrelationData = ref<AnalysisData | null>(null)
   const heatmapData = ref<AnalysisData | null>(null)
+  const persistentHeatmapData = ref<HeatmapData | null>(null)
+  const heatmapLoadedFor = ref<HeatmapLoadedFor | null>(null)
   function setPairSelection(pair: string, calId: number | null = null) {
     selectedPair.value = pair
     selectedCalendarId.value = calId
@@ -79,12 +92,30 @@ export const useAnalysisStore = defineStore('analysis', () => {
     heatmapData.value = data
   }
 
+  function setPersistentHeatmapData(data: HeatmapData | null, pairs: string[], calendarId: number | null) {
+    persistentHeatmapData.value = data
+    heatmapLoadedFor.value = { pairs, calendarId }
+  }
+
+  function resetHeatmapData() {
+    persistentHeatmapData.value = null
+    heatmapLoadedFor.value = null
+  }
+
+  function shouldReloadHeatmap(pairs: string[], calendarId: number | null): boolean {
+    if (!heatmapLoadedFor.value) return true
+    if (heatmapLoadedFor.value.calendarId !== calendarId) return true
+    if (pairs.length !== heatmapLoadedFor.value.pairs.length) return true
+    return !pairs.every((p, i) => p === heatmapLoadedFor.value!.pairs[i])
+  }
+
   function clearAnalysis() {
     selectedPair.value = ''
     selectedEvent.value = ''
     pairCorrelationData.value = null
     eventCorrelationData.value = null
     heatmapData.value = null
+    resetHeatmapData()
   }
 
   return {
@@ -94,11 +125,16 @@ export const useAnalysisStore = defineStore('analysis', () => {
     pairCorrelationData,
     eventCorrelationData,
     heatmapData,
+    persistentHeatmapData,
+    heatmapLoadedFor,
     setPairSelection,
     setEventSelection,
     setPairCorrelationData,
     setEventCorrelationData,
     setHeatmapData,
+    setPersistentHeatmapData,
+    resetHeatmapData,
+    shouldReloadHeatmap,
     clearAnalysis,
   }
 })

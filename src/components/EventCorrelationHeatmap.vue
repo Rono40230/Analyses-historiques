@@ -1,5 +1,5 @@
 <template>
-  <div v-if="loadingHeatmap" class="loading"><div class="spinner" /><p>Génération de la heatmap...</p></div>
+  <div v-if="loadingHeatmap" class="loading"><span class="spinner">⏳</span><p>Génération de la heatmap...</p></div>
 
   <div v-if="heatmapData && !loadingHeatmap" class="heatmap-container">
     <HeatmapHeader />
@@ -55,7 +55,7 @@ const filteredEventTypes = computed(() => {
 // Watch availablePairs et charger la heatmap quand elles changent
 watch(() => props.availablePairs, (newPairs) => {
   if (newPairs && newPairs.length > 0 && !props.isArchiveMode) {
-    loadHeatmapData(newPairs)
+    loadHeatmapData(newPairs, props.calendarId)
   }
 }, { deep: true })
 
@@ -68,7 +68,12 @@ onMounted(() => {
 
 <style scoped>
 .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 400px; gap: 20px; }
-.spinner { width: 40px; height: 40px; border: 4px solid #30363d; border-top-color: #58a6ff; border-radius: 50%; animation: spin 1s linear infinite; }
+.spinner { font-size: 60px; animation: hourglassFlip 1s ease-in-out infinite; display: inline-block; }
 @keyframes spin { to { transform: rotate(360deg); } }
+@keyframes hourglassFlip {
+  0% { transform: scaleX(1) rotateY(0deg); }
+  50% { transform: scaleX(-1) rotateY(180deg); }
+  100% { transform: scaleX(1) rotateY(360deg); }
+}
 .heatmap-container { background: #161b22; padding: 20px; border-radius: 8px; border: 1px solid #30363d; }
 </style>

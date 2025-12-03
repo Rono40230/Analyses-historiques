@@ -28,7 +28,7 @@ onMounted(async () => {
 const store = useVolatilityStore()
 const { analysisResult, selectedSymbol, loading, error } = storeToRefs(store)
 
-const activeTab = ref<'volatility' | 'calendar' | 'correlation' | 'archives'>('volatility')
+const activeTab = ref<'volatility' | 'heatmap' | 'retrospective' | 'archives'>('volatility')
 const selectedSymbolLocal = ref('')
 const activeCalendarId = ref<number | null>(null)
 
@@ -56,7 +56,7 @@ function handleOpenBidiParams(data: { hour: number; quarter: number }) {
   showBidiModal.value = true
 }
 
-function switchTab(tab: 'volatility' | 'calendar' | 'correlation' | 'archives') {
+function switchTab(tab: 'volatility' | 'heatmap' | 'retrospective' | 'archives') {
   activeTab.value = tab
 }
 </script>
@@ -73,10 +73,17 @@ function switchTab(tab: 'volatility' | 'calendar' | 'correlation' | 'archives') 
       </button>
       <button 
         class="tab-button" 
-        :class="{ active: activeTab === 'correlation' }"
-        @click="switchTab('correlation')"
+        :class="{ active: activeTab === 'heatmap' }"
+        @click="switchTab('heatmap')"
       >
-        📈 Volatilité par rapport aux événements économiques
+        🔥 Heatmap de Corrélation
+      </button>
+      <button 
+        class="tab-button" 
+        :class="{ active: activeTab === 'retrospective' }"
+        @click="switchTab('retrospective')"
+      >
+        📊 Métriques Rétrospectives
       </button>
       <button 
         class="tab-button" 
@@ -88,7 +95,6 @@ function switchTab(tab: 'volatility' | 'calendar' | 'correlation' | 'archives') 
       <div class="tab-spacer" />
       <button 
         class="tab-button" 
-        :class="{ active: activeTab === 'calendar' }"
         @click="switchTab('calendar')"
       >
         📥 Importer des données
@@ -174,8 +180,12 @@ function switchTab(tab: 'volatility' | 'calendar' | 'correlation' | 'archives') 
         <ImportHub />
       </template>
 
-      <template v-if="activeTab === 'correlation'">
-        <EventCorrelationView />
+      <template v-if="activeTab === 'heatmap'">
+        <EventCorrelationView :view-mode="'heatmap'" />
+      </template>
+
+      <template v-if="activeTab === 'retrospective'">
+        <EventCorrelationView :view-mode="'retrospective'" />
       </template>
 
       <template v-if="activeTab === 'archives'">

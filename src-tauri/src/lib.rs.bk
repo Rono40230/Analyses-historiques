@@ -170,8 +170,6 @@ pub fn run() {
             get_events_for_period,
             analyze_event_correlation,
             get_correlation_heatmap,    // Heatmap événements × paires
-            get_event_impact_by_pair,   // Impact d'un événement sur toutes les paires
-            get_pair_event_correlation, // Impact de tous les événements sur une paire
             get_past_events,            // Liste des événements passés pour dropdown
             get_pair_event_history,     // Historique des événements pour une paire
             // Pair data import commands (Phase 4)
@@ -211,6 +209,7 @@ pub fn run() {
             // Candle index commands (Performance optimization)
             init_candle_index,
             load_pair_candles,
+            get_pair_candles,
             get_candle_index_stats,
             get_candles_for_hour,
             get_candles_for_quarter, // NEW: Charger candles filtrées par quarter (TÂCHE 5)
@@ -221,6 +220,10 @@ pub fn run() {
             delete_archive,
             // Global Analysis (Phase IA)
             analyze_all_archives,
+            // Retrospective analysis commands (Phase 7)
+            analyze_peak_delay,
+            analyze_decay_profile,
+            get_event_types,
             // PDF export commands
             exporter_formules_pdf,
         ]);

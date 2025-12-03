@@ -20,7 +20,7 @@ pub mod metadata;
 pub mod movement_analysis_commands;
 pub mod pair_data;
 pub mod pair_importer;
-pub mod retrospective_analysis_commands;
+pub mod retrospective_analysis;
 pub mod session_commands;
 pub mod volatility;
 pub mod volatility_duration_commands;
@@ -52,7 +52,7 @@ pub use metadata::{
 pub use movement_analysis_commands::{analyze_movement_quality, get_movement_qualities};
 pub use pair_data::import_pair_data;
 // Phase 7: Retrospective analysis commands (fully integrated)
-pub use retrospective_analysis_commands::*;
+pub use retrospective_analysis::{analyze_peak_delay, analyze_decay_profile, get_event_types};
 pub use session_commands::*;
 pub use volatility::{
     analyze_slice_metrics, analyze_straddle_metrics, analyze_symbol,

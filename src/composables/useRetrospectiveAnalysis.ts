@@ -1,36 +1,59 @@
 import { ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { eventTranslations } from '../stores/eventTranslations'
 
 // Types from Tauri command results
-export interface PeakDelayData { peak_delay_minutes: number; peak_atr: number; event_minute: number; confidence: number; event_count: number; event_type: string }
+export interface PeakDelayData { peak_delay_minutes: number; peak_atr: number; event_minute: number; confidence: number; event_count: number; event_type: string; optimal_entry_seconds_before: number; event_date_min: string; event_date_max: string }
 export interface DecayProfileData { peak_atr: number; decay_rate_pips_per_minute: number; decay_speed: string; recommended_timeout_minutes: number; event_count: number; event_type: string }
-export interface EventTypeData { types: string[] }
+export interface EventType { name: string; count: number }
+export interface EventTypeData { types: EventType[] }
 
 export function useRetrospectiveAnalysis() {
   const peakDelayLoading = ref(false), peakDelayError = ref<string | null>(null), peakDelayResults = ref<PeakDelayData | null>(null)
   const decayLoading = ref(false), decayError = ref<string | null>(null), decayResults = ref<DecayProfileData | null>(null)
-  const eventTypesLoading = ref(false), eventTypesError = ref<string | null>(null), eventTypes = ref<string[]>([])
+  const eventTypesLoading = ref(false), eventTypesError = ref<string | null>(null), eventTypes = ref<EventType[]>([])
 
-  const analyzePeakDelay = async (candles: unknown[], eventType: string) => {
+  const analyzePeakDelay = async (pair: string, eventType: string) => {
     peakDelayLoading.value = true; peakDelayError.value = null
-    try { peakDelayResults.value = await invoke<PeakDelayData>('analyze_peak_delay', { candles, event_type: eventType }) }
-    catch (e) { peakDelayError.value = String(e); peakDelayResults.value = null }
+    try { 
+      peakDelayResults.value = await invoke<PeakDelayData>('analyze_peak_delay', { pair, eventType })
+    }
+    catch (e) { 
+      peakDelayError.value = String(e); 
+      peakDelayResults.value = null 
+    }
     finally { peakDelayLoading.value = false }
   }
 
-  const analyzeDecayProfile = async (candles: unknown[], eventType: string) => {
+  const analyzeDecayProfile = async (pair: string, eventType: string) => {
     decayLoading.value = true; decayError.value = null
-    try { decayResults.value = await invoke<DecayProfileData>('analyze_decay_profile', { candles, event_type: eventType }) }
-    catch (e) { decayError.value = String(e); decayResults.value = null }
+    try { 
+      decayResults.value = await invoke<DecayProfileData>('analyze_decay_profile', { pair, eventType })
+    }
+    catch (e) { 
+      decayError.value = String(e); 
+      decayResults.value = null 
+    }
     finally { decayLoading.value = false }
   }
 
-  const loadEventTypes = async () => {
+  const loadEventTypes = async (calendarId?: number) => {
     eventTypesLoading.value = true; eventTypesError.value = null
-    try { const data = await invoke<EventTypeData>('get_event_types'); eventTypes.value = data.types }
-    catch (e) { eventTypesError.value = String(e); eventTypes.value = [] }
+    try { 
+      const data = await invoke<EventTypeData>('get_event_types', { calendar_id: calendarId })
+      eventTypes.value = data.types 
+    }
+    catch (e) { 
+      eventTypesError.value = String(e); 
+      eventTypes.value = [] 
+    }
     finally { eventTypesLoading.value = false }
   }
 
-  return { peakDelayLoading, peakDelayError, peakDelayResults, analyzePeakDelay, decayLoading, decayError, decayResults, analyzeDecayProfile, eventTypesLoading, eventTypesError, eventTypes, loadEventTypes }
+  function getEventLabel(eventName: string): string {
+    const translation = eventTranslations[eventName]
+    return translation ? `${eventName} (${translation.fr}) ${translation.flag}` : eventName
+  }
+
+  return { peakDelayLoading, peakDelayError, peakDelayResults, analyzePeakDelay, decayLoading, decayError, decayResults, analyzeDecayProfile, eventTypesLoading, eventTypesError, eventTypes, loadEventTypes, getEventLabel }
 }

@@ -1,8 +1,9 @@
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { getEventTranslation } from '../stores/eventTranslations'
+import { useAnalysisStore } from '../stores/analysisStore'
 
-interface HeatmapData {
+export interface HeatmapData {
   pairs: string[]
   event_types: Array<{ name: string; has_data?: boolean }>
   data: Record<string, Record<string, number>>
@@ -10,23 +11,36 @@ interface HeatmapData {
 
 export function useEventCorrelationHeatmap(isArchiveMode = false, archiveData?: HeatmapData) {
   const loadingHeatmap = ref(false)
-  const heatmapData = ref<HeatmapData | null>(null)
+  const analysisStore = useAnalysisStore()
+
+  const heatmapData = computed(() => {
+    if (isArchiveMode) return archiveData || null
+    return analysisStore.persistentHeatmapData
+  })
+
   const minVolatilityThreshold = ref(3)
   const maxEventsToDisplay = ref(10)
 
-  async function loadHeatmapData(pairs: string[]) {
+  async function loadHeatmapData(pairs: string[], calendarId: number | null = null) {
     if (!pairs || pairs.length === 0) {
       return
     }
+
+    // Vérifier si on doit recharger
+    if (!analysisStore.shouldReloadHeatmap(pairs, calendarId)) {
+      return
+    }
+
     loadingHeatmap.value = true
     try {
       const result = await invoke<HeatmapData>('get_correlation_heatmap', { 
         pairs: pairs,
-        calendar_id: null
+        calendar_id: calendarId
       })
-      heatmapData.value = result
+      // Stocker dans le store pour la persistance
+      analysisStore.setPersistentHeatmapData(result, pairs, calendarId)
     } catch (error) {
-      heatmapData.value = { pairs: [], event_types: [], data: {} }
+      analysisStore.setPersistentHeatmapData({ pairs: [], event_types: [], data: {} }, pairs, calendarId)
     } finally {
       loadingHeatmap.value = false
     }
