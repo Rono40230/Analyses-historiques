@@ -1,6 +1,15 @@
 // composable pour gérer l'archivage de la heatmap
-import { ref } from 'vue'
+import { ref, Ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+
+interface HeatmapComponentInstance {
+  getHeatmapArchiveData: () => {
+    heatmapData: any
+    minVolatilityThreshold: number
+    maxEventsToDisplay: number
+    selectedEventType: string
+  }
+}
 
 export function useHeatmapArchive() {
   const showArchiveModal = ref(false)
@@ -9,7 +18,7 @@ export function useHeatmapArchive() {
   const archivePeriodEnd = ref('')
 
   async function openArchiveModal(
-    heatmapComponentRef: any,
+    heatmapComponentRef: Ref<HeatmapComponentInstance | undefined>,
     selectedCalendarId: number | null
   ) {
     if (!heatmapComponentRef?.value) return

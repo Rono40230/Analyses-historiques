@@ -4,7 +4,11 @@ import { invoke } from '@tauri-apps/api/core'
 import { useAnalysisStore } from '../stores/analysisStore'
 import { useDataRefresh } from './useDataRefresh'
 
-export function useHeatmapState(props: any) {
+interface HeatmapStateProps {
+  viewMode?: 'heatmap' | 'retrospective'
+}
+
+export function useHeatmapState(props: HeatmapStateProps) {
   const analysisStore = useAnalysisStore()
   const viewMode = ref<'heatmap' | 'retrospective'>('heatmap')
   const availablePairs = ref<string[]>([])
