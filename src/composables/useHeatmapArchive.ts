@@ -4,7 +4,11 @@ import { invoke } from '@tauri-apps/api/core'
 
 interface HeatmapComponentInstance {
   getHeatmapArchiveData: () => {
-    heatmapData: any
+    heatmapData: {
+      pairs: string[]
+      event_types: Array<{ name: string; has_data?: boolean }>
+      data: Record<string, Record<string, number>>
+    }
     minVolatilityThreshold: number
     maxEventsToDisplay: number
     selectedEventType: string
