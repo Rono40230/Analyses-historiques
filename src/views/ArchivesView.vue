@@ -117,6 +117,10 @@
             <span class="meta-label">🕒 Créé le:</span>
             <span class="meta-value">{{ formatDate(archive.created_at) }}</span>
           </div>
+          <div v-if="isRetroAnalysisType(archive)" class="meta-item">
+            <span class="meta-label">📊 Événement:</span>
+            <span class="meta-value">{{ extractEventLabel(archive) }}</span>
+          </div>
           <div
             v-if="archive.comment"
             class="meta-item comment"
@@ -275,6 +279,19 @@ function formatDate(dateStr: string): string {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+function isRetroAnalysisType(archive: Archive): boolean {
+  return archive.archive_type === 'Métriques Rétrospectives' || archive.archive_type === 'RETRO_ANALYSIS'
+}
+
+function extractEventLabel(archive: Archive): string {
+  try {
+    const data = JSON.parse(archive.data_json)
+    return data.eventLabel || data.eventType || 'Événement inconnu'
+  } catch {
+    return 'Événement inconnu'
+  }
 }
 
 function viewArchive(archive: Archive) {
