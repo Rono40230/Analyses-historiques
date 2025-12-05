@@ -119,7 +119,7 @@ const handleInputBlur = () => {
 
 <style scoped>
 .searchable-dropdown-wrapper { position: relative; }
-.dropdown-header { display: flex; align-items: center; width: 200px; padding: 12px 16px; border: 2px solid #ccc; border-radius: 8px; background: #ffffff; transition: all 0.3s; overflow: hidden; gap: 8px; }
+.dropdown-header { display: flex; align-items: center; width: 200px; padding: 12px 16px; border: 2px solid #ccc; border-radius: 8px; background: #ffffff; transition: all 0.3s; overflow: hidden; gap: 8px; box-sizing: border-box; }
 .dropdown-header:hover { border-color: #999; background: #f9f9f9; }
 .dropdown-input { flex: 1; background: transparent; border: none; color: #000000; font-size: 1em; outline: none; cursor: text; padding: 0; margin: 0; }
 .dropdown-input::placeholder { color: #999999; }
