@@ -10,6 +10,7 @@
         :confidence="Math.round((data?.peakDelayResults?.confidence ?? 0) * 100)"
         :event-count="data?.peakDelayResults?.event_count ?? 0"
         :entry-seconds="data?.peakDelayResults?.optimal_entry_seconds_before ?? 0"
+        :event-label="data?.eventLabel || data?.pair"
         :is-archive-mode="true"
       />
     </div>
