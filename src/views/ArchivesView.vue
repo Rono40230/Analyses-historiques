@@ -117,7 +117,7 @@
             <span class="meta-label">🕒 Créé le:</span>
             <span class="meta-value">{{ formatDate(archive.created_at) }}</span>
           </div>
-          <div v-if="archive.archive_type === 'Métriques Rétrospectives'" class="meta-item">
+          <div v-if="archive.archive_type === 'Métriques Rétrospectives' && extractEventLabel(archive) !== 'Événement inconnu'" class="meta-item">
             <span class="meta-label">📊 Événement:</span>
             <span class="meta-value">{{ extractEventLabel(archive) }}</span>
           </div>
@@ -294,8 +294,9 @@ function isRetroAnalysisType(archive: Archive): boolean {
 function extractEventLabel(archive: Archive): string {
   try {
     const data = JSON.parse(archive.data_json)
-    const label = data.eventLabel || data.eventType || 'Événement inconnu'
-    return label
+    // Chercher eventLabel en priorité, puis eventType, puis pair (paire)
+    const label = data.eventLabel || data.eventType || data.pair || ''
+    return label.trim() || 'Événement inconnu'
   } catch (e) {
     return 'Événement inconnu'
   }
