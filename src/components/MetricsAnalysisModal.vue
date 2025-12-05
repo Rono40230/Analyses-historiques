@@ -60,6 +60,12 @@ const archiveDataJson = ref('')
 const loadAnalysis = async () => {
   if (!props.analysisResult) return
   try {
+    // En mode archive, les données sont déjà complètes - pas de recalcul
+    if (props.isArchiveMode) {
+      // Juste afficher les données sauvegardées sans recalculer
+      return
+    }
+    // Mode normal: recalculer les analyses
     if (props.preSelectedHour !== undefined && props.preSelectedQuarter !== undefined) {
       await updateAnalysisForQuarter(props.analysisResult, props.preSelectedHour, props.preSelectedQuarter)
       const symbol = props.analysisResult.symbol || 'EURUSD'
@@ -76,6 +82,8 @@ watch(() => props.analysisResult, loadAnalysis)
 watch(() => props.isOpen, (isOpen) => { if (isOpen) loadAnalysis() })
 watch(() => ({ hour: props.preSelectedHour, quarter: props.preSelectedQuarter }), async (newSelection) => {
   if (newSelection.hour !== undefined && newSelection.quarter !== undefined && props.analysisResult) {
+    // Ne pas recalculer en mode archive
+    if (props.isArchiveMode) return
     try {
       await updateAnalysisForQuarter(props.analysisResult, newSelection.hour, newSelection.quarter)
       const symbol = props.analysisResult.symbol || 'EURUSD'
