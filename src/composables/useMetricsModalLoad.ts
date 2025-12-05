@@ -1,15 +1,78 @@
 // composables/useMetricsModalLoad.ts - Logic for loading metrics in MetricsAnalysisModal
 import { watch, onMounted, Ref } from 'vue'
 import type { AnalysisResult } from '../stores/volatility'
+import type { SliceAnalysis } from '../utils/straddleAnalysis'
 import { useMetricsAnalysisData } from './useMetricsAnalysisData'
 import { useStraddleAnalysis } from './useStraddleAnalysis'
+
+interface MovementQuality {
+  hour: number
+  quarter: number
+  score: number
+  [key: string]: any
+}
+
+interface VolatilityDuration {
+  [key: string]: any
+}
+
+interface TradingPlan {
+  [key: string]: any
+}
+
+interface EntryWindowAnalysis {
+  optimal_offset: number
+  optimal_win_rate: number
+  [key: string]: any
+}
+
+interface OptimalOffset {
+  offset_pips: number
+  percentile_95_wicks: number
+  with_margin: number
+  sl_adjusted_pips: number
+}
+
+interface WinRateMetric {
+  total_trades: number
+  wins: number
+  losses: number
+  whipsaws: number
+  win_rate_percentage: number
+  win_rate_adjusted: number
+}
+
+interface WhipsawMetric {
+  total_trades: number
+  whipsaw_count: number
+  whipsaw_frequency_percentage: number
+  risk_level: string
+  risk_color: string
+  sl_adjusted_pips: number
+  win_rate_adjusted: number
+  trailing_stop_adjusted: number
+  timeout_adjusted_minutes: number
+  whipsaw_details: any[]
+}
+
+export interface ArchivedAnalysisData {
+  analysisResult: AnalysisResult
+  sliceAnalyses: SliceAnalysis[]
+  movementQualities: Record<string, MovementQuality>
+  volatilityDuration: VolatilityDuration
+  tradingPlan: TradingPlan
+  entryWindowAnalysis: EntryWindowAnalysis
+  offsetOptimal: OptimalOffset
+  winRate: WinRateMetric
+  whipsawAnalysis: WhipsawMetric
+}
 
 interface ModalProps {
   analysisResult: AnalysisResult | null
   isArchiveMode?: boolean
   preSelectedHour?: number
   preSelectedQuarter?: number
-  archivedData?: any
+  archivedData?: ArchivedAnalysisData
 }
 
 export function useMetricsModalLoad(props: ModalProps, isOpen: Ref<boolean>) {
@@ -72,3 +135,4 @@ export function useMetricsModalLoad(props: ModalProps, isOpen: Ref<boolean>) {
 
   return { analysisData, sliceAnalyses, movementQualities, volatilityDuration, tradingPlan, entryWindowAnalysis, offsetOptimal, winRate, whipsawAnalysis }
 }
+

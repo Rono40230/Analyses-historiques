@@ -24,9 +24,9 @@
 <script setup lang="ts">
 import { ref, withDefaults } from 'vue'
 import type { AnalysisResult } from '../stores/volatility'
+import { useMetricsModalLoad, type ArchivedAnalysisData } from '../composables/useMetricsModalLoad'
 import ArchiveModal from './ArchiveModal.vue'
 import { useStraddleAnalysis } from '../composables/useStraddleAnalysis'
-import { useMetricsModalLoad } from '../composables/useMetricsModalLoad'
 import BestSliceCard from './metrics/BestSliceCard.vue'
 import MetricsGrid from './metrics/MetricsGrid.vue'
 import VolatilityDurationSection from './metrics/VolatilityDurationSection.vue'
@@ -39,7 +39,7 @@ interface Props {
   selectedSymbol?: string
   preSelectedHour?: number
   preSelectedQuarter?: number
-  archivedData?: any
+  archivedData?: ArchivedAnalysisData
 }
 
 const props = withDefaults(defineProps<Props>(), {
