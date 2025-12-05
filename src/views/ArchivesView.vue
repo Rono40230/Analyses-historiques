@@ -2,11 +2,31 @@
   <div class="archives-container">
     <div class="archives-header">
       <div class="header-content">
-        <div>
-          <h1>🗄️ Archives</h1>
-          <p class="subtitle">
-            Consultez vos analyses sauvegardées
-          </p>
+        <div class="header-title-section">
+          <div>
+            <h1>🗄️ Archives</h1>
+            <p class="subtitle">
+              Consultez vos analyses sauvegardées
+            </p>
+          </div>
+          <!-- Dropdown pour les paires dans le header -->
+          <div class="header-pair-filter">
+            <label for="pair-select" class="filter-label">💱 Paire :</label>
+            <select 
+              id="pair-select"
+              v-model="selectedPair"
+              class="pair-select"
+            >
+              <option value="all">Toutes les paires</option>
+              <option 
+                v-for="pair in availablePairs" 
+                :key="pair"
+                :value="pair"
+              >
+                {{ pair }}
+              </option>
+            </select>
+          </div>
         </div>
         <button
           class="ai-btn"
@@ -80,70 +100,84 @@
 
     <div
       v-else
-      class="archives-grid"
+      class="archives-container-accordion"
     >
+      <!-- Sections d'archives groupées par type -->
       <div 
-        v-for="archive in archiveStore.archives" 
-        :key="archive.id" 
-        class="archive-card"
+        v-for="(archives, type) in archivesByType" 
+        :key="type"
+        class="archive-section"
       >
-        <div class="archive-header">
+        <div 
+          class="section-header"
+          @click="toggleTypeExpansion(type)"
+        >
+          <span class="section-toggle">
+            {{ expandedTypes.has(type) ? '▼' : '▶' }}
+          </span>
           <div
             class="archive-type-badge"
-            :class="getTypeClass(archive.archive_type)"
+            :class="getTypeClass(type)"
           >
-            {{ archive.archive_type }}
+            {{ type }}
           </div>
-          <button
-            class="delete-btn"
-            title="Supprimer"
-            @click="confirmDelete(archive)"
-          >
-            🗑️
-          </button>
+          <span class="section-count">{{ archives.length }} archive{{ archives.length > 1 ? 's' : '' }}</span>
         </div>
 
-        <h3
-          class="archive-title"
-          v-html="formatTitleHTML(archive.title)"
-        />
-        
-        <div class="archive-meta">
-          <div class="meta-item">
-            <span class="meta-label">📅 Période:</span>
-            <span class="meta-value">{{ formatPeriod(archive.period_start, archive.period_end) }}</span>
-          </div>
-          <div class="meta-item">
-            <span class="meta-label">🕒 Créé le:</span>
-            <span class="meta-value">{{ formatDate(archive.created_at) }}</span>
-          </div>
-          <div v-if="archive.archive_type === 'Métriques Rétrospectives' && extractEventLabel(archive) !== 'Événement inconnu'" class="meta-item">
-            <span class="meta-label">📊 Événement:</span>
-            <span class="meta-value">{{ extractEventLabel(archive) }}</span>
-          </div>
-          <div
-            v-if="archive.comment"
-            class="meta-item comment"
+        <!-- Grille d'archives (compact) -->
+        <transition name="collapse">
+          <div 
+            v-if="expandedTypes.has(type)"
+            class="archives-grid-compact"
           >
-            <span class="meta-label">💬 Commentaire:</span>
-            <span class="meta-value">{{ archive.comment }}</span>
-          </div>
-        </div>
+            <div 
+              v-for="archive in archives" 
+              :key="archive.id" 
+              class="archive-card-compact"
+            >
+              <div class="card-header">
+                <h3 class="card-title" v-html="formatTitleHTML(archive.title)" />
+                <button
+                  class="delete-btn"
+                  title="Supprimer"
+                  @click="confirmDelete(archive)"
+                >
+                  🗑️
+                </button>
+              </div>
 
-        <div class="archive-actions">
-          <button
-            class="btn-view"
-            @click="viewArchive(archive)"
-          >
-            👁️ Voir
-          </button>
-          <button
-            class="btn-pdf"
-            @click="exportPDF(archive)"
-          >
-            📄 PDF
-          </button>
-        </div>
+              <div class="card-meta-compact">
+                <div class="meta-row">
+                  <span class="meta-label">📅</span>
+                  <span class="meta-value">{{ formatPeriod(archive.period_start, archive.period_end) }}</span>
+                </div>
+                <div class="meta-row">
+                  <span class="meta-label">🕒</span>
+                  <span class="meta-value">{{ formatDate(archive.created_at) }}</span>
+                </div>
+                <div v-if="archive.archive_type === 'Métriques Rétrospectives' && extractEventLabel(archive) !== 'Événement inconnu'" class="meta-row">
+                  <span class="meta-label">📊</span>
+                  <span class="meta-value">{{ extractEventLabel(archive) }}</span>
+                </div>
+              </div>
+
+              <div class="card-actions-compact">
+                <button
+                  class="btn-action-compact btn-view"
+                  @click="viewArchive(archive)"
+                >
+                  👁️ Voir
+                </button>
+                <button
+                  class="btn-action-compact btn-pdf"
+                  @click="exportPDF(archive)"
+                >
+                  📄 PDF
+                </button>
+              </div>
+            </div>
+          </div>
+        </transition>
       </div>
     </div>
 
@@ -212,7 +246,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { useArchiveStore, type Archive } from '../stores/archiveStore'
 import MetricsAnalysisModal from '../components/MetricsAnalysisModal.vue'
 import RetroactiveAnalysisResultsViewer from '../components/RetroactiveAnalysisResultsViewer.vue'
@@ -226,19 +260,93 @@ const viewerData = ref<any>(null)
 const isGlobalAnalysisOpen = ref(false)
 const showDeleteConfirmModal = ref(false)
 const archiveToDelete = ref<Archive | null>(null)
+const selectedPair = ref<string>('all')
+const expandedTypes = ref<Set<string>>(new Set())
 
 onMounted(async () => {
   await archiveStore.loadArchives()
+  // Expand the first section by default if archives exist
+  if (archiveStore.archives.length > 0) {
+    const firstType = archiveStore.archives[0].archive_type
+    expandedTypes.value.add(firstType)
+  }
+})
+
+// Computed property pour grouper et filtrer les archives par type
+const archivesByType = computed(() => {
+  let filtered = archiveStore.archives
+  
+  // Filtrer selon la paire sélectionnée
+  if (selectedPair.value !== 'all') {
+    filtered = filtered.filter(archive => {
+      try {
+        const data = JSON.parse(archive.data_json)
+        // Chercher la paire dans les données
+        const archivePair = data.pair || data.analysisResult?.symbol || null
+        return archivePair === selectedPair.value
+      } catch {
+        return false
+      }
+    })
+  }
+  
+  // Grouper par type
+  const grouped: Record<string, Archive[]> = {}
+  filtered.forEach(archive => {
+    const type = archive.archive_type
+    if (!grouped[type]) {
+      grouped[type] = []
+    }
+    grouped[type].push(archive)
+  })
+  
+  return grouped
+})
+
+// Basculer l'expansion/réduction d'une section de type
+function toggleTypeExpansion(type: string) {
+  if (expandedTypes.value.has(type)) {
+    expandedTypes.value.delete(type)
+  } else {
+    expandedTypes.value.add(type)
+  }
+}
+
+// Computed property pour récupérer les paires uniques disponibles
+const availablePairs = computed(() => {
+  const pairs = new Set<string>()
+  archiveStore.archives.forEach(archive => {
+    try {
+      const data = JSON.parse(archive.data_json)
+      // Chercher la paire dans les données de l'archive
+      if (data.pair) {
+        pairs.add(data.pair)
+      }
+      // Pour les archives Volatilité brute, chercher dans analysisResult
+      if (data.analysisResult?.symbol) {
+        pairs.add(data.analysisResult.symbol)
+      }
+      // Pour les heatmaps et corrélations
+      if (data.pairMetrics) {
+        Object.keys(data.pairMetrics).forEach(pair => pairs.add(pair))
+      }
+    } catch {
+      // Ignorer les erreurs de parsing
+    }
+  })
+  return Array.from(pairs).sort()
 })
 
 function getTypeClass(type: string): string {
   const mapping: Record<string, string> = {
     'Volatilité brute': 'type-metrics',
+    'Métriques Rétrospectives': 'type-default',
     'Corrélation événement/paire': 'type-event',
     'Corrélation paire/événement': 'type-pair',
     'Heatmap': 'type-heatmap',
     // Anciens types pour rétrocompatibilité
     'METRICS': 'type-metrics',
+    'RETRO_ANALYSIS': 'type-default',
     'EVENT_IMPACT': 'type-event',
     'PAIR_IMPACT': 'type-pair',
     'HEATMAP': 'type-heatmap'
@@ -367,6 +475,20 @@ function cancelDelete() {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 20px;
+}
+
+.header-title-section {
+  display: flex;
+  align-items: flex-end;
+  gap: 30px;
+  flex: 1;
+}
+
+.header-pair-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .archives-header h1 {
@@ -464,6 +586,206 @@ function cancelDelete() {
   gap: 25px;
 }
 
+/* Dropdown filter styles */
+.filter-dropdown {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-label {
+  color: #8b949e;
+  font-weight: 600;
+  font-size: 0.95em;
+}
+
+.pair-select {
+  padding: 10px 14px;
+  border: 2px solid #30363d;
+  background: #161b22;
+  color: #000000;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  font-size: 0.95em;
+  min-width: 150px;
+}
+
+.pair-select:hover {
+  border-color: #58a6ff;
+  background: #1a1f2e;
+}
+
+.pair-select:focus {
+  outline: none;
+  border-color: #58a6ff;
+  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+}
+
+.pair-select option {
+  background: #161b22;
+  color: #000000;
+}
+
+/* Accordion structure */
+.archives-container-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.archive-section {
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #161b22 0%, #1a2332 100%);
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.section-header:hover {
+  background: linear-gradient(135deg, #1a2332 0%, #212d3d 100%);
+  border-color: #58a6ff;
+}
+
+.section-toggle {
+  color: #58a6ff;
+  font-size: 1.1em;
+  transition: transform 0.2s;
+}
+
+.section-count {
+  margin-left: auto;
+  color: #8b949e;
+  font-size: 0.9em;
+}
+
+/* Compact grid for archives inside accordion */
+.archives-grid-compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 15px;
+  padding: 15px;
+  background: #0d1117;
+}
+
+.archive-card-compact {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  padding: 12px;
+  transition: all 0.3s;
+  height: fit-content;
+}
+
+.archive-card-compact:hover {
+  border-color: #58a6ff;
+  box-shadow: 0 8px 24px rgba(88, 166, 255, 0.2);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.card-title {
+  color: #e2e8f0;
+  font-size: 0.85em;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.3;
+  flex: 1;
+  word-break: break-word;
+}
+
+.card-meta-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+  font-size: 0.8em;
+}
+
+.meta-row {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.meta-row .meta-label {
+  color: #8b949e;
+  min-width: 18px;
+}
+
+.meta-row .meta-value {
+  color: #cbd5e0;
+  font-size: 0.85em;
+  flex: 1;
+}
+
+.card-actions-compact {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-action-compact {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: none;
+  font-weight: 600;
+  font-size: 0.75em;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-action-compact.btn-view {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-action-compact.btn-view:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+}
+
+.btn-action-compact.btn-pdf {
+  background: #2d3748;
+  color: #cbd5e0;
+}
+
+.btn-action-compact.btn-pdf:hover {
+  background: #4a5568;
+}
+
+/* Collapse transition for accordion */
+.collapse-enter-active, .collapse-leave-active {
+  transition: all 0.3s ease;
+}
+
+.collapse-enter-from {
+  opacity: 0;
+  height: 0;
+}
+
+.collapse-leave-to {
+  opacity: 0;
+  height: 0;
+}
+
 .archive-card {
   background: #161b22;
   border-radius: 12px;
@@ -509,6 +831,11 @@ function cancelDelete() {
 
 .type-heatmap {
   background: #dc2626;
+  color: white;
+}
+
+.type-default {
+  background: #16a34a;
   color: white;
 }
 
@@ -818,6 +1145,87 @@ function cancelDelete() {
   transform: translateY(0) scale(0.98);
 }
 
+/* Responsive styles for accordion and compact cards */
+@media (max-width: 1200px) {
+  .archives-grid-compact {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .header-title-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .header-pair-filter {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .filter-label {
+    font-size: 0.85em;
+  }
+
+  .pair-select {
+    padding: 8px 10px;
+    font-size: 0.85em;
+    min-width: 120px;
+  }
+
+  .archives-grid-compact {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .archive-card-compact {
+    padding: 10px;
+  }
+
+  .card-title {
+    font-size: 0.8em;
+  }
+
+  .card-meta-compact {
+    gap: 4px;
+  }
+
+  .btn-action-compact {
+    padding: 4px 6px;
+    font-size: 0.7em;
+  }
+}
+
+@media (max-width: 480px) {
+  .filters-bar {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .filter-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .archives-grid-compact {
+    grid-template-columns: 1fr;
+  }
+
+  .section-header {
+    padding: 12px 16px;
+  }
+
+  .archive-card-compact {
+    padding: 8px;
+  }
+
+  .card-actions-compact {
+    gap: 4px;
+  }
+}
+
 @media print {
   /* Masquer tout sauf la modale de visualisation */
   body > *:not(#app) {
@@ -845,7 +1253,9 @@ function cancelDelete() {
   .archives-header,
   .loading,
   .empty-state,
-  .archives-grid {
+  .archives-grid,
+  .archives-container-accordion,
+  .filters-bar {
     display: none !important;
   }
 
