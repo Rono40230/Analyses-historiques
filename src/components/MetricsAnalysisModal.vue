@@ -73,6 +73,10 @@ const loadAnalysis = async () => {
       await analyzeStraddleMetrics(symbol, props.preSelectedHour, props.preSelectedQuarter)
     } else {
       await updateAnalysis(props.analysisResult, false)
+      // Aussi analyser les métriques Straddle pour la meilleure heure détectée
+      const symbol = props.analysisResult.symbol || 'EURUSD'
+      const [bestHour, bestQuarter] = props.analysisResult.best_quarter
+      await analyzeStraddleMetrics(symbol, bestHour, bestQuarter)
     }
   } catch (error) {
     // Error handling
