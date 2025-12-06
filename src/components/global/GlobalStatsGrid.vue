@@ -27,82 +27,14 @@
         </div>
       </template>
     </MetricTooltip>
-
-    <MetricTooltip title="Confiance Moyenne">
-      <div class="stat-card glass">
-        <div class="stat-icon">
-          🎯
-        </div>
-        <div class="stat-info">
-          <span class="stat-label">Confiance Moyenne</span>
-          <span class="stat-value highlight">{{ result.global_stats.average_confidence.toFixed(1) }}/100</span>
-        </div>
-      </div>
-      <template #definition>
-        <div class="tooltip-section-title">
-          📖 Définition
-        </div>
-        <div class="tooltip-section-text">
-          Moyenne des scores de confiance de toutes vos analyses archivées. Ce score combine volatilité, qualité des ticks et fiabilité des signaux.
-        </div>
-      </template>
-      <template #scoring>
-        <div class="tooltip-section-title">
-          📊 Échelle de Confiance
-        </div>
-        <div class="tooltip-section-text">
-          • <strong>80-100</strong> : Scalp Agressif ✅<br>
-          • <strong>65-79</strong> : Scalp Normal 🟢<br>
-          • <strong>50-64</strong> : Scalp Prudent 🟡<br>
-          • <strong>35-49</strong> : Très Prudent 🟠<br>
-          • <strong>0-34</strong> : Ne pas trader ❌
-        </div>
-      </template>
-    </MetricTooltip>
-
-    <MetricTooltip title="Volatilité Moyenne">
-      <div class="stat-card glass">
-        <div class="stat-icon">
-          📈
-        </div>
-        <div class="stat-info">
-          <span class="stat-label">Volatilité Moyenne</span>
-          <span class="stat-value">{{ (result.global_stats.average_volatility * 100).toFixed(2) }}%</span>
-        </div>
-      </div>
-      <template #definition>
-        <div class="tooltip-section-title">
-          📖 Définition
-        </div>
-        <div class="tooltip-section-text">
-          Mesure l'amplitude moyenne des mouvements de prix sur toutes vos paires analysées. Calculée via l'ATR (Average True Range) normalisé.
-        </div>
-      </template>
-      <template #usage>
-        <div class="tooltip-section-title">
-          💡 Interprétation
-        </div>
-        <div class="tooltip-section-text">
-          • <strong>\u003c 10%</strong> : Marché calme, peu d'opportunités<br>
-          • <strong>10-25%</strong> : Volatilité idéale pour le scalping<br>
-          • <strong>\u003e 25%</strong> : Marché chaotique, risque élevé
-        </div>
-      </template>
-    </MetricTooltip>
   </div>
 </template>
 
 <script setup lang="ts">
 import MetricTooltip from '../MetricTooltip.vue'
 
-interface GlobalStats {
-  average_confidence: number
-  average_volatility: number
-}
-
 interface GlobalStatsResult {
   total_analyses: number
-  global_stats: GlobalStats
 }
 
 defineProps<{

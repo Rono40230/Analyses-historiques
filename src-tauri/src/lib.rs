@@ -221,6 +221,7 @@ pub fn run() {
             delete_archive,
             // Global Analysis (Phase IA)
             analyze_all_archives,
+            get_available_pairs,
             // Retrospective analysis commands (Phase 7)
             analyze_peak_delay,
             analyze_decay_profile,

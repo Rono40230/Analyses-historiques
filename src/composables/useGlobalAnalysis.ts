@@ -1,10 +1,8 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import type { GlobalAnalysisResult } from './globalAnalysisTypes'
 
 export { type GlobalStats, type BestPairGlobal, type GoldenHourGlobal, type TradableEventGlobal, type PairStraddleRateGlobal, type OptimalTimeWindowGlobal, type GlobalAnalysisResult } from './globalAnalysisTypes'
-
-const AVAILABLE_PAIRS = ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'USDCHF', 'NZDUSD', 'EURGBP', 'EURJPY', 'GBPJPY', 'AUDJPY', 'XAUUSD', 'USAIDX', 'DEUIDX']
 
 export function useGlobalAnalysis() {
   const loading = ref(false)
@@ -16,7 +14,7 @@ export function useGlobalAnalysis() {
   const startDate = ref('')
   const endDate = ref('')
   const selectedPairs = ref<string[]>([])
-  const availablePairs = ref<string[]>(AVAILABLE_PAIRS)
+  const availablePairs = ref<string[]>([])
 
   const sortedGoldenHours = computed(() => {
     if (!result.value) return []
@@ -47,6 +45,19 @@ export function useGlobalAnalysis() {
     logs.value.unshift(message)
     if (logs.value.length > 5) logs.value.pop()
   }
+
+  async function loadAvailablePairs() {
+    try {
+      const pairs = await invoke<string[]>('get_available_pairs')
+      availablePairs.value = pairs
+    } catch (e) {
+      // Fallback silencieux, on garde une liste vide
+      availablePairs.value = []
+    }
+  }
+
+  // Charger les paires à l'initialisation du composable
+  loadAvailablePairs()
 
   async function runAnalysis(animate = true) {
     loading.value = true
