@@ -62,14 +62,19 @@ export function useArchiveStatistics() {
   const archives = ref<NormalizedArchive[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const rawArchivesCount = ref(0)
+  const parseErrors = ref<string[]>([])
 
   async function loadAllArchives() {
     loading.value = true
     error.value = null
     archives.value = []
+    rawArchivesCount.value = 0
+    parseErrors.value = []
 
     try {
       const rawArchives = await invoke<RawArchive[]>('list_all_archives')
+      rawArchivesCount.value = rawArchives.length
       
       for (const raw of rawArchives) {
         try {
@@ -81,8 +86,8 @@ export function useArchiveStatistics() {
               archives.value.push(normalized)
             }
           }
-        } catch {
-          // Archive non parsable, ignorer silencieusement
+        } catch (e) {
+          parseErrors.value.push(`${raw.title}: ${String(e)}`)
         }
       }
     } catch (e) {
@@ -131,6 +136,8 @@ export function useArchiveStatistics() {
     archives: computed(() => archives.value),
     loading: computed(() => loading.value),
     error: computed(() => error.value),
+    rawArchivesCount: computed(() => rawArchivesCount.value),
+    parseErrors: computed(() => parseErrors.value),
     loadAllArchives,
     archivesByEvent,
     archivesByPair,

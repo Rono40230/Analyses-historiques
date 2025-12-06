@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useArchiveStatistics } from '../../composables/useArchiveStatistics'
 
-const { globalStats, eventStatistics, pairStatistics, archives } = useArchiveStatistics()
+const { globalStats, eventStatistics, pairStatistics, archives, rawArchivesCount, parseErrors } = useArchiveStatistics()
 
 const statsDisplay = computed(() => {
   if (!globalStats.value) {
@@ -164,11 +164,17 @@ const qualityLabel = computed(() => {
     <div class="mt-4 rounded-lg border border-red-500/30 bg-red-950/20 p-3">
       <div class="text-xs font-semibold text-red-300">🔴 DEBUG INFO</div>
       <p class="mt-1 text-xs text-gray-300">
-        Archives brutes chargées: {{ archives.length }} | 
+        Archives brutes chargées: {{ rawArchivesCount }} | 
         Globales: {{ statsDisplay.totalArchives }} | 
         Événements: {{ statsDisplay.totalEvents }} | 
         Paires: {{ statsDisplay.totalPairs }}
       </p>
+      <div v-if="parseErrors.length > 0" class="mt-2">
+        <p class="text-xs text-red-400">Erreurs de parsing:</p>
+        <p v-for="(err, idx) in parseErrors" :key="idx" class="text-xs text-red-300">
+          • {{ err }}
+        </p>
+      </div>
     </div>
   </div>
 </template>
