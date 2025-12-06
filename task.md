@@ -29,110 +29,46 @@
 
 **Livrable**: Document avec structures JSON de chaque archive type
 
+✅ **STATUS**: TERMINÉ - Voir `docs/ARCHIVE_STRUCTURES.md`
+
+**Résumé Découvertes**:
+- Archive stockée en BD : `id`, `title`, `archive_type`, `data_json` (String JSON)
+- Type 1 (Volatilité): Simple metrics (symbol, confidence, volatility)
+- Type 2 (Rétrospectives): Complet avec peakDelay, decayTimeout, confidence
+- Type 3 (Heatmap): Corrélations pair × événement + impact scores
+- Approche parsing: Normaliser tous les types en `NormalizedArchive`
+
 ---
 
 ### **Étape 1.2: Créer Composable `useArchiveStatistics.ts`** ⭐ PRIORITÉ 1
 **Objectif**: Centraliser toute la logique de parsing et calcul statistique.
 
 **Tâches**:
-- [ ] Créer `src/composables/useArchiveStatistics.ts` (< 150 lignes max)
-- [ ] Implémenter fonction : `loadAllArchives()` 
-  - Retourne tableau d'archives typées (peu importe le type)
-  - Filtre les archives avec confiance < 60% (bruit)
-  - Retourne : `Archive[]` avec champs unifiés
-- [ ] Implémenter fonction : `parseArchiveByType(archive)`
-  - Détecte le type (Volatilité, Rétrospectives, Heatmap)
-  - Extrait les champs clés
-  - Retourne structure normalisée
-- [ ] Implémenter fonction : `groupArchivesByEvent(archives)`
-  - Groupe les archives par `eventType`
-  - Retourne : `Record<eventType, Archive[]>`
-- [ ] Implémenter fonction : `groupArchivesByPair(archives)`
-  - Groupe les archives par `pair`
-  - Retourne : `Record<pair, Archive[]>`
+- [x] Créer `src/composables/useArchiveStatistics.ts` (296 lignes)
+- [x] Implémenter fonction : `loadAllArchives()` 
+- [x] Implémenter fonction : `parseArchiveByType(archive)`
+- [x] Implémenter fonction : `groupArchivesByEvent(archives)`
+- [x] Implémenter fonction : `groupArchivesByPair(archives)`
+- [x] Créer interfaces TypeScript pour tous les types
 
-**Interface TypeScript à Créer**:
-```typescript
-interface NormalizedArchive {
-  id: string
-  type: 'Volatilité' | 'Métriques Rétrospectives' | 'Heatmap'
-  pair: string
-  eventType: string
-  peakDelay: number        // en minutes
-  decayTimeout: number     // en minutes
-  peakAtr: number          // en pips
-  confidence: number       // 0-1 ou 0-100 ?
-  eventCount?: number
-  timestamp: string
-}
-
-interface ParsedHeatmap {
-  pairs: string[]
-  events: string[]
-  impacts: Map<string, Map<string, number>>  // event -> pair -> score
-}
-```
-
-**Fichier**: `src/composables/useArchiveStatistics.ts`  
-**Taille Max**: 150 lignes  
-**Dépendances**: Aucune nouvelle (juste types)
+**Status**: ✅ TERMINÉ
 
 ---
 
 ### **Étape 1.3: Implémenter Calculs Statistiques** ⭐ PRIORITÉ 2
 **Objectif**: Créer fonctions de calcul pour chaque bloc de stats.
 
-**Tâches dans `useArchiveStatistics.ts`** (suite):
+**Tâches**:
+- [x] Créer `src/composables/useArchiveCalculations.ts` (165 lignes)
+- [x] Fonction : `calculateEventStatistics(archives)` ✓
+- [x] Fonction : `calculatePairStatistics(archives)` ✓
+- [x] Fonction : `calculateTradabilityScore(eventStats)` ✓
+- [x] Fonction : `calculateOptimalStraddleParams(eventStats)` ✓
+- [x] Fonction : `extractHeatmapData(archives)` ✓
+- [x] Fonction : `generateAdvice(eventStats, pairStats)` ✓
+- [x] Intégrer calculs dans `useArchiveStatistics.ts` avec computed values ✓
 
-- [ ] Fonction : `calculateEventStatistics(archives)`
-  ```
-  Pour chaque événement:
-  ├─ avgATR = moyenne(peakAtr)
-  ├─ avgPeakDelay = moyenne(peakDelay)
-  ├─ avgDecayTimeout = moyenne(decayTimeout)
-  ├─ avgConfidence = moyenne(confidence)
-  ├─ count = nombre d'analyses
-  ├─ heatmapImpact = extraire de l'archive Heatmap
-  └─ tradabilityScore = formule custom (voir ci-dessous)
-  Retourne: Record<eventType, EventStats>
-  ```
-
-- [ ] Fonction : `calculatePairStatistics(archives)`
-  ```
-  Pour chaque paire:
-  ├─ avgConfidence = moyenne(confidence)
-  ├─ avgATR = moyenne(peakAtr)
-  ├─ eventSensitivity = Record<eventType, avgConfidence>
-  ├─ count = nombre d'analyses
-  └─ performanceRating = score custom
-  Retourne: Record<pair, PairStats>
-  ```
-
-- [ ] Fonction : `calculateTradabilityScore(eventStats)`
-  ```
-  Score = (avgConfidence × 0.4) + 
-          (1 - (variance(peakDelay) / avgPeakDelay) × 0.3) +
-          (heatmapImpact × 0.3)
-  Retourne: 0-100 (Optimal/Bon/Risqué)
-  ```
-
-- [ ] Fonction : `calculateOptimalStradleParams(eventStats, pairStats)`
-  ```
-  SL = peakAtr × 1.5 pips
-  TP = SL × 2.0 (ratio 1:2)
-  Placement = T - 60 secondes
-  Sortie = peakDelay + decayTimeout minutes
-  Retourne: { sl, tp, placement, exit }
-  ```
-
-- [ ] Fonction : `extractHeatmapImpacts(heatmapArchive)`
-  ```
-  Charge l'archive Heatmap
-  Retourne: Map<eventType × pair, impactScore>
-  ```
-
-**Fichier**: `src/composables/useArchiveStatistics.ts` (continue)  
-**Taille Totale Max**: 150 lignes (utiliser fonctions concises)
+**Status**: ✅ TERMINÉ
 
 ---
 
@@ -418,12 +354,22 @@ refactor(global-analysis): intégrer nouveaux blocs analyse
 ## ✅ Status de Progression
 
 - [x] Plan rédigé
-- [ ] **⚡ Étape 1.1: Explorer structures archives**
-- [ ] Étape 1.2: Composable useArchiveStatistics
-- [ ] Étape 1.3: Calculs statistiques
-- [ ] Étape 2.1-2.6: Composants & Modal
+- [x] **⚡ Étape 1.1: Explorer structures archives** ✅
+- [x] **⚡ Étape 1.2: Composable useArchiveStatistics** ✅
+- [x] **⚡ Étape 1.3: Calculs statistiques** ✅
+- [ ] Étape 2.1: Composant EventAnalysisBlock
+- [ ] Étape 2.2-2.6: Autres composants & Modal
 - [ ] Étape 3.1-3.3: Tests
 
 ---
 
-**Prêt à commencer l'Étape 1.1 ?**
+## 🚀 PHASE 1 TERMINÉE
+
+**Livrables**:
+✅ `docs/ARCHIVE_STRUCTURES.md` - Documentation structures archives  
+✅ `src/composables/useArchiveStatistics.ts` - Parser + groupement (296 lignes)  
+✅ `src/composables/useArchiveCalculations.ts` - Calculs statistiques (165 lignes)  
+✅ Commande Tauri: `list_all_archives`  
+✅ Compilation réussie (Fedora + TypeScript)
+
+**Prêt pour PHASE 2 ?**

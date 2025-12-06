@@ -32,6 +32,13 @@ pub async fn list_archives(
 }
 
 #[tauri::command]
+pub async fn list_all_archives(
+    archive_service: State<'_, ArchiveService>,
+) -> Result<Vec<Archive>, String> {
+    archive_service.list_archives()
+}
+
+#[tauri::command]
 pub async fn get_archive(
     archive_service: State<'_, ArchiveService>,
     archive_id: i32,

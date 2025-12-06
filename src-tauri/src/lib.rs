@@ -217,6 +217,7 @@ pub fn run() {
             // Archive commands
             save_archive,
             list_archives,
+            list_all_archives,
             get_archive,
             delete_archive,
             // Global Analysis (Phase IA)
