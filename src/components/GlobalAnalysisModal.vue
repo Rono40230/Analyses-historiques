@@ -6,83 +6,43 @@
   >
     <div class="modal-content">
       <div class="modal-header">
-        <h2>✨ IAnalyse Statistique</h2>
+        <h2>✨ IAnalyse Statistique - Archives</h2>
         <button
           class="close-button"
-          @click="$emit('close')"
+          @click="close"
         >
           ×
         </button>
       </div>
 
-      <!-- Barre de Filtres -->
-      <GlobalFiltersBar
-        v-model:start-date="startDate"
-        v-model:end-date="endDate"
-        v-model:selected-pairs="selectedPairs"
-        :loading="loading"
-        :available-pairs="availablePairs"
-        @run-analysis="runAnalysis(false)"
-      />
-
       <div class="modal-body">
-        <!-- ÉTAT 1 : CHARGEMENT (Animation Wow) -->
-        <LoadingState
-          v-if="loading"
-          :loading-step="loadingStep"
-          :progress="progress"
-          :logs="logs"
-        />
+        <!-- Statistiques Globales -->
+        <GlobalStatsBlock />
 
-        <!-- ÉTAT 2 : RÉSULTATS (Dashboard) -->
-        <div
-          v-else-if="result"
-          class="results-container"
-        >
-          <!-- En-tête Stats Globales -->
-          <GlobalStatsGrid :result="result" />
+        <!-- Événements Tradables -->
+        <EventAnalysisBlock />
 
-          <!-- Dashboard Grid (Top Paires & Golden Hours) -->
-          <DashboardGrid
-            :result="result"
-            :sorted-golden-hours="sortedGoldenHours"
-            :best-hour="bestHour"
-            :best-hour-reliability="bestHourReliability"
-            :best-pair="bestPair"
-          />
+        <!-- Performance par Paire -->
+        <PairAnalysisBlock />
 
-          <!-- Section Événements Tradables (pleine largeur) -->
-          <TradableEventsSection :result="result" />
+        <!-- Timing & Setup Straddle -->
+        <TimingAnalysisBlock />
 
-          <!-- Section Taux de Réussite Straddle (pleine largeur) -->
-          <StraddleSuccessSection :result="result" />
-
-          <!-- Section Fenêtres Temporelles Optimales (pleine largeur) -->
-          <OptimalTimingSection :result="result" />
-        </div>
-
-        <!-- ÉTAT 3 : ERREUR -->
-        <ErrorState
-          v-else-if="error"
-          :error="error"
-          @retry="runAnalysis()"
-        />
+        <!-- Recommandations Stratégiques -->
+        <AdviceBlock />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { defineEmits, defineProps, watch } from 'vue'
-import { useGlobalAnalysis } from '../composables/useGlobalAnalysis'
-import GlobalFiltersBar from './global/GlobalFiltersBar.vue'
+import { defineEmits, defineProps } from 'vue'
 import LoadingState from './global/LoadingState.vue'
-import GlobalStatsGrid from './global/GlobalStatsGrid.vue'
-import DashboardGrid from './global/DashboardGrid.vue'
-import TradableEventsSection from './global/TradableEventsSection.vue'
-import StraddleSuccessSection from './global/StraddleSuccessSection.vue'
-import OptimalTimingSection from './global/OptimalTimingSection.vue'
-import ErrorState from './global/ErrorState.vue'
+import GlobalStatsBlock from './analysis/GlobalStatsBlock.vue'
+import EventAnalysisBlock from './analysis/EventAnalysisBlock.vue'
+import PairAnalysisBlock from './analysis/PairAnalysisBlock.vue'
+import TimingAnalysisBlock from './analysis/TimingAnalysisBlock.vue'
+import AdviceBlock from './analysis/AdviceBlock.vue'
 
 const props = defineProps<{
   isOpen: boolean
@@ -92,32 +52,9 @@ const emit = defineEmits<{
   close: []
 }>()
 
-const {
-  loading,
-  result,
-  error,
-  loadingStep,
-  progress,
-  logs,
-  startDate,
-  endDate,
-  selectedPairs,
-  availablePairs,
-  sortedGoldenHours,
-  bestHour,
-  bestHourReliability,
-  bestPair,
-  runAnalysis
-} = useGlobalAnalysis()
-
 function close() {
   emit('close')
 }
-
-watch(() => props.isOpen, (newVal) => {
-  if (newVal) runAnalysis(true)
-})
-
 </script>
 
 <style scoped>
