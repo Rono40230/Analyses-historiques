@@ -70,6 +70,7 @@ export function useArchiveStatistics() {
 
     try {
       const rawArchives = await invoke<RawArchive[]>('list_all_archives')
+      
       for (const raw of rawArchives) {
         try {
           const normalized = parseArchiveByType(raw)

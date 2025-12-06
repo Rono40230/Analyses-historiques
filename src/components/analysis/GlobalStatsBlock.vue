@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useArchiveStatistics } from '../../composables/useArchiveStatistics'
 
-const { globalStats, eventStatistics, pairStatistics } = useArchiveStatistics()
+const { globalStats, eventStatistics, pairStatistics, archives } = useArchiveStatistics()
 
 const statsDisplay = computed(() => {
   if (!globalStats.value) {
@@ -158,6 +158,17 @@ const qualityLabel = computed(() => {
           {{ statsDisplay.totalEvents >= 15 ? 'Bonne diversification événementielle' : 'Augmentez l\'analyse sur plus d\'événements' }}
         </p>
       </div>
+    </div>
+
+    <!-- Debug Info -->
+    <div class="mt-4 rounded-lg border border-red-500/30 bg-red-950/20 p-3">
+      <div class="text-xs font-semibold text-red-300">🔴 DEBUG INFO</div>
+      <p class="mt-1 text-xs text-gray-300">
+        Archives brutes chargées: {{ archives.length }} | 
+        Globales: {{ statsDisplay.totalArchives }} | 
+        Événements: {{ statsDisplay.totalEvents }} | 
+        Paires: {{ statsDisplay.totalPairs }}
+      </p>
     </div>
   </div>
 </template>
