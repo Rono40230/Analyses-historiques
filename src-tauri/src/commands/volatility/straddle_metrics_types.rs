@@ -22,11 +22,11 @@ pub struct StraddleMetricsResponse {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OptimalOffsetData {
-    pub offset_pips: f64,
+    pub offset_points: f64,
     pub percentile_95_wicks: f64,
     pub with_margin: f64,
     /// Stop Loss ajusté par whipsaw: SL × (1 + whipsaw_frequency × 0.3)
-    pub sl_adjusted_pips: f64,
+    pub sl_adjusted_points: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -48,7 +48,7 @@ pub struct WhipsawData {
     pub risk_level: String,
     pub risk_color: String,
     /// Stop Loss ajusté par whipsaw
-    pub sl_adjusted_pips: f64,
+    pub sl_adjusted_points: f64,
     /// Win Rate ajusté par whipsaw
     pub win_rate_adjusted: f64,
     /// Trailing Stop ajusté par whipsaw: 1.59 × (1 - whipsaw_frequency / 2)
