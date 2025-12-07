@@ -84,11 +84,7 @@ export function formatPointsWithPips(symbol: string, points: number, decimals = 
   const pipsFormatted = pips.toFixed(decimals)
   const pointsFormatted = points.toFixed(1)
   
-  // Si pips et points sont identiques (crypto, indices), afficher une seule fois
-  if (Math.abs(pips - points) < 0.01) {
-    return `${pointsFormatted} points`
-  }
-  
+  // Toujours afficher la conversion pips pour transparence
   return `${pointsFormatted} points (soit ${pipsFormatted} pips)`
 }
 
