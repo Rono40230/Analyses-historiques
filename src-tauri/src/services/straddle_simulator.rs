@@ -2,6 +2,7 @@
 // Simule une stratégie Straddle sur l'historique complet d'un créneau
 
 use super::straddle_adjustments::AdjustedMetrics;
+use super::straddle_multipliers::calculate_sl_base;
 use super::straddle_simulator_helpers::{
     calculate_atr_mean, calculate_risk_level, find_trade_resolution, get_whipsaw_coefficient,
 };
@@ -133,7 +134,16 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
     let mut whipsaw_details_vec: Vec<WhipsawDetail> = Vec::new();
 
     let tp_distance = offset_optimal * 2.0;
-    let sl_distance = offset_optimal;
+    // === NOUVEAU : UTILISER LES MULTIPLICATEURS PAIR-SPÉCIFIQUES POUR LE SL ===
+    // Convertir ATR (en points) en valeur de prix pour le calcul du SL
+    let sl_base_distance = calculate_sl_base(atr_mean, symbol, false, None);
+    // Convertir le SL calculé en pips pour cohérence avec les calculs suivants
+    let sl_distance = normalize_to_pips(sl_base_distance, symbol);
+    
+    tracing::info!(
+        "Straddle SL config: pair={}, ATR={:.6}, SL_base={:.0}, SL_pips={:.0}",
+        symbol, atr_mean, sl_base_distance, sl_distance
+    );
 
     for (i, candle) in candles.iter().enumerate() {
         let open = candle.open;

@@ -32,6 +32,7 @@ pub mod session;
 pub mod session_analyzer;
 pub mod slice_metrics_analyzer;
 pub mod straddle_adjustments;
+pub mod straddle_multipliers;
 pub mod straddle_simulator;
 pub mod straddle_simulator_helpers;
 pub mod volatility;
