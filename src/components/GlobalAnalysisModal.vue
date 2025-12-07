@@ -18,7 +18,6 @@
       <div class="modal-body">
         <!-- Section: Statistiques Clés -->
         <section class="content-section">
-          <h3 class="section-title">📊 Statistiques Globales</h3>
           <GlobalStatsBlock />
         </section>
 

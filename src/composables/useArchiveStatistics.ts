@@ -4,21 +4,9 @@ import { parseArchiveByType } from './useArchiveParsers'
 import { calculateEventStatistics, calculatePairStatistics, calculateEventPairStatistics } from './useArchiveMetrics'
 import { extractHeatmapData, generateAdvice } from './useArchiveCalculations'
 import { calculateTrailingStop } from './useTrailingStopCalculation'
-import { NormalizedArchive, EventStats, PairStats, EventPairStats } from './useArchiveTypes'
+import type { NormalizedArchive } from './useArchiveTypes'
 
 export { calculateTrailingStop }
-export { NormalizedArchive, EventStats, PairStats, EventPairStats } from './useArchiveTypes'
-
-export interface RawArchive {
-  id: number
-  title: string
-  archive_type: string
-  period_start: string
-  period_end: string
-  comment?: string
-  created_at: string
-  data_json: string
-}
 
 // ============================================================================
 // COMPOSABLE - Instance globale partagée

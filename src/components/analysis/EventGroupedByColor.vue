@@ -2,8 +2,8 @@
 import { ref, computed } from 'vue'
 import { useArchiveStatistics } from '../../composables/useArchiveStatistics'
 import { useEventPairCorrelation } from '../../composables/useEventPairCorrelation'
-import { useEventDetail } from '../../composables/useEventDetail'
 import { useEventTranslation } from '../../composables/useEventTranslation'
+import type { EventDetailState } from '../../composables/useEventDetail'
 
 interface EventDisplay {
   eventType: string
@@ -19,24 +19,38 @@ interface GreenGroup {
   label: string
   events: EventDisplay[]
   isOpen: boolean
+  category: 'vert' | 'orange' | 'rouge'
 }
 
 const props = defineProps<{
   sortedEvents: EventDisplay[]
+  openDetail: (event: EventDetailState) => void
 }>()
 
 const { eventPairStatistics } = useArchiveStatistics()
 const { getPairsByEvent, hasHeatmapData } = useEventPairCorrelation()
-const { openDetail } = useEventDetail()
 const { translateEventName } = useEventTranslation()
 
 // État des accordéons (tous ouverts par défaut)
 const groupStates = ref<Record<number, boolean>>({})
 
+// Wrapper fonction pour getPairsByEvent (c'est un computed retournant une fonction)
+function getPairsByEventFunc(eventType: string) {
+  return getPairsByEvent.value(eventType)
+}
+
 // Compter les paires vertes par événement
 function countGreenPairs(eventType: string): number {
-  const pairs = getPairsByEvent(eventType)
+  const pairs = getPairsByEventFunc(eventType)
   return pairs.filter(p => p.impact >= 80).length
+}
+
+// Déterminer la catégorie (meilleur impact trouvé)
+function getCategory(eventType: string): 'vert' | 'orange' | 'rouge' {
+  const pairs = getPairsByEventFunc(eventType)
+  if (pairs.some(p => p.impact >= 80)) return 'vert'
+  if (pairs.some(p => p.impact >= 60)) return 'orange'
+  return 'rouge'
 }
 
 // Enrichir les événements avec le compte de paires vertes, puis trier
@@ -47,31 +61,28 @@ const eventsWithGreenCount = computed(() => {
   })).sort((a, b) => b.greenPairCount - a.greenPairCount)
 })
 
-// Grouper par nombre de paires vertes (en ordre descendant)
+// Grouper par catégorie (vert > orange > rouge)
 const groupedByGreen = computed<GreenGroup[]>(() => {
-  const groupMap = new Map<number, EventDisplay[]>()
+  const groups: GreenGroup[] = [
+    { greenCount: 0, label: '🟢 Paires Vertes', category: 'vert', events: [], isOpen: groupStates.value['vert'] ?? true },
+    { greenCount: 1, label: '🟡 Paires Oranges', category: 'orange', events: [], isOpen: groupStates.value['orange'] ?? true },
+    { greenCount: 2, label: '🔴 Paires Rouges', category: 'rouge', events: [], isOpen: groupStates.value['rouge'] ?? true },
+  ]
   
   for (const event of eventsWithGreenCount.value) {
-    const key = event.greenPairCount
-    if (!groupMap.has(key)) {
-      groupMap.set(key, [])
+    const category = getCategory(event.eventType)
+    const group = groups.find(g => g.category === category)
+    if (group) {
+      group.events.push(event)
     }
-    groupMap.get(key)!.push(event)
   }
-
-  // Tri par greenCount descendant
-  const sortedKeys = Array.from(groupMap.keys()).sort((a, b) => b - a)
   
-  return sortedKeys.map(greenCount => ({
-    greenCount,
-    label: greenCount === 0 ? '❌ Aucune paire verte' : `✅ ${greenCount} paire${greenCount > 1 ? 's' : ''} verte${greenCount > 1 ? 's' : ''}`,
-    events: groupMap.get(greenCount)!,
-    isOpen: groupStates.value[greenCount] ?? true
-  }))
+  // Retourner seulement les groupes avec des événements
+  return groups.filter(g => g.events.length > 0)
 })
 
-function toggleGroup(greenCount: number) {
-  groupStates.value[greenCount] = !groupStates.value[greenCount]
+function toggleGroup(category: string) {
+  groupStates.value[category] = !groupStates.value[category]
 }
 
 function getGroupBgColor(greenCount: number): string {
@@ -85,8 +96,6 @@ function getGroupBorderColor(greenCount: number): string {
   if (greenCount === 1) return '#fbbf24' // Orange
   return '#ef4444' // Rouge
 }
-
-function getImpactColor(impact: number): string {
   if (impact >= 80) return '#10b981'
   if (impact >= 60) return '#fbbf24'
   if (impact >= 40) return '#f97316'
@@ -107,7 +116,7 @@ function openEventDetail(eventType: string, pair: string) {
   
   if (!eventStats || !pairStats) return
   
-  openDetail({
+  props.openDetail({
     eventType,
     score: eventStats.tradabilityScore,
     avgATR: eventStats.avgATR,
@@ -125,32 +134,30 @@ function openEventDetail(eventType: string, pair: string) {
 <template>
   <div class="event-grouped-container">
     <!-- Green Count Groups (Accordion) -->
-    <div v-for="group in groupedByGreen" :key="group.greenCount" class="color-group">
+    <div v-for="group in groupedByGreen" :key="group.category" class="color-group">
       <!-- Group Header (Accordion Toggle) -->
       <div 
         class="group-header"
-        :style="{ backgroundColor: getGroupBgColor(group.greenCount), borderLeftColor: getGroupBorderColor(group.greenCount) }"
-        @click="toggleGroup(group.greenCount)"
+        :style="{ backgroundColor: getGroupBgColor(group.category === 'vert' ? 2 : group.category === 'orange' ? 1 : 0), borderLeftColor: getGroupBorderColor(group.category === 'vert' ? 2 : group.category === 'orange' ? 1 : 0) }"
+        @click="toggleGroup(group.category)"
       >
         <div class="group-title">
           <span class="group-label">{{ group.label }}</span>
           <span class="group-count">{{ group.events.length }} carte{{ group.events.length > 1 ? 's' : '' }}</span>
         </div>
         <div class="group-toggle">
-          <span class="toggle-icon" :class="{ open: groupStates[group.greenCount] }">▶</span>
+          <span class="toggle-icon" :class="{ open: groupStates[group.category] }">▶</span>
         </div>
       </div>
 
       <!-- Group Content (Cards) -->
-      <div v-if="groupStates[group.greenCount]" class="group-content">
+      <div v-if="groupStates[group.category]" class="group-content">
         <div v-for="event in group.events" :key="event.eventType" class="event-card">
           <!-- Event Header -->
           <div class="event-header">
             <div class="event-title-group">
-              <span class="event-icon">{{ event.icon }}</span>
               <div>
                 <h4 class="event-name">{{ translateEventName(event.eventType) }}</h4>
-                <span class="green-pairs-badge">✅ {{ event.greenPairCount }} paires vertes</span>
               </div>
             </div>
           </div>
@@ -170,7 +177,7 @@ function openEventDetail(eventType: string, pair: string) {
               <div class="metric-value">{{ Math.round(event.stats.avgConfidence) }}%</div>
             </div>
             <div class="metric-box">
-              <div class="metric-label">Analyses</div>
+              <div class="metric-label">Occurrences</div>
               <div class="metric-value">{{ event.stats.count }}</div>
             </div>
           </div>
@@ -179,17 +186,17 @@ function openEventDetail(eventType: string, pair: string) {
           <div v-if="hasHeatmapData" class="best-pairs-section">
             <div class="pairs-label">Meilleures Paires</div>
             <div class="pairs-list">
-              <div v-for="pair in getPairsByEvent(event.eventType).slice(0, 3)" :key="pair.pair" class="pair-badge" :style="{ borderLeftColor: getImpactColor(pair.impact) }">
+              <div v-for="pair in getPairsByEventFunc(event.eventType).slice(0, 3)" :key="pair.pair" class="pair-badge" :style="{ borderLeftColor: getImpactColor(pair.impact) }">
                 <span class="pair-icon">{{ getImpactIcon(pair.impact) }}</span>
                 <span class="pair-name">{{ pair.pair }}</span>
                 <span class="pair-impact">{{ Math.round(pair.impact) }}%</span>
               </div>
-              <div v-if="getPairsByEvent(event.eventType).length === 0" class="no-pairs">
+              <div v-if="getPairsByEventFunc(event.eventType).length === 0" class="no-pairs">
                 Aucune paire détectée
               </div>
             </div>
             <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-              <button v-for="pair in getPairsByEvent(event.eventType).slice(0, 3)" :key="pair.pair" class="detail-button" @click="openEventDetail(event.eventType, pair.pair)">
+              <button v-for="pair in getPairsByEventFunc(event.eventType).slice(0, 3)" :key="pair.pair" class="detail-button" @click="openEventDetail(event.eventType, pair.pair)">
                 {{ pair.pair }} →
               </button>
             </div>

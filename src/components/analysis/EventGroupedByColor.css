@@ -63,8 +63,8 @@
 
 /* Group Content */
 .group-content {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   gap: 12px;
   padding: 12px;
   background-color: rgba(15, 23, 42, 0.6);

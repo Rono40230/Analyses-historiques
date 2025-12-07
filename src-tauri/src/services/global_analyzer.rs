@@ -109,8 +109,8 @@ impl GlobalAnalyzer {
                     .unwrap_or_else(|_| {
                         // Fallback: utiliser l'époque Unix (1970-01-01)
                         chrono::NaiveDateTime::new(
-                            chrono::NaiveDate::from_ymd_opt(1970, 1, 1).unwrap(),
-                            chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap()
+                            chrono::NaiveDate::from_ymd_opt(1970, 1, 1).expect("epoch date is valid"),
+                            chrono::NaiveTime::from_hms_opt(0, 0, 0).expect("epoch time is valid")
                         )
                     });
                 let weight = calculate_temporal_weight(created_at_dt);
@@ -140,8 +140,8 @@ impl GlobalAnalyzer {
             .unwrap_or_else(|_| {
                 // Fallback: utiliser l'époque Unix (1970-01-01)
                 chrono::NaiveDateTime::new(
-                    chrono::NaiveDate::from_ymd_opt(1970, 1, 1).unwrap(),
-                    chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap()
+                    chrono::NaiveDate::from_ymd_opt(1970, 1, 1).expect("epoch date is valid"),
+                    chrono::NaiveTime::from_hms_opt(0, 0, 0).expect("epoch time is valid")
                 )
             });
         if let Some(start) = start_date {

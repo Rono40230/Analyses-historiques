@@ -68,7 +68,7 @@ const avgConfidence = computed(() => {
     </div>
 
     <!-- Events List (Grouped by Color) -->
-    <EventGroupedByColor v-if="sortedEvents.length > 0" :sorted-events="sortedEvents" />
+    <EventGroupedByColor v-if="sortedEvents.length > 0" :sorted-events="sortedEvents" :open-detail="openDetail" />
 
     <!-- Empty State -->
     <div v-else class="empty-state">

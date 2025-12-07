@@ -25,24 +25,6 @@ const statsDisplay = computed(() => {
 })
 const metrics = computed(() => [
   {
-    label: 'Archives Analysées',
-    value: statsDisplay.value.totalArchives,
-    icon: '📦',
-    color: 'from-blue-600 to-cyan-600',
-  },
-  {
-    label: 'Confiance Moyenne',
-    value: `${statsDisplay.value.avgConfidence}%`,
-    icon: '📊',
-    color: 'from-green-600 to-emerald-600',
-  },
-  {
-    label: 'Win Rate Estimé',
-    value: `${statsDisplay.value.estimatedWinRate}%`,
-    icon: '🎯',
-    color: 'from-purple-600 to-pink-600',
-  },
-  {
     label: 'Événements Suivis',
     value: statsDisplay.value.totalEvents,
     icon: '📅',
@@ -84,40 +66,7 @@ const qualityLabel = computed(() => {
         <div class="metric-value">{{ metric.value }}</div>
       </div>
     </div>
-    <!-- Blocs horizontaux -->
-    <div class="blocks-row">
-      <!-- Score de Qualité -->
-      <div class="block-item">
-        <div class="block-title">Score de Qualité</div>
-        <div class="quality-bar">
-          <div class="quality-fill" :style="{ width: `${qualityScore}%` }"></div>
-        </div>
-        <div class="block-footer">{{ qualityScore }}/100</div>
-      </div>
-      <!-- Couverture des Données -->
-      <div class="block-item">
-        <div class="block-title">Archives chargées</div>
-        <div class="coverage-bar">
-          <div class="coverage-fill" :style="{ width: `${(statsDisplay.totalArchives / 25) * 100}%` }"></div>
-        </div>
-        <div class="block-footer">{{ statsDisplay.totalArchives }}/25</div>
-      </div>
-      <!-- Événements -->
-      <div class="block-item">
-        <div class="block-title">Événements détectés</div>
-        <div class="event-badge">{{ statsDisplay.totalEvents }} types</div>
-      </div>
-      <!-- Paires -->
-      <div class="block-item">
-        <div class="block-title">Paires tradées</div>
-        <div class="pair-badge">{{ statsDisplay.totalPairs }} paires</div>
-      </div>
-      <!-- Qualité Label -->
-      <div class="block-item">
-        <div class="block-title">Évaluation</div>
-        <div class="quality-label-badge">{{ qualityLabel }}</div>
-      </div>
-    </div>
+    <!-- Blocs horizontaux - SUPPRIMÉS -->
   </div>
 </template>
 <style scoped>
@@ -131,7 +80,7 @@ const qualityLabel = computed(() => {
 /* Metrics Grid */
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -164,11 +113,9 @@ const qualityLabel = computed(() => {
   font-weight: 700;
   color: #4ecdc4;
 }
-/* Blocs Horizontaux */
+/* Blocs Horizontaux - SUPPRIMÉS */
 .blocks-row {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 12px;
+  display: none;
 }
 .block-item {
   background: rgba(0, 0, 0, 0.2);
