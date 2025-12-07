@@ -47,7 +47,7 @@
             Stop Loss
           </div>
           <div class="metric-value" style="color: #fff;">
-            {{ props.offsetOptimal?.sl_adjusted_points?.toFixed(1) ?? 'N/A' }} <span class="unit">points</span>
+            {{ props.offsetOptimal?.sl_adjusted_points ? formatPointsWithPips('BTCUSD', props.offsetOptimal.sl_adjusted_points) : 'N/A' }}
           </div>
         </div>
         <template #definition>
@@ -72,7 +72,7 @@
             Trailing Stop
           </div>
           <div class="metric-value" style="color: #fff;">
-            {{ trailingStopValue() }} <span class="unit">points</span>
+            {{ formatPointsWithPips('BTCUSD', parseFloat(trailingStopValue())) }}
           </div>
         </div>
         <template #definition>
@@ -122,6 +122,7 @@ import MetricTooltip from '../MetricTooltip.vue'
 import { useMetricsFormatting } from '../../composables/useMetricsFormatting'
 import { calculateTrailingStop } from '../../composables/useTrailingStopCalculation'
 import { getWinrateColor } from './BidiParametersSection.helpers'
+import { formatPointsWithPips } from '../../utils/pipConverter'
 
 interface SliceAnalysis { slice: { startTime: string; hour: number; quarter: number } }
 interface EntryWindowAnalysis { optimal_offset: number }
