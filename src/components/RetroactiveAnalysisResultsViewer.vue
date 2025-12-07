@@ -5,7 +5,7 @@
         :peak-delay="data?.peakDelayResults?.peak_delay_minutes ?? 0"
         :decay-timeout="data?.decayResults?.recommended_timeout_minutes ?? 0"
         :peak-atr="data?.peakDelayResults?.peak_atr ?? 0"
-        :decay-rate="data?.decayResults?.decay_rate_pips_per_minute ?? 0"
+        :decay-rate="data?.decayResults?.decay_rate_points_per_minute ?? 0"
         :decay-speed="data?.decayResults?.decay_speed ?? 'N/A'"
         :confidence="Math.round((data?.peakDelayResults?.confidence ?? 0) * 100)"
         :event-count="data?.peakDelayResults?.event_count ?? 0"
@@ -29,7 +29,7 @@ interface ArchivedRetroData {
   }
   decayResults?: {
     recommended_timeout_minutes: number
-    decay_rate_pips_per_minute: number
+    decay_rate_points_per_minute: number
     decay_speed: string
   }
   pair?: string

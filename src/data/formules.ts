@@ -101,9 +101,9 @@ export const formules: Record<string, Formule> = {
     output: {
       type: 'float',
       range: '0.0 - ∞',
-      unite: 'pips'
+      unite: 'points MetaTrader 5'
     },
-    exemple: 'EURUSD M1: ATR = 12.5 pips (volatilité moyenne)',
+    exemple: 'EURUSD M1: ATR = 12.5 points (volatilité moyenne)',
     notes: [
       'Sensible aux gaps (inclus dans TR)',
       'Wilder\'s EMA plus fluide que SMA',
@@ -122,9 +122,9 @@ export const formules: Record<string, Formule> = {
     output: {
       type: 'float',
       range: '0.0 - ∞',
-      unite: 'pips'
+      unite: 'points MetaTrader 5'
     },
-    exemple: 'Hour 12:00-12:59: Range = 45 pips (moyenne de 60 candles M1)',
+    exemple: 'Hour 12:00-12:59: Range = 45 points (moyenne de 60 candles M1)',
     notes: [
       'Plus simple que ATR, ne compte pas les gaps',
       'Utile pour normaliser les TP/SL'

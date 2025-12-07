@@ -39,7 +39,7 @@
       :peak-delay="peakDelayResults.peak_delay_minutes"
       :decay-timeout="decayResults.recommended_timeout_minutes"
       :peak-atr="peakDelayResults.peak_atr"
-      :decay-rate="decayResults.decay_rate_pips_per_minute"
+      :decay-rate="decayResults.decay_rate_points_per_minute"
       :decay-speed="decayResults.decay_speed"
       :confidence="Math.round(peakDelayResults.confidence * 100)"
       :event-count="peakDelayResults.event_count"

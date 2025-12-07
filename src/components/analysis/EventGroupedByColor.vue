@@ -168,7 +168,8 @@ function openEventDetail(eventType: string, pair: string) {
           <div class="metrics-grid">
             <div class="metric-box">
               <div class="metric-label">Volatilité ATR</div>
-              <div class="metric-value">{{ Math.round(event.stats.avgATR * 10) / 10 }}p</div>
+              <div class="metric-value">{{ Math.round(event.stats.avgATR * 10) / 10 }}</div>
+              <div style="font-size: 10px; color: #a0aec0;">points</div>
             </div>
             <div class="metric-box">
               <div class="metric-label">Pic (+/-)</div>
