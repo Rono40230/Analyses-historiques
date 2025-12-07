@@ -47,7 +47,7 @@
             Stop Loss
           </div>
           <div class="metric-value" style="color: #fff;">
-            {{ props.offsetOptimal?.sl_adjusted_points ? formatPointsWithPips('BTCUSD', props.offsetOptimal.sl_adjusted_points) : 'N/A' }}
+            {{ props.offsetOptimal?.sl_adjusted_points ? formatPointsWithPips(props.symbol || 'EURUSD', props.offsetOptimal.sl_adjusted_points) : 'N/A' }}
           </div>
         </div>
         <template #definition>
@@ -72,7 +72,7 @@
             Trailing Stop
           </div>
           <div class="metric-value" style="color: #fff;">
-            {{ formatPointsWithPips('BTCUSD', parseFloat(trailingStopValue())) }}
+            {{ formatPointsWithPips(props.symbol || 'EURUSD', parseFloat(trailingStopValue())) }}
           </div>
         </div>
         <template #definition>
@@ -141,6 +141,7 @@ const props = defineProps<{
   whipsawAnalysis?: WhipsawAnalysis
   offsetOptimal?: OffsetOptimal
   winRate?: WinRate
+  symbol?: string
 }>()
 
 const { calculateExactTime } = useMetricsFormatting()

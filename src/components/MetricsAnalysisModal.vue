@@ -7,7 +7,7 @@
           <BestSliceCard v-for="analysis in sliceAnalyses.filter(a => a.rank === 1)" :key="`slice-${analysis.rank}`" :analysis="analysis" :symbol="analysisData?.symbol" :volatility-duration="volatilityDuration" :movement-qualities="movementQualities" :whipsaw-analysis="whipsawAnalysis">
             <MetricsGrid :analysis="analysis" :analysis-data="analysisData" />
             <VolatilityDurationSection :volatility-duration="volatilityDuration" :trading-plan="tradingPlan" />
-            <BidiParametersSection :slice-analyses="sliceAnalyses" :entry-window-analysis="entryWindowAnalysis" :analysis="analysis" :volatility-duration="volatilityDuration" :whipsaw-analysis="whipsawAnalysis" :offset-optimal="offsetOptimal" :win-rate="winRate" />
+            <BidiParametersSection :slice-analyses="sliceAnalyses" :entry-window-analysis="entryWindowAnalysis" :analysis="analysis" :volatility-duration="volatilityDuration" :whipsaw-analysis="whipsawAnalysis" :offset-optimal="offsetOptimal" :win-rate="winRate" :symbol="analysisData?.symbol || 'EURUSD'" />
           </BestSliceCard>
         </div>
         <div v-if="!sliceAnalyses || sliceAnalyses.length === 0" class="loading-state">

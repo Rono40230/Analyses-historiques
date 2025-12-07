@@ -15,39 +15,45 @@ L'application actuelle calcule les ATR et les paramètres Straddle en **PIPS** (
 
 ## 🎯 Objectif
 Convertir tous les calculs de **PIPS → POINTS** et mettre à jour:
-1. Les parsers de données (import)
-2. Les calculs de statistiques
-3. Les formules Straddle
-4. L'affichage UI (labels + unités)
-5. La documentation (formules.ts)
+1. ✅ Les parsers de données (import)
+2. ✅ Les calculs de statistiques
+3. ✅ Les formules Straddle
+4. ✅ L'affichage UI (labels + unités)
+5. ✅ La documentation (formules.ts)
 
 ---
 
-## 📊 Fichiers à Modifier (Ordre de Priorité)
+## 📊 Fichiers Modifiés (Completed)
 
-### 🔴 PRIORITÉ HAUTE - Parsers & Imports
+### ✅ PHASES TERMINÉES
 
-#### 1. `src/composables/useArchiveParsers.ts`
-**Problème**: 
-- Ligne 50-52: Multiplication par 10000 pour convertir "décimales en pips"
-- Ligne 65-67: `peakAtrDecimal * 10000` crée des valeurs énormes
-- Ligne 127: Commentaire "volatilityValue est déjà en pips" (FAUX pour crypto)
+#### Phase 1: Parser & Statistiques (COMPLÉTÉE)
+- ✅ Suppression multiplication par 10000 dans `useArchiveParsers.ts`
+- ✅ Renommage `peakAtrPips` → `peakAtrPoints` partout
+- ✅ Validation avec données réelles (BTCUSD, EURUSD, USDJPY)
 
-**À faire**:
-- [ ] Supprimer la multiplication par 10000 dans `parseRetrospectiveArchive()`
-- [ ] Remplacer `peakAtrPips` par `peakAtrPoints`
-- [ ] Utiliser directement: `peakAtrPoints = peakAtrDecimal` (ou selon format source)
-- [ ] Mettre à jour commentaires pour clarifier "points MT5"
-- [ ] Tester avec données réelles (BTC, EURUSD, etc.)
+#### Phase 2: Formules Straddle (COMPLÉTÉE)
+- ✅ Mise à jour des calculs SL/TS en points
+- ✅ Straddle multiplicators.rs avec 11 pairs
+- ✅ Validation SL = offset × ratio_whipsaw × MUL (318 points pour BTC)
 
-**Code à changer**:
-```typescript
-// AVANT:
-const peakAtrPips = peakAtrDecimal * 10000
+#### Phase 3: pip_value Table (COMPLÉTÉE)
+- ✅ Création lookup table MT5 officielle
+- ✅ Correction straddle_simulator.rs avec getPipValue()
+- ✅ Validation: EURJPY 15 pips, XAUUSD 35 pips, BTCUSD 600 pips
 
-// APRÈS:
-const peakAtrPoints = peakAtrDecimal // Valeur déjà en points MT5
-```
+#### Phase 4: UI Conversion Display (COMPLÉTÉE)
+- ✅ Création utils/pipConverter.ts avec formatPointsWithPips()
+- ✅ Mise à jour BidiParametersSection.vue (SL + TS)
+- ✅ Mise à jour PairAnalysisBlock.vue (ATR)
+- ✅ Mise à jour EventDetailModal.vue (ATR)
+- ✅ Mise à jour EventGroupedByColor.vue (ATR)
+- ✅ Mise à jour RetroAnalysisResults.vue (decay_rate)
+- ✅ Commit c58b8f8 "🎨 Ajout: Conversion pips affichée"
+
+---
+
+## 📐 Norme MT5 Pip_Value (Finalisée)
 
 ---
 
