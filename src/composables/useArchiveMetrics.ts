@@ -128,15 +128,15 @@ export function calculateEventPairStatistics(archives: NormalizedArchive[]): Rec
     stat.avgConfidence += archive.confidence
   }
 
-  // Moyenne + calcul SL/Trailing Stop
+  // Moyenne + calcul SL/Trailing Stop (en points MT5)
   for (const stat of Object.values(stats)) {
     stat.avgATR = stat.count > 0 ? stat.avgATR / stat.count : 0
     stat.avgConfidence = stat.count > 0 ? stat.avgConfidence / stat.count : 0
     
-    // SL = ATR × 1.5
-    stat.slAdjusted = Math.round((stat.avgATR * 1.5) * 10) / 10
+    // SL = ATR × 1.5 (en points MT5)
+    stat.slAdjusted = Math.round(stat.avgATR * 1.5 * 10) / 10
     
-    // Trailing Stop = ATR × 0.75 (50% du SL)
+    // Trailing Stop = ATR × 0.75 (50% du SL) en points MT5
     stat.trailingStopCoefficient = calculateTrailingStop(stat.avgATR)
   }
 

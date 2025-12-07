@@ -158,10 +158,10 @@ export function calculateTradingPlan(slice: Stats15Min, estimatedPriceValue: num
   
   return {
     entryTime: '—',
-    slPips: Math.round(slPoints * 10000),
+    slPips: Math.round(slPoints),
     slPoints: slPoints,
     slUsd: slUsd,
-    tpPips: Math.round(tpPoints * 10000),
+    tpPips: Math.round(tpPoints),
     tpPoints: tpPoints,
     tpUsd: tpUsd,
     tpRatio: tpPoints / slPoints,

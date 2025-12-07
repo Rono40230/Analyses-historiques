@@ -47,7 +47,7 @@ function parseVolatilityArchive(raw: RawArchive): NormalizedArchive | null {
 
 /**
  * Parser type "Métriques Rétrospectives" (20 archives)
- * Convertit les ATR de décimales en pips (×10000)
+ * Utilise directement les ATR en points MetaTrader 5 (pas de conversion)
  */
 function parseRetrospectiveArchive(raw: RawArchive): NormalizedArchive | null {
   try {
@@ -62,9 +62,8 @@ function parseRetrospectiveArchive(raw: RawArchive): NormalizedArchive | null {
       if (!titleMatch) return null
     }
 
-    // Convertir ATR de décimales en pips (×10000)
-    const peakAtrDecimal = data.peakDelayResults?.peak_atr || 0.004
-    const peakAtrPips = peakAtrDecimal * 10000
+    // ATR déjà en points MetaTrader 5 - pas de conversion
+    const peakAtrPoints = data.peakDelayResults?.peak_atr || 0.004
 
     const peakDelay = data.peakDelayResults?.peak_delay_minutes || 3.2
     const decayTimeout = data.decayResults?.recommended_timeout_minutes || 18.5
@@ -79,7 +78,7 @@ function parseRetrospectiveArchive(raw: RawArchive): NormalizedArchive | null {
       type: 'Métriques Rétrospectives',
       pair: finalPair,
       eventType,
-      peakAtr: peakAtrPips,
+      peakAtr: peakAtrPoints,
       peakDelay,
       decayTimeout,
       confidence,
@@ -93,38 +92,8 @@ function parseRetrospectiveArchive(raw: RawArchive): NormalizedArchive | null {
 
 /**
  * Parser type "Heatmap" (1 archive)
+ * Volatilité déjà en points MetaTrader 5
  * Structure réelle sauvegardée:
- * {
- *   heatmapData: {
- *     pairs: ["ADAUSD", "BTCUSD", ...],
- *     event_types: [{ name: "NFP", count: N, has_data: true }, ...],
- *     data: {
- *       "EventName": { "ADAUSD": 12.1, "BTCUSD": 74.5, ... },
- *       ...
- *     }
- *   }
- * }
- */
-function parseHeatmapArchive(raw: RawArchive): NormalizedArchive[] {
-  const results: NormalizedArchive[] = []
-
-  try {
-    const data = JSON.parse(raw.data_json)
-    const heatmapData = data.heatmapData || {}
-    const pairs = heatmapData.pairs || []
-    const eventTypes = heatmapData.event_types || []
-    const volatilityMatrix = heatmapData.data || {}
-
-    // Construire liste d'événements depuis event_types
-    const events = eventTypes.map((et: any) => et.name || String(et))
-
-    for (const eventType of events) {
-      const eventData = volatilityMatrix[eventType] || {}
-
-      for (const pair of pairs) {
-        const volatilityValue = eventData[pair] || 0
-
-        // volatilityValue est déjà en pips (ex: 12.1, 74.5)
         results.push({
           id: `${raw.id}-${eventType}-${pair}`,
           type: 'Heatmap',

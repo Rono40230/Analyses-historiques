@@ -5,9 +5,9 @@
 
 /**
  * Calcule le Trailing Stop
- * @param atr - Average True Range
+ * @param atr - Average True Range en points MetaTrader 5
  * @param whipsawFrequency - Fréquence whipsaw (0-1), optionnel
- * @returns Distance du Trailing Stop en pips
+ * @returns Distance du Trailing Stop en points MetaTrader 5
  */
 export function calculateTrailingStop(atr: number, whipsawFrequency: number = 0): number {
   const baseTS = atr * 0.75

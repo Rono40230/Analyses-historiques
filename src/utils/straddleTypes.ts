@@ -14,9 +14,25 @@ export interface DetectedTrap {
 }
 
 export interface TradingPlan {
-  entryTime: string; slPips: number; slPoints: number; slUsd: number; tpPips: number; tpPoints: number; tpUsd: number; tpRatio: number
-  atrPercentage: number; atrPoints: number; winProbability: number; avgGainR: number; avgLossR: number; tradeExpiration?: number
-  trailingStopCoefficient: number; recommendation: string; confidence: number; riskLevel: string; tradeDurationMinutes?: number
+  entryTime: string
+  slPips: number // Stop Loss en points MetaTrader 5
+  slPoints: number // Stop Loss en points MetaTrader 5 (même que slPips)
+  slUsd: number // Stop Loss en USD
+  tpPips: number // Take Profit en points MetaTrader 5
+  tpPoints: number // Take Profit en points MetaTrader 5 (même que tpPips)
+  tpUsd: number // Take Profit en USD
+  tpRatio: number // Ratio TP/SL
+  atrPercentage: number // ATR en % du prix
+  atrPoints: number // ATR en points MetaTrader 5
+  winProbability: number // Probabilité gain %
+  avgGainR: number // Gain moyen en multiples du risque
+  avgLossR: number // Perte moyenne en multiples du risque
+  tradeExpiration?: number // Durée du trade en minutes
+  trailingStopCoefficient: number // Coefficient Trailing Stop en points
+  recommendation: string // Recommandation
+  confidence: number // Confiance 0-100
+  riskLevel: string // Niveau risque
+  tradeDurationMinutes?: number // Durée estimée en minutes
 }
 
 export interface SliceAnalysis {
@@ -24,5 +40,11 @@ export interface SliceAnalysis {
 }
 
 export interface BidiParameters {
-  entryTime: string; slPips: number; tpPips: number; winRate: number; avgGain: number; tradeExpiration: number; bestHourReliability: number
+  entryTime: string
+  slPips: number // Stop Loss en points MetaTrader 5
+  tpPips: number // Take Profit en points MetaTrader 5
+  winRate: number // Taux de réussite
+  avgGain: number // Gain moyen
+  tradeExpiration: number // Durée en minutes
+  bestHourReliability: number // Fiabilité %
 }

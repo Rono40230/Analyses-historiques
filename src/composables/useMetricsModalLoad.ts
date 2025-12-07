@@ -27,10 +27,10 @@ interface EntryWindowAnalysis {
 }
 
 interface OptimalOffset {
-  offset_pips: number
+  offset_points: number // Points MetaTrader 5
   percentile_95_wicks: number
   with_margin: number
-  sl_adjusted_pips: number
+  sl_adjusted_points: number // Points MetaTrader 5
 }
 
 interface WinRateMetric {
@@ -48,7 +48,7 @@ interface WhipsawMetric {
   whipsaw_frequency_percentage: number
   risk_level: string
   risk_color: string
-  sl_adjusted_pips: number
+  sl_adjusted_points: number // Points MetaTrader 5
   win_rate_adjusted: number
   trailing_stop_adjusted: number
   timeout_adjusted_minutes: number

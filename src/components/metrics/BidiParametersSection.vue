@@ -47,7 +47,7 @@
             Stop Loss
           </div>
           <div class="metric-value" style="color: #fff;">
-            {{ props.offsetOptimal?.sl_adjusted_pips?.toFixed(1) ?? 'N/A' }} <span class="unit">pips</span>
+            {{ props.offsetOptimal?.sl_adjusted_points?.toFixed(1) ?? 'N/A' }} <span class="unit">points</span>
           </div>
         </div>
         <template #definition>
@@ -72,7 +72,7 @@
             Trailing Stop
           </div>
           <div class="metric-value" style="color: #fff;">
-            {{ trailingStopValue() }} <span class="unit">pips</span>
+            {{ trailingStopValue() }} <span class="unit">points</span>
           </div>
         </div>
         <template #definition>
@@ -126,7 +126,7 @@ import { getWinrateColor } from './BidiParametersSection.helpers'
 interface SliceAnalysis { slice: { startTime: string; hour: number; quarter: number } }
 interface EntryWindowAnalysis { optimal_offset: number }
 interface WhipsawAnalysis { whipsaw_frequency_percentage: number; trailing_stop_adjusted: number; optimal_entry_minutes: number }
-interface OffsetOptimal { sl_adjusted_pips: number }
+interface OffsetOptimal { sl_adjusted_points: number }
 interface WinRate { win_rate_adjusted: number }
 interface VolatilityDuration { peak_duration_minutes: number }
 interface TradingPlan { trailingStopCoefficient: number }
@@ -156,9 +156,9 @@ const getBestTimeDisplay = () => {
 
 // Calcul du Trailing Stop avec la nouvelle formule unifiée + whipsaw
 const trailingStopValue = () => {
-  if (!props.offsetOptimal?.sl_adjusted_pips) return 'N/A'
+  if (!props.offsetOptimal?.sl_adjusted_points) return 'N/A'
   // Retrouver ATR à partir du SL: ATR = SL / 1.5
-  const atr = props.offsetOptimal.sl_adjusted_pips / 1.5
+  const atr = props.offsetOptimal.sl_adjusted_points / 1.5
   // Whipsaw en décimal (ex: 33% = 0.33)
   const whipsawFreq = (props.whipsawAnalysis?.whipsaw_frequency_percentage ?? 0) / 100
   // Appliquer la formule unifiée avec whipsaw: TS = ATR × 0.75 × (1 + whipsaw × 0.3)

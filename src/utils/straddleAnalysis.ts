@@ -38,8 +38,8 @@ export function calculateBidiParameters(bestSlice: Stats15Min, allSlices: Stats1
   
   return {
     entryTime: '—',
-    slPips: Math.round((bestSlice.atr_mean * 1.5) * 10000),
-    tpPips: Math.round((bestSlice.atr_mean * 2.5) * 10000),
+    slPips: Math.round(bestSlice.atr_mean * 1.5),
+    tpPips: Math.round(bestSlice.atr_mean * 2.5),
     winRate: 0.55,
     avgGain: 0.35,
     tradeExpiration: tradeDurationMinutes,
