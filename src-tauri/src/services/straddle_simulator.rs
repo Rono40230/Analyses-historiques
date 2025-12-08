@@ -3,7 +3,7 @@
 
 use super::straddle_adjustments::AdjustedMetrics;
 use super::straddle_simulator_helpers::{
-    calculate_atr_mean, calculate_risk_level, find_trade_resolution, get_whipsaw_coefficient,
+    calculate_atr_mean, calculate_risk_level, get_whipsaw_coefficient,
 };
 use crate::models::Candle;
 
@@ -141,14 +141,10 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
 
     // CORRECTION PHASE 8: Simuler UN SEUL trade avec fenêtre 60 min
     // (Au lieu de tester chaque candle comme point d'entrée)
-    let mut total_trades = 0;
-    let mut total_trades = 0;
+    let offset_optimal = atr_mean * 1.5;
     let mut whipsaws = 0;
     let mut whipsaw_weight_sum = 0.0;
     let mut whipsaw_details_vec: Vec<WhipsawDetail> = Vec::new();
-
-    let tp_distance = offset_optimal * 2.0;
-    let sl_distance = offset_optimal;
 
     // CORRECTION PHASE 8: Compter les double-triggers (whipsaw) en 60 min
     // Ne pas calculer win/loss car TP est dynamique (trailing stop)
@@ -187,7 +183,6 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
             // Si les 2 se sont déclenchés dans la fenêtre 60min
             if buy_triggered && sell_triggered {
                 whipsaws = 1;
-                total_trades = 1;
                 let whipsaw_duration_minutes = (buy_trigger_idx.max(sell_trigger_idx) - buy_trigger_idx.min(sell_trigger_idx)) as i32;
                 let coefficient = get_whipsaw_coefficient(whipsaw_duration_minutes);
                 whipsaw_weight_sum = coefficient;
@@ -205,13 +200,11 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
         }
 
         // Si pas de double trigger = pas de trade comptabilisé
-        if total_trades == 0 {
-            total_trades = 0;
-        }
     }
 
-    let mut wins = 0;
-    let mut losses = 0;
+    let total_trades = 0; // Pas comptabilisé (TP dynamique)
+    let wins = 0;         // Pas calculable avec TP dynamique
+    let losses = 0;       // Pas calculable avec TP dynamique
     let win_rate_percentage = 0.0; // Pas calculable avec TP dynamique
     
     // Whipsaw frequency = si double trigger détecté = 100%, sinon 0%

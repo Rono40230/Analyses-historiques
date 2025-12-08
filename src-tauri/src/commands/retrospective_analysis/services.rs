@@ -1,7 +1,6 @@
-use super::types::{DecayProfileResult, DecayProfileDetailedResult, PeakDelayResult, VolatilityProfileResult};
-use super::helpers::{setup_databases, load_events_by_type, calculate_atr};
+use super::helpers::calculate_atr;
 use crate::services::VolatilityDurationAnalyzer;
-use chrono::Duration;
+use chrono::{Duration, Timelike};
 
 pub struct RetroAnalysisService;
 
@@ -10,7 +9,7 @@ impl RetroAnalysisService {
         pair: &str,
         event_type: &str,
         events: &[crate::models::CalendarEvent],
-        loader: &crate::db::CandleLoader,
+        loader: &crate::services::DatabaseLoader,
     ) -> Result<(Vec<i16>, Vec<f64>), String> {
         let mut peak_delays = Vec::new();
         let mut peak_atrs = Vec::new();
@@ -45,7 +44,7 @@ impl RetroAnalysisService {
     pub async fn compute_decay_profile(
         pair: &str,
         events: &[crate::models::CalendarEvent],
-        loader: &crate::db::CandleLoader,
+        loader: &crate::services::DatabaseLoader,
     ) -> Result<(Vec<f64>, Vec<f64>), String> {
         let mut decay_rates = Vec::new();
         let mut peak_atrs = Vec::new();
@@ -78,7 +77,7 @@ impl RetroAnalysisService {
     pub async fn compute_volatility_profile(
         pair: &str,
         events: &[crate::models::CalendarEvent],
-        loader: &crate::db::CandleLoader,
+        loader: &crate::services::DatabaseLoader,
     ) -> Result<(Vec<f64>, f64, f64, f64, i32), String> {
         let mut all_atr_series: Vec<Vec<f64>> = Vec::new();
 
