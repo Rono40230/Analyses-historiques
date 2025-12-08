@@ -8,6 +8,7 @@ mod schema;
 mod services;
 
 use commands::*;
+use commands::retrospective_analysis::{analyze_decay_profile_detailed, analyze_volatility_profile};
 use std::sync::Mutex;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -226,6 +227,8 @@ pub fn run() {
             // Retrospective analysis commands (Phase 7)
             analyze_peak_delay,
             analyze_decay_profile,
+            analyze_decay_profile_detailed,
+            analyze_volatility_profile,
             get_event_types,
             // PDF export commands
             exporter_formules_pdf,

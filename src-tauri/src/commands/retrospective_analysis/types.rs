@@ -25,6 +25,37 @@ pub struct DecayProfileResult {
     pub event_type: String,
 }
 
+/// Detailed decay profile with ATR timeline
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DecayProfileDetailedResult {
+    pub peak_atr: f64,
+    pub decay_rate_pips_per_minute: f64,
+    pub decay_speed: String,
+    pub recommended_timeout_minutes: i16,
+    pub event_count: usize,
+    pub event_type: String,
+    pub atr_timeline: Vec<f64>,           // ATR par minute (tous les 1min)
+    pub volatility_mean: Vec<f64>,        // Moyenne de volatilité par minute
+    pub volatility_std: Vec<f64>,         // Écart-type par minute
+    pub peak_minute: u16,                 // Minute où ATR = max
+    pub total_minutes_analyzed: u16,      // Durée totale en minutes
+}
+
+/// Volatility profile for retrospective analysis (T-30 to T+90)
+/// Y-axis: ATR5 (volatilité réelle mesurée sur fenêtre 5-min glissante)
+/// X-axis: Temps en minutes depuis événement (-30 = T-30, 0 = T0, 90 = T+90)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VolatilityProfileResult {
+    pub atr5_timeline: Vec<f64>,          // ATR5 glissant (121 points = T-30 à T+90)
+    pub peak_minute: u16,                 // Minute où ATR5 atteint le max (0 = T0, 30 = T-30, 120 = T+90)
+    pub peak_atr5: f64,                   // Valeur max d'ATR5
+    pub mean_atr5: f64,                   // Moyenne d'ATR5 sur la période
+    pub std_atr5: f64,                    // Écart-type d'ATR5
+    pub event_count: usize,               // Nombre d'occurrences analysées
+    pub event_type: String,
+    pub pair: String,
+}
+
 /// Available event types with count
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventTypeList {

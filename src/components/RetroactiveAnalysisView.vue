@@ -39,11 +39,16 @@
       :peak-delay="peakDelayResults.peak_delay_minutes"
       :decay-timeout="decayResults.recommended_timeout_minutes"
       :peak-atr="peakDelayResults.peak_atr"
-      :decay-rate="decayResults.decay_rate_points_per_minute"
+      :decay-rate="decayResults.decay_rate_pips_per_minute"
       :decay-speed="decayResults.decay_speed"
       :confidence="Math.round(peakDelayResults.confidence * 100)"
       :event-count="peakDelayResults.event_count"
       :event-label="getEventLabel(selectedEventType)"
+      :atr5-timeline="graphData?.atr5_timeline"
+      :peak-minute="graphData?.peak_minute"
+      :peak-atr5="graphData?.peak_atr5"
+      :mean-atr5="graphData?.mean_atr5"
+      :std-atr5="graphData?.std_atr5"
       @archive="openArchiveModal"
     />
 
@@ -66,6 +71,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { useRetrospectiveAnalysis } from '../composables/useRetrospectiveAnalysis'
+import { useRetroAnalysisGraphData } from '../composables/useRetroAnalysisGraphData'
 import ArchiveModal from './ArchiveModal.vue'
 import CalendarFileSelector from './CalendarFileSelector.vue'
 import RetroAnalysisResults from './RetroAnalysisResults.vue'
@@ -89,6 +95,8 @@ const onCalendarSelected = (filename: string) => {
 const { peakDelayLoading, peakDelayError, peakDelayResults, analyzePeakDelay, 
          decayLoading, decayError, decayResults, analyzeDecayProfile, 
          eventTypes, eventTypesError, eventTypesLoading, loadEventTypes, getEventLabel } = useRetrospectiveAnalysis()
+
+const { graphData, loading: graphLoading, chargerDonnéesGraph } = useRetroAnalysisGraphData()
 
 const pairs = ref<string[]>([])
 const selected = ref('')
@@ -126,6 +134,7 @@ async function load() {
   try {
     await analyzePeakDelay(selected.value, selectedEventType.value)
     await analyzeDecayProfile(selected.value, selectedEventType.value)
+    await chargerDonnéesGraph(selected.value, selectedEventType.value)
   } catch (e) {
     error.value = String(e)
   } finally {
