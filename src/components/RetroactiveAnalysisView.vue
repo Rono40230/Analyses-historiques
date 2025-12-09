@@ -36,19 +36,24 @@
 
     <RetroAnalysisResults
       v-else
-      :peak-delay="peakDelayResults.peak_delay_minutes"
-      :decay-timeout="decayResults.recommended_timeout_minutes"
-      :peak-atr="peakDelayResults.peak_atr"
-      :decay-rate="decayResults.decay_rate_pips_per_minute"
-      :decay-speed="decayResults.decay_speed"
-      :confidence="Math.round(peakDelayResults.confidence * 100)"
-      :event-count="peakDelayResults.event_count"
+      :atr-timeline-before="graphData?.atr_timeline_before"
+      :atr-timeline-after="graphData?.atr_timeline_after"
+      :body-timeline-before="graphData?.body_timeline_before"
+      :body-timeline-after="graphData?.body_timeline_after"
+      :noise-ratio-before="graphData?.noise_ratio_before ?? 0"
+      :noise-ratio-during="graphData?.noise_ratio_during ?? 0"
+      :noise-ratio-after="graphData?.noise_ratio_after ?? 0"
+      :volatility-increase-percent="graphData?.volatility_increase_percent ?? 0"
+      :event-count="graphData?.event_count ?? 0"
+      :event-type="selectedEventType"
+      :pair="selected"
+      :event-datetime="graphData?.event_datetime"
+      :timezone-offset="graphData?.timezone_offset"
+      :meilleur-moment="graphData?.meilleur_moment ?? 0"
+      :stop-loss="graphData?.stop_loss ?? 0"
+      :trailing-stop="graphData?.trailing_stop ?? 0"
+      :timeout="graphData?.timeout ?? 60"
       :event-label="getEventLabel(selectedEventType)"
-      :atr5-timeline="graphData?.atr5_timeline"
-      :peak-minute="graphData?.peak_minute"
-      :peak-atr5="graphData?.peak_atr5"
-      :mean-atr5="graphData?.mean_atr5"
-      :std-atr5="graphData?.std_atr5"
       @archive="openArchiveModal"
     />
 
@@ -143,12 +148,19 @@ async function load() {
 }
 
 function openArchiveModal() {
-  if (!peakDelayResults.value || !decayResults.value || !selected.value || !selectedEventType.value) return
-  archivePeriodStart.value = peakDelayResults.value.event_date_min
-  archivePeriodEnd.value = peakDelayResults.value.event_date_max
+  if (!graphData.value || !selected.value || !selectedEventType.value) return
+  archivePeriodStart.value = graphData.value.event_type // Format sera mis à jour avec la date réelle
+  archivePeriodEnd.value = graphData.value.pair // Format sera mis à jour avec la date réelle
   archiveDataJson.value = JSON.stringify({
-    peakDelayResults: peakDelayResults.value,
-    decayResults: decayResults.value,
+    atrTimelineBefore: graphData.value.atr_timeline_before,
+    atrTimelineAfter: graphData.value.atr_timeline_after,
+    bodyTimelineBefore: graphData.value.body_timeline_before,
+    bodyTimelineAfter: graphData.value.body_timeline_after,
+    noiseRatioBefore: graphData.value.noise_ratio_before,
+    noiseRatioDuring: graphData.value.noise_ratio_during,
+    noiseRatioAfter: graphData.value.noise_ratio_after,
+    volatilityIncreasePercent: graphData.value.volatility_increase_percent,
+    eventCount: graphData.value.event_count,
     pair: selected.value,
     eventType: selectedEventType.value,
     eventLabel: getEventLabel(selectedEventType.value)
@@ -162,20 +174,186 @@ function handleArchiveSaved() {
 </script>
 
 <style scoped>
-.container { height: 100dvh; padding: 20px; background: #0d1117; border-radius: 8px; color: #e2e8f0; display: flex; flex-direction: column; overflow: hidden; }
-.controls { margin-bottom: 20px; display: flex; gap: 20px; align-items: flex-end; flex-wrap: nowrap; flex-shrink: 0; }
-.control-group { display: flex; align-items: flex-end; gap: 10px; flex-shrink: 0; }
-label { display: block; color: #e2e8f0; font-weight: 600; margin-bottom: 8px; }
-:deep(.file-selector-inline) { margin: 0; }
-.pair-select { width: 200px; padding: 12px 16px; font-size: 1em; border: 2px solid #4a5568; border-radius: 8px; background: #2d3748; color: #000000 !important; cursor: pointer; transition: all 0.3s; }
-.pair-select:hover { border-color: #667eea; background: #374151; }
-.pair-select:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2); }
-.pair-select option { background: #ffffff; color: #000000 !important; }
-.spinner { text-align: center; color: #8b949e; padding: 40px; font-size: 1.2em; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; min-height: 300px; }
-.spinner::before { content: '⏳'; font-size: 60px; animation: hourglassFlip 1s ease-in-out infinite; display: block; order: -1; }
-.empty { text-align: center; color: #8b949e; padding: 40px; font-size: 1.2em; }
-.error { background: #3d2626; color: #f85149; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-.error-small { font-size: 0.85em; color: #f85149; margin-top: 5px; }
-.warning-small { font-size: 0.85em; color: #d29922; margin-top: 5px; }
-@keyframes hourglassFlip { 0% { transform: scaleX(1) rotateY(0deg); } 50% { transform: scaleX(-1) rotateY(180deg); } 100% { transform: scaleX(1) rotateY(360deg); } }
+.container { 
+  min-height: 100%;
+  padding: 12px 20px 20px 20px; 
+  background: #0d1117; 
+  border-radius: 8px; 
+  color: #e2e8f0; 
+  display: flex; 
+  flex-direction: column; 
+  overflow: auto;
+}
+
+.controls { 
+  margin-bottom: 15px; 
+  display: flex; 
+  gap: 15px; 
+  align-items: flex-end; 
+  flex-wrap: wrap; 
+  flex-shrink: 0;
+}
+
+.control-group { 
+  display: flex; 
+  align-items: flex-end; 
+  gap: 10px; 
+  flex-shrink: 0;
+}
+
+label { 
+  display: block; 
+  color: #e2e8f0; 
+  font-weight: 600; 
+  margin-bottom: 6px;
+  font-size: 0.95em;
+}
+
+:deep(.file-selector-inline) { 
+  margin: 0; 
+}
+
+.pair-select { 
+  min-width: 150px;
+  padding: 10px 12px; 
+  font-size: 0.95em; 
+  border: 2px solid #4a5568; 
+  border-radius: 6px; 
+  background: #2d3748; 
+  color: #000000 !important; 
+  cursor: pointer; 
+  transition: all 0.3s;
+}
+
+.pair-select:hover { 
+  border-color: #667eea; 
+  background: #374151; 
+}
+
+.pair-select:focus { 
+  outline: none; 
+  border-color: #667eea; 
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2); 
+}
+
+.pair-select option { 
+  background: #ffffff; 
+  color: #000000 !important; 
+}
+
+.spinner { 
+  text-align: center; 
+  color: #8b949e; 
+  padding: 20px; 
+  font-size: 1.1em; 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center; 
+  gap: 15px; 
+  min-height: auto;
+}
+
+.spinner::before { 
+  content: '⏳'; 
+  font-size: 50px; 
+  animation: hourglassFlip 1s ease-in-out infinite; 
+  display: block; 
+  order: -1; 
+}
+
+.empty { 
+  text-align: center; 
+  color: #8b949e; 
+  padding: 20px; 
+  font-size: 1.1em; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.error { 
+  background: #3d2626; 
+  color: #f85149; 
+  padding: 15px; 
+  border-radius: 8px; 
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+.error-small { 
+  font-size: 0.8em; 
+  color: #f85149; 
+  margin-top: 5px; 
+}
+
+.warning-small { 
+  font-size: 0.8em; 
+  color: #d29922; 
+  margin-top: 5px; 
+}
+
+@keyframes hourglassFlip { 
+  0% { transform: scaleX(1) rotateY(0deg); } 
+  50% { transform: scaleX(-1) rotateY(180deg); } 
+  100% { transform: scaleX(1) rotateY(360deg); } 
+}
+
+/* Responsive pour tablettes et petits écrans */
+@media (max-width: 768px) {
+  .container {
+    padding: 10px 15px 15px 15px;
+  }
+  
+  .controls {
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+  
+  label {
+    font-size: 0.9em;
+    margin-bottom: 4px;
+  }
+  
+  .pair-select {
+    min-width: 120px;
+    padding: 8px 10px;
+    font-size: 0.9em;
+  }
+}
+
+/* Responsive pour petits téléphones */
+@media (max-width: 480px) {
+  .container {
+    padding: 8px 10px 10px 10px;
+  }
+  
+  .controls {
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  
+  .control-group {
+    width: 100%;
+    flex-direction: column;
+  }
+  
+  label {
+    font-size: 0.85em;
+    margin-bottom: 3px;
+  }
+  
+  .pair-select {
+    width: 100%;
+    min-width: unset;
+    padding: 8px;
+    font-size: 0.85em;
+  }
+  
+  .spinner {
+    padding: 20px 10px;
+    font-size: 1em;
+  }
+}
 </style>

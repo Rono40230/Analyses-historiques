@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { useRetroAnalysisCache } from '../composables/useRetroAnalysisCache'
+
 export interface SymbolInfo {
   symbol: string
   file_path: string
@@ -102,6 +104,10 @@ export const useVolatilityStore = defineStore('volatility', () => {
   const loading = ref(false)
   const error = ref('')
   const dataRefreshTrigger = ref(0)
+  
+  // Utiliser le composable cache
+  const { retroAnalysisCache, cacheRetroAnalysis, getRetroAnalysisCache, clearRetroAnalysisCache, clearRetroAnalysisCacheForPair } = useRetroAnalysisCache()
+  
   const hasAnalysis = computed(() => analysisResult.value !== null)
   const bestQuarterStats = computed(() => {
     if (!analysisResult.value) return null
@@ -178,10 +184,15 @@ export const useVolatilityStore = defineStore('volatility', () => {
     dataRefreshTrigger,
     hasAnalysis,
     bestQuarterStats,
+    retroAnalysisCache,
     loadSymbols,
     analyzeSymbol,
     getHourlyStats,
     clearAnalysis,
     triggerDataRefresh,
+    cacheRetroAnalysis,
+    getRetroAnalysisCache,
+    clearRetroAnalysisCache,
+    clearRetroAnalysisCacheForPair,
   }
 })

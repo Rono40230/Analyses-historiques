@@ -56,6 +56,30 @@ pub struct VolatilityProfileResult {
     pub pair: String,
 }
 
+/// Event impact analysis: volatility comparison before/after event
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EventImpactResult {
+    pub atr_timeline_before: Vec<f64>,    // ATR moyen T-30 à T0 (30 points)
+    pub atr_timeline_after: Vec<f64>,     // ATR moyen T0 à T+90 (90 points)
+    pub body_timeline_before: Vec<f64>,   // Body% moyen T-30 à T0 (30 points)
+    pub body_timeline_after: Vec<f64>,    // Body% moyen T0 à T+90 (90 points)
+    pub noise_ratio_before: f64,          // Noise Ratio moyen avant événement
+    pub noise_ratio_during: f64,          // Noise Ratio au moment de l'événement
+    pub noise_ratio_after: f64,           // Noise Ratio moyen après événement
+    pub volatility_increase_percent: f64, // % d'augmentation ATR (après vs avant)
+    pub event_count: usize,               // Nombre d'occurrences analysées
+    pub event_type: String,
+    pub pair: String,
+    pub event_datetime: String,           // ISO 8601: heure moyenne de l'événement
+    pub timezone_offset: String,          // Ex: "UTC+0" ou "UTC-5"
+    
+    // === PARAMÈTRES BIDI POUR STRADDLE ===
+    pub meilleur_moment: f64,             // Offset optimal en minutes avant événement (T0 - meilleur_moment)
+    pub stop_loss: f64,                   // Stop Loss en pips (basé sur ATR moyen)
+    pub trailing_stop: f64,               // Trailing Stop coefficient (ajusté selon noise)
+    pub timeout: i32,                     // Timeout recommandé en minutes (basé sur decay de volatilité)
+}
+
 /// Available event types with count
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventTypeList {

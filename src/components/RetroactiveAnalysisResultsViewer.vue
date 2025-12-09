@@ -2,14 +2,22 @@
   <div class="retro-viewer">
     <div class="results-section">
       <RetroAnalysisResults
-        :peak-delay="data?.peakDelayResults?.peak_delay_minutes ?? 0"
-        :decay-timeout="data?.decayResults?.recommended_timeout_minutes ?? 0"
-        :peak-atr="data?.peakDelayResults?.peak_atr ?? 0"
-        :decay-rate="data?.decayResults?.decay_rate_points_per_minute ?? 0"
-        :decay-speed="data?.decayResults?.decay_speed ?? 'N/A'"
-        :confidence="Math.round((data?.peakDelayResults?.confidence ?? 0) * 100)"
-        :event-count="data?.peakDelayResults?.event_count ?? 0"
-        :event-label="data?.eventLabel || data?.pair"
+        :atr-timeline-before="data?.atrTimelineBefore"
+        :atr-timeline-after="data?.atrTimelineAfter"
+        :body-timeline-before="data?.bodyTimelineBefore"
+        :body-timeline-after="data?.bodyTimelineAfter"
+        :noise-ratio-before="data?.noiseRatioBefore ?? 0"
+        :noise-ratio-during="data?.noiseRatioDuring ?? 0"
+        :noise-ratio-after="data?.noiseRatioAfter ?? 0"
+        :volatility-increase-percent="data?.volatilityIncreasePercent ?? 0"
+        :event-count="data?.eventCount ?? 0"
+        :event-type="data?.eventType ?? ''"
+        :pair="data?.pair ?? ''"
+        :meilleur-moment="data?.meilleurMoment ?? 0"
+        :stop-loss="data?.stopLoss ?? 0"
+        :trailing-stop="data?.trailingStop ?? 0"
+        :timeout="data?.timeout ?? 60"
+        :event-label="data?.eventLabel"
         :is-archive-mode="true"
       />
     </div>
@@ -17,24 +25,26 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, computed } from 'vue'
+import { computed } from 'vue'
 import RetroAnalysisResults from './RetroAnalysisResults.vue'
 
 interface ArchivedRetroData {
-  peakDelayResults?: {
-    peak_delay_minutes: number
-    peak_atr: number
-    confidence: number
-    event_count: number
-  }
-  decayResults?: {
-    recommended_timeout_minutes: number
-    decay_rate_points_per_minute: number
-    decay_speed: string
-  }
-  pair?: string
+  atrTimelineBefore?: number[]
+  atrTimelineAfter?: number[]
+  bodyTimelineBefore?: number[]
+  bodyTimelineAfter?: number[]
+  noiseRatioBefore?: number
+  noiseRatioDuring?: number
+  noiseRatioAfter?: number
+  volatilityIncreasePercent?: number
+  eventCount?: number
   eventType?: string
+  pair?: string
   eventLabel?: string
+  meilleurMoment?: number
+  stopLoss?: number
+  trailingStop?: number
+  timeout?: number
 }
 
 const props = defineProps<{

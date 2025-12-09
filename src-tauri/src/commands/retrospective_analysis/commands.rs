@@ -72,26 +72,14 @@ pub async fn analyze_volatility_profile(
     pair: String,
     event_type: String,
     state: tauri::State<'_, crate::commands::calendar_commands::CalendarState>,
-) -> Result<crate::commands::retrospective_analysis::types::VolatilityProfileResult, String> {
+) -> Result<crate::commands::retrospective_analysis::types::EventImpactResult, String> {
     let (conn, loader) = setup_databases(&state).await?;
     let events = super::helpers::load_events_by_type(conn, &event_type).await?;
     if events.is_empty() {
         return Err(format!("No events: {}", event_type));
     }
 
-    let (atr5_timeline, peak_atr5, mean_atr5, std_atr5, peak_minute) =
-        RetroAnalysisService::compute_volatility_profile(&pair, &events, &loader).await?;
-
-    Ok(crate::commands::retrospective_analysis::types::VolatilityProfileResult {
-        atr5_timeline,
-        peak_minute: peak_minute as u16,
-        peak_atr5,
-        mean_atr5,
-        std_atr5,
-        event_count: events.len(),
-        event_type,
-        pair,
-    })
+    RetroAnalysisService::compute_event_impact(&pair, &event_type, &events, &loader).await
 }
 
 #[tauri::command]

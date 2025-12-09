@@ -99,7 +99,7 @@ export function formatPointsWithPips(symbol: string, points: number | undefined,
   }
   
   const pips = pointsToPips(symbol, points)
-  const pipsFormatted = Math.round(pips * 10) / 10  // Arrondir à 1 décimale
+  const pipsFormatted = Math.round(pips)  // Arrondir à l'entier (pas de décimales)
   const pointsFormatted = Math.round(points).toString()  // Arrondir sans décimales
   
   // Toujours afficher la conversion pips pour transparence
