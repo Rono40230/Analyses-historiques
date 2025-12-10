@@ -30,6 +30,8 @@
       :stop-loss="stopLoss"
       :trailing-stop="trailingStop"
       :timeout="timeout"
+      :offset="offset"
+      :stop-loss-recovery="stopLossRecovery"
       :pair="pair"
     />
   </div>
@@ -59,6 +61,8 @@ defineProps<{
   stopLoss?: number
   trailingStop?: number
   timeout?: number
+  offset?: number
+  stopLossRecovery?: number
 }>()
 
 defineEmits<{ archive: [] }>()

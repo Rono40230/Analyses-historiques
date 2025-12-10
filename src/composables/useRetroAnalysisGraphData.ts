@@ -20,6 +20,8 @@ export interface RetroGraphData {
   stop_loss: number                  // SL en pips
   trailing_stop: number              // TS coefficient
   timeout: number                    // Timeout en minutes
+  offset: number                     // Offset d'entrée en points
+  stop_loss_recovery: number         // SL Recovery en points
 }
 
 export function useRetroAnalysisGraphData() {

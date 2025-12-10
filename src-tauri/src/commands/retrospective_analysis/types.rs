@@ -78,6 +78,8 @@ pub struct EventImpactResult {
     pub stop_loss: f64,                   // Stop Loss en pips (basé sur ATR moyen)
     pub trailing_stop: f64,               // Trailing Stop coefficient (ajusté selon noise)
     pub timeout: i32,                     // Timeout recommandé en minutes (basé sur decay de volatilité)
+    pub offset: f64,                      // Offset d'entrée en points (distance du prix)
+    pub stop_loss_recovery: f64,          // Stop Loss pour mode Simultané (Recovery)
 }
 
 /// Available event types with count

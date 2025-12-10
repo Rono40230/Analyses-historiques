@@ -33,10 +33,17 @@ export function useRetroGraphDataPoints(props: {
   }
 
   const getTimeLabel = (offset: number): string => {
-    const d = new Date((props.eventDatetime ? new Date(props.eventDatetime).getTime() : Date.now()) + offset * 60000)
+    let dateStr = props.eventDatetime || ''
+    // Force UTC si pas de timezone spécifiée (format YYYY-MM-DDTHH:mm:ss venant du backend)
+    if (dateStr && !dateStr.endsWith('Z') && !dateStr.includes('+')) {
+      dateStr += 'Z'
+    }
+    const baseTime = dateStr ? new Date(dateStr).getTime() : Date.now()
+    
+    const d = new Date(baseTime + offset * 60000)
     const m = Math.round(d.getMinutes() / 5) * 5
     d.setMinutes(m)
-    return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', hour12: false })
+    return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Paris' })
   }
 
   const getXPositionBefore = (min: number): number => {

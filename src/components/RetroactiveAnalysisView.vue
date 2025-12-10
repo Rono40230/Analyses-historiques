@@ -40,6 +40,8 @@
       :stop-loss="graphData?.stop_loss ?? 0"
       :trailing-stop="graphData?.trailing_stop ?? 0"
       :timeout="graphData?.timeout ?? 60"
+      :offset="graphData?.offset ?? 0"
+      :stop-loss-recovery="graphData?.stop_loss_recovery ?? 0"
       :event-label="getEventLabel(selectedEventType)"
       @archive="openArchiveModal"
     />

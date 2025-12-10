@@ -192,6 +192,8 @@ impl RetroAnalysisService {
             stop_loss: bidi_params.1,
             trailing_stop: bidi_params.2,
             timeout: bidi_params.3,
+            offset: bidi_params.4,
+            stop_loss_recovery: bidi_params.5,
         })
     }
 }
