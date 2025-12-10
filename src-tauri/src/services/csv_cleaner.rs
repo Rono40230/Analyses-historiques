@@ -27,7 +27,7 @@ pub fn clean_european_csv(input_path: &str, output_dir: &Path) -> Result<Cleanin
     let output_filename = filename.replace(".csv", "_cleaned.csv");
     let output_path = output_dir.join(&output_filename);
 
-    println!("🧹 Nettoyage: {} → {}", input_path, output_path.display());
+    tracing::debug!("🧹 Nettoyage: {} → {}", input_path, output_path.display());
 
     let input_file = File::open(input_path).map_err(|e| format!("Ouverture: {}", e))?;
     let reader = BufReader::new(input_file);

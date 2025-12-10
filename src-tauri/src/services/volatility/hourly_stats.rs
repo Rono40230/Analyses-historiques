@@ -22,7 +22,7 @@ impl<'a> HourlyStatsCalculator<'a> {
     pub(super) fn calculate(&self) -> Result<Vec<HourlyStats>> {
         debug!("Calculating hourly statistics (Paris time)");
 
-        const PARIS_OFFSET_HOURS: i32 = 1; // UTC+1 (hiver) - TODO: gérer DST pour l'été
+        const PARIS_OFFSET_HOURS: i32 = 1; // UTC+1 (hiver). Amélioration future: gérer DST dynamiquement en été
 
         // Groupe les bougies par heure de Paris
         let mut hourly_groups: HashMap<u8, Vec<&Candle>> = HashMap::new();

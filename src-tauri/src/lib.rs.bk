@@ -8,6 +8,7 @@ mod schema;
 mod services;
 
 use commands::*;
+use commands::retrospective_analysis::analyze_volatility_profile;
 use std::sync::Mutex;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -155,12 +156,12 @@ pub fn run() {
             calculate_offset_optimal,
             calculate_win_rate,
             calculate_whipsaw_freq,
-            analyze_slice_metrics,                    // NEW: Analyse métriques d'un créneau 15min
-            analyze_straddle_metrics,                 // NEW: Analyse complète avec VRAIES données
-            analyze_volatility_duration_for_slice,    // NEW: Durée de volatilité réelle
-            analyze_quarter_entry_timing,             // NEW: Meilleur moment d'entrée par minute
-            load_candles_for_hour,                    // NEW: Charger 60 candles pour une heure
-            get_cached_candles_for_hour,              // NEW: Récupérer candles en cache
+            analyze_slice_metrics, // NEW: Analyse métriques d'un créneau 15min
+            analyze_straddle_metrics, // NEW: Analyse complète avec VRAIES données
+            analyze_volatility_duration_for_slice, // NEW: Durée de volatilité réelle
+            analyze_quarter_entry_timing, // NEW: Meilleur moment d'entrée par minute
+            load_candles_for_hour, // NEW: Charger 60 candles pour une heure
+            get_cached_candles_for_hour, // NEW: Récupérer candles en cache
             // Calendar commands (Phase 2 MVP)
             get_upcoming_events,
             load_economic_events_from_csv,
@@ -169,9 +170,9 @@ pub fn run() {
             // Event correlation commands (Phase 3 ML)
             get_events_for_period,
             analyze_event_correlation,
-            get_correlation_heatmap,    // Heatmap événements × paires
-            get_past_events,            // Liste des événements passés pour dropdown
-            get_pair_event_history,     // Historique des événements pour une paire
+            get_correlation_heatmap, // Heatmap événements × paires
+            get_past_events,         // Liste des événements passés pour dropdown
+            get_pair_event_history,  // Historique des événements pour une paire
             // Pair data import commands (Phase 4)
             import_pair_data,
             clean_csv_files,        // Nouveau: nettoyage CSV européens
@@ -185,6 +186,7 @@ pub fn run() {
             get_pair_metadata_from_db,   // NEW: métadonnées depuis BD
             get_calendars_metadata,      // NEW: métadonnées calendriers (format UI)
             get_calendar_id_by_filename, // NEW: récupérer ID calendrier depuis nom fichier
+            get_calendar_period_by_id,   // NEW: récupérer dates période du calendrier par ID
             get_pairs_metadata,          // NEW: métadonnées paires (format UI)
             import_calendar_files,       // NEW: importer calendriers
             delete_pair_from_db,         // NEW: supprimer paire de la BD
@@ -216,13 +218,16 @@ pub fn run() {
             // Archive commands
             save_archive,
             list_archives,
+            list_all_archives,
             get_archive,
             delete_archive,
             // Global Analysis (Phase IA)
             analyze_all_archives,
+            get_available_pairs,
             // Retrospective analysis commands (Phase 7)
             analyze_peak_delay,
             analyze_decay_profile,
+            analyze_volatility_profile,
             get_event_types,
             // PDF export commands
             exporter_formules_pdf,

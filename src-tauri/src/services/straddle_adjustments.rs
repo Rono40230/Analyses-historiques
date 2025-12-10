@@ -24,6 +24,7 @@ impl AdjustedMetrics {
     /// 4. Timeout ajusté = Basé sur ATR (volatilité)
     ///    - ATR élevé = timeout court (18 min) - volatilité décline vite
     ///    - ATR faible = timeout long (32 min) - volatilité décline lentement
+    #[allow(dead_code)]
     pub fn new(
         win_rate_percentage: f64,
         offset_optimal_pips: f64,
@@ -73,44 +74,28 @@ impl AdjustedMetrics {
         }
     }
 
-    /// Nouvelle méthode avec multiplicateurs pair-spécifiques
+    /// Calcule les valeurs BRUTES sans pondération whipsaw
+    /// Whipsaw est désactivé - retourne les valeurs non modifiées
     pub fn new_with_pair(
-        win_rate_percentage: f64,
+        _win_rate_percentage: f64,
         offset_optimal_pips: f64,
-        whipsaw_frequency_percentage: f64,
+        _whipsaw_frequency_percentage: f64,
         atr_mean: f64,
-        symbol: &str,
+        _symbol: &str,
     ) -> Self {
-        let whipsaw_factor = whipsaw_frequency_percentage / 100.0;
-
-        let win_rate_adjusted = win_rate_percentage * (1.0 - whipsaw_factor);
-
-        // === NOUVEAU : UTILISER LES MULTIPLICATEURS PAIR-SPÉCIFIQUES POUR SL ===
-        // Au lieu de: SL = offset × ratio_whipsaw (ancien système)
-        // Maintenant: SL = offset × ratio_whipsaw × MUL_PAIR
-        use crate::services::straddle_multipliers::get_sl_multiplier;
+        // Whipsaw désactivé = pas de pondération
+        // Retourner les valeurs brutes (sans modification)
         
-        let pair_multiplier = get_sl_multiplier(symbol, false, None);
-        
-        let whipsaw_adjusted_ratio = match whipsaw_factor {
-            w if w > 0.50 => 3.5,  // Whipsaw 50%+ → ratio 3.5× (énorme SL, beaucoup de bruit)
-            w if w > 0.30 => 3.0,  // Whipsaw 30-50% → ratio 3.0×
-            w if w > 0.20 => 2.5,  // Whipsaw 20-30% → ratio 2.5×
-            w if w > 0.10 => 2.0,  // Whipsaw 10-20% → ratio 2.0×
-            w if w > 0.05 => 1.5,  // Whipsaw 5-10% → ratio 1.5×
-            _ => 1.2,              // Whipsaw <5% → ratio 1.2× (petit SL, peu de bruit)
-        };
-        
-        // SL final = offset × ratio_whipsaw × MUL_PAIR
-        let sl_adjusted_pips = (offset_optimal_pips * whipsaw_adjusted_ratio * pair_multiplier).ceil();
+        let win_rate_adjusted = 0.0;  // Pas de win rate
 
-        // === TRAILING STOP BASÉ SUR ATR (NOUVEAU) ===
-        // TS = ATR × 0.75 × (1 + whipsaw_factor × 0.3)
-        // ATR est en points, convertir en pips selon le symbole
-        let points_per_pip = get_points_per_pip(symbol);
-        let atr_pips = atr_mean / points_per_pip;
-        let trailing_stop_adjusted = (atr_pips * 0.75 * (1.0 + whipsaw_factor * 0.3)).max(0.1);
+        // SL brut = offset sans pondération
+        let sl_adjusted_pips = offset_optimal_pips;
 
+        // TS brut = coefficient fixe (sans whipsaw)
+        // Retourner coefficient 1.0 pour que TS = SL × 1.0
+        let trailing_stop_adjusted = 1.0;
+
+        // Timeout basé sur ATR (indépendant du whipsaw)
         let atr_normalized = (atr_mean / 0.0008).min(1.0);
         let timeout_base = 32.0;
         let timeout_min = 18.0;
@@ -123,20 +108,5 @@ impl AdjustedMetrics {
             trailing_stop_adjusted,
             timeout_adjusted_minutes,
         }
-    }
-}
-
-/// Obtenir le nombre de points par pip selon le symbole
-fn get_points_per_pip(symbol: &str) -> f64 {
-    if symbol.contains("XAU") {
-        10.0  // Or: 1 pip = 10 points
-    } else if symbol.contains("XAG") {
-        1000.0  // Argent: 1 pip = 1000 points
-    } else if symbol.contains("US30") || symbol.contains("DE30") || symbol.contains("NAS100") || symbol.contains("SPX500") || symbol.contains("USA500") {
-        1.0  // Indices: 1 pip = 1 point
-    } else if symbol.contains("BTC") || symbol.contains("ETH") {
-        1.0  // Crypto: 1 pip = 1 point
-    } else {
-        10.0  // Forex par défaut (EURUSD, CADJPY, USDJPY, etc): 1 pip = 10 points
     }
 }

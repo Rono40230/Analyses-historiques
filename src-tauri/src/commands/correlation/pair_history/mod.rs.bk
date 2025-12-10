@@ -72,7 +72,7 @@ pub async fn get_pair_event_history(
         let event_datetime = match parse_sqlite_datetime(datetime_str) {
             Ok(dt) => dt,
             Err(e) => {
-                eprintln!("⚠️ Skipping event {}: {}", event_id, e);
+                tracing::warn!("⚠️ Skipping event {}: {}", event_id, e);
                 continue;
             }
         };

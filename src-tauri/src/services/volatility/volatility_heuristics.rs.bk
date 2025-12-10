@@ -1,6 +1,9 @@
 // services/volatility_heuristics.rs - Estimations heuristiques
 use crate::models::{Stats15Min, VolatilityError};
 
+#[cfg(test)]
+use crate::models::EventInHour;
+
 pub struct VolatilityHeuristics;
 
 impl VolatilityHeuristics {
@@ -60,35 +63,34 @@ impl VolatilityHeuristics {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::CalendarEvent;
 
     fn create_test_slice(atr: f64, events_count: usize) -> Stats15Min {
         Stats15Min {
             hour: 14,
             quarter: 0,
             atr_mean: atr,
+            atr_max: atr * 1.2,
+            volatility_mean: 0.2,
+            range_mean: 0.003,
             body_range_mean: 50.0,
+            shadow_ratio_mean: 0.5,
+            volume_imbalance_mean: 0.1,
             noise_ratio_mean: 2.0,
-            breakout_percent: 30.0,
+            breakout_percentage: 30.0,
             candle_count: 15,
-            events: vec![
-                CalendarEvent {
-                    id: 1,
-                    symbol: "EURUSD".to_string(),
-                    event_time: chrono::Utc::now(),
-                    impact: if events_count > 0 {
-                        "HIGH".to_string()
-                    } else {
-                        "LOW".to_string()
-                    },
-                    description: "Test".to_string(),
-                    actual: None,
-                    forecast: None,
-                    previous: None,
-                    created_at: chrono::Utc::now(),
-                }
-            ][0..events_count]
+            events: vec![EventInHour {
+                event_name: "Test Event".to_string(),
+                impact: if events_count > 0 { "HIGH".to_string() } else { "LOW".to_string() },
+                datetime: "2025-01-15 14:00:00".to_string(),
+                volatility_increase: 0.5,
+            }][0..events_count.min(1)]
                 .to_vec(),
+            peak_duration_minutes: None,
+            volatility_half_life_minutes: None,
+            recommended_trade_expiration_minutes: None,
+            peak_duration_mean: None,
+            volatility_half_life_mean: None,
+            recommended_trade_expiration_mean: None,
         }
     }
 

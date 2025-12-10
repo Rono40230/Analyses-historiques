@@ -27,7 +27,7 @@ pub fn handle_duplicate(output_dir: &Path, filename: &str) -> Result<PathBuf, St
         let new_path = output_dir.join(&new_filename);
 
         if !new_path.exists() {
-            println!("  ⚠️  Doublon détecté, sauvegarde comme: {}", new_filename);
+            tracing::warn!("⚠️  Doublon détecté, sauvegarde comme: {}", new_filename);
             return Ok(new_path);
         }
     }
@@ -41,8 +41,7 @@ pub fn process_file_with_cleaning(
     temp_dir: &Path,
     data_dir: &Path,
 ) -> Result<ProcessResult, String> {
-    // Étape 1 : Nettoyer le fichier
-    println!("  🧹 Nettoyage...");
+    tracing::info!("🧹 Début du nettoyage du fichier");
     let cleaning_report = clean_european_csv(source_path, temp_dir)?;
 
     let cleaned_path = &cleaning_report.cleaned_file;
@@ -62,16 +61,15 @@ pub fn process_file_with_cleaning(
         ));
     }
 
-    println!(
-        "  ✅ {} lignes nettoyées ({} erreurs = {:.2}%)",
+    tracing::info!(
+        "✅ {} lignes nettoyées ({} erreurs = {:.2}%)",
         cleaning_report.lines_cleaned, cleaning_report.errors, error_rate
     );
 
-    // Étape 2 : Importer le fichier nettoyé
-    println!("  📥 Import...");
+    tracing::info!("📥 Début de l'import du fichier");
     let (pair, timeframe) = import_cleaned_file(cleaned_path, data_dir)?;
 
-    println!("  ✅ Importé: {} ({})", pair, timeframe);
+    tracing::info!("✅ Importé: {} ({})", pair, timeframe);
 
     // NOTE: Ne pas supprimer le fichier nettoyé ici
     // Il sera inséré en BD par import_clean_commands.rs, puis supprimé après

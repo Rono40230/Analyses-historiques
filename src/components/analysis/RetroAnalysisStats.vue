@@ -22,7 +22,6 @@
     </div>
   </div>
 
-  <!-- Section Paramètres Bidi Straddle -->
   <div class="bidi-section">
     <h4>⚙️ PARAMÈTRES BIDI STRADDLE</h4>
     <div class="bidi-grid">
@@ -140,7 +139,6 @@ const noiseQualityAfter = computed(() => {
   font-size: 1.15em;
 }
 
-/* === SECTION BIDI STRADDLE === */
 .bidi-section {
   margin-top: 10px;
   margin-bottom: 0;
@@ -207,127 +205,37 @@ const noiseQualityAfter = computed(() => {
 }
 
 @media (max-width: 1024px) {
-  .stats-section {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 10px;
-  }
-
-  .bidi-grid {
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 8px;
-  }
-
-  .bidi-value {
-    font-size: 1em;
-  }
+  .stats-section { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .bidi-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+  .bidi-value { font-size: 1em; }
 }
 
 @media (max-width: 768px) {
-  .stats-section {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-
-  .stat-item {
-    padding: 8px;
-  }
-
-  .stat-label {
-    font-size: 0.7em;
-  }
-
-  .stat-value {
-    font-size: 0.95em;
-  }
-
-  .bidi-section {
-    padding: 12px;
-    margin-top: 10px;
-  }
-
-  .bidi-section h4 {
-    font-size: 11px;
-    margin-bottom: 8px;
-  }
-
-  .bidi-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-
-  .bidi-param {
-    padding: 8px;
-  }
-
-  .bidi-label {
-    font-size: 0.7em;
-  }
-
-  .bidi-value {
-    font-size: 0.95em;
-  }
-
-  .bidi-description {
-    font-size: 0.65em;
-  }
+  .stats-section { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .stat-item { padding: 8px; }
+  .stat-label { font-size: 0.7em; }
+  .stat-value { font-size: 0.95em; }
+  .bidi-section { padding: 12px; margin-top: 10px; }
+  .bidi-section h4 { font-size: 11px; margin-bottom: 8px; }
+  .bidi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .bidi-param { padding: 8px; }
+  .bidi-label { font-size: 0.7em; }
+  .bidi-value { font-size: 0.95em; }
+  .bidi-description { font-size: 0.65em; }
 }
 
 @media (max-width: 480px) {
-  .stats-section {
-    grid-template-columns: 1fr;
-    gap: 6px;
-  }
-
-  .stat-item {
-    padding: 6px 8px;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .stat-label {
-    font-size: 0.65em;
-  }
-
-  .stat-value {
-    font-size: 0.9em;
-  }
-
-  .bidi-section {
-    padding: 10px;
-    margin-top: 8px;
-  }
-
-  .bidi-section h4 {
-    font-size: 10px;
-    margin-bottom: 8px;
-  }
-
-  .bidi-grid {
-    grid-template-columns: 1fr;
-    gap: 6px;
-  }
-
-  .bidi-param {
-    padding: 6px;
-  }
-
-  .bidi-label {
-    font-size: 0.65em;
-    margin-bottom: 3px;
-  }
-
-  .bidi-value {
-    font-size: 0.85em;
-    margin-bottom: 2px;
-  }
-
-  .bidi-unit {
-    font-size: 0.6em;
-  }
-
-  .bidi-description {
-    font-size: 0.6em;
-  }
+  .stats-section { grid-template-columns: 1fr; gap: 6px; }
+  .stat-item { padding: 6px 8px; flex-direction: row; justify-content: space-between; align-items: center; }
+  .stat-label { font-size: 0.65em; }
+  .stat-value { font-size: 0.9em; }
+  .bidi-section { padding: 10px; margin-top: 8px; }
+  .bidi-section h4 { font-size: 10px; margin-bottom: 8px; }
+  .bidi-grid { grid-template-columns: 1fr; gap: 6px; }
+  .bidi-param { padding: 6px; }
+  .bidi-label { font-size: 0.65em; margin-bottom: 3px; }
+  .bidi-value { font-size: 0.85em; margin-bottom: 2px; }
+  .bidi-unit { font-size: 0.6em; }
+  .bidi-description { font-size: 0.6em; }
 }
 </style>

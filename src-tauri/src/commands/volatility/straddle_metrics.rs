@@ -123,7 +123,8 @@ pub async fn analyze_straddle_metrics(
             risk_color: simulation.risk_color,
             sl_adjusted_points: pips_to_points(simulation.sl_adjusted_pips, &symbol),
             win_rate_adjusted: simulation.win_rate_adjusted,
-            trailing_stop_adjusted: pips_to_points(simulation.trailing_stop_adjusted, &symbol),
+            // Trailing Stop: coefficient × SL = valeur en pips
+            trailing_stop_adjusted: pips_to_points(simulation.sl_adjusted_pips * simulation.trailing_stop_adjusted, &symbol),
             timeout_adjusted_minutes: simulation.timeout_adjusted_minutes,
             whipsaw_details,
         },

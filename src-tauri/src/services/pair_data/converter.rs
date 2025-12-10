@@ -40,7 +40,6 @@ impl PairDataConverter {
         use std::fs::File;
         use std::io::{BufRead, BufReader};
 
-        // Lire et normaliser le fichier si format européen
         let file = File::open(path).map_err(|e| format!("Erreur ouverture: {}", e))?;
         let buf_reader = BufReader::new(file);
         let lines: Vec<String> = buf_reader

@@ -56,17 +56,6 @@ pub fn calculate_ema(values: &[f64], period: usize) -> f64 {
     ema
 }
 
-/// Retourne le coefficient de pondération selon la durée du whipsaw
-pub fn get_whipsaw_coefficient(minutes: i32) -> f64 {
-    match minutes {
-        0 => 1.0,      // Immédiat = coefficient 1.0 (très grave)
-        1..=2 => 0.8,  // 1-2 min = coefficient 0.8
-        3..=5 => 0.6,  // 3-5 min = coefficient 0.6
-        6..=10 => 0.3, // 6-10 min = coefficient 0.3
-        _ => 0.1,      // 11-15 min = coefficient 0.1 (très léger)
-    }
-}
-
 /// Calcule le risque et la couleur basé sur la fréquence whipsaw
 pub fn calculate_risk_level(whipsaw_freq_pct: f64) -> (String, String) {
     if whipsaw_freq_pct < 10.0 {
@@ -80,58 +69,9 @@ pub fn calculate_risk_level(whipsaw_freq_pct: f64) -> (String, String) {
     }
 }
 
-/// Cherche la résolution d'un trade (TP, SL ou timeout)
-pub fn find_trade_resolution(
-    candles: &[Candle],
-    start_idx: usize,
-    entry_time: chrono::DateTime<chrono::Utc>,
-    tp_level: f64,
-    sl_level: f64,
-    is_buy: bool,
-) -> (bool, bool, i32) {
-    // Chercher dans les 15 MINUTES, pas dans les 15 indices suivants
-    let max_time = entry_time + chrono::Duration::minutes(15);
-
-    for candle in candles.iter().skip(start_idx + 1) {
-
-        if candle.datetime > max_time {
-            break;
-        }
-
-        let duration = candle.datetime.signed_duration_since(entry_time);
-        let duration_minutes = duration.num_minutes() as i32;
-
-        if is_buy {
-            if candle.high >= tp_level {
-                return (true, false, 0);
-            }
-            if candle.low <= sl_level {
-                return (false, true, duration_minutes);
-            }
-        } else {
-            if candle.low <= tp_level {
-                return (true, false, 0);
-            }
-            if candle.high >= sl_level {
-                return (false, true, duration_minutes);
-            }
-        }
-    }
-
-    // Non résolu = loss
-    (false, false, 15)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_whipsaw_coefficient() {
-        assert_eq!(get_whipsaw_coefficient(0), 1.0);
-        assert_eq!(get_whipsaw_coefficient(2), 0.8);
-        assert_eq!(get_whipsaw_coefficient(5), 0.6);
-    }
 
     #[test]
     fn test_risk_level() {

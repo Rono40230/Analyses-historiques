@@ -9,7 +9,6 @@
               Consultez vos analyses sauvegardées
             </p>
           </div>
-          <!-- Dropdown pour les paires dans le header -->
           <div class="header-pair-filter">
             <label for="pair-select" class="filter-label">💱 Paire :</label>
             <select 
@@ -42,7 +41,6 @@
       @close="isGlobalAnalysisOpen = false"
     />
 
-    <!-- Modal de confirmation de suppression -->
     <div v-if="showDeleteConfirmModal" class="delete-confirm-overlay">
       <div class="delete-confirm-modal">
         <div class="delete-confirm-header">
@@ -252,6 +250,7 @@ import MetricsAnalysisModal from '../components/MetricsAnalysisModal.vue'
 import RetroactiveAnalysisResultsViewer from '../components/RetroactiveAnalysisResultsViewer.vue'
 import EventCorrelationHeatmap from '../components/EventCorrelationHeatmap.vue'
 import GlobalAnalysisModal from '../components/GlobalAnalysisModal.vue'
+import type { Archive as ArchiveType } from '../stores/archiveStore'
 
 const archiveStore = useArchiveStore()
 const selectedArchive = ref<Archive | null>(null)
@@ -387,16 +386,6 @@ function formatDate(dateStr: string): string {
     hour: '2-digit',
     minute: '2-digit'
   })
-}
-
-function isRetroAnalysisType(archive: Archive): boolean {
-  try {
-    const data = JSON.parse(archive.data_json)
-    // Vérifier si c'est une archive rétrospective en cherchant les clés spécifiques
-    return archive.archive_type === 'Métriques Rétrospectives' && (data.peakDelayResults || data.eventLabel)
-  } catch {
-    return false
-  }
 }
 
 function extractEventLabel(archive: Archive): string {
@@ -586,19 +575,6 @@ function cancelDelete() {
   gap: 25px;
 }
 
-/* Dropdown filter styles */
-.filter-dropdown {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.filter-label {
-  color: #8b949e;
-  font-weight: 600;
-  font-size: 0.95em;
-}
-
 .pair-select {
   padding: 10px 14px;
   border: 2px solid #30363d;
@@ -628,7 +604,6 @@ function cancelDelete() {
   color: #000000;
 }
 
-/* Accordion structure */
 .archives-container-accordion {
   display: flex;
   flex-direction: column;
@@ -669,7 +644,6 @@ function cancelDelete() {
   font-size: 0.9em;
 }
 
-/* Compact grid for archives inside accordion */
 .archives-grid-compact {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -771,7 +745,6 @@ function cancelDelete() {
   background: #4a5568;
 }
 
-/* Collapse transition for accordion */
 .collapse-enter-active, .collapse-leave-active {
   transition: all 0.3s ease;
 }
@@ -784,27 +757,6 @@ function cancelDelete() {
 .collapse-leave-to {
   opacity: 0;
   height: 0;
-}
-
-.archive-card {
-  background: #161b22;
-  border-radius: 12px;
-  border: 1px solid #30363d;
-  padding: 20px;
-  transition: all 0.3s;
-}
-
-.archive-card:hover {
-  border-color: #58a6ff;
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(88, 166, 255, 0.2);
-}
-
-.archive-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
 }
 
 .archive-type-badge {
@@ -853,81 +805,6 @@ function cancelDelete() {
   background: #dc2626;
 }
 
-.archive-title {
-  color: #e2e8f0;
-  font-size: 0.95em; /* Même taille que les métadonnées */
-  font-weight: bold;
-  margin: 0 0 15px 0;
-  line-height: 1.4;
-  /* Suppression des contraintes de ligne unique */
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-}
-
-.archive-meta {
-  margin-bottom: 20px;
-}
-
-.meta-item {
-  margin-bottom: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.meta-label {
-  color: #8b949e;
-  font-size: 0.9em;
-  font-weight: 600;
-}
-
-.meta-value {
-  color: #cbd5e0;
-  font-size: 0.95em;
-}
-
-.meta-item.comment .meta-value {
-  font-style: italic;
-  color: #a0aec0;
-}
-
-.archive-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.btn-view,
-.btn-pdf {
-  flex: 1;
-  padding: 10px;
-  border-radius: 6px;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-view {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.btn-view:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
-
-.btn-pdf {
-  background: #2d3748;
-  color: #cbd5e0;
-}
-
-.btn-pdf:hover {
-  background: #4a5568;
-}
-
-/* Styles pour la modale viewer */
 .viewer-overlay {
   position: fixed;
   top: 0;
@@ -1007,7 +884,6 @@ function cancelDelete() {
   font-size: 1.2em;
 }
 
-/* Modal de confirmation de suppression - Stylisé */
 .delete-confirm-overlay {
   position: fixed;
   top: 0;
