@@ -7,18 +7,18 @@ use crate::models::Stats15Min;
 pub(super) struct BestQuarterFinder;
 
 impl BestQuarterFinder {
-    /// Trouve le meilleur quarter (15 min) pour stratégie STRADDLE (V4 - Optimisée Straddle)
+    /// Trouve le meilleur quarter (15 min) pour stratégie STRADDLE (V5 - Breakout Straddle)
     ///
-    /// OPTIMISATION STRADDLE (V4) - Non-directionnel, profit sur volatilité bidirectionnelle:
+    /// OPTIMISATION STRADDLE (V5) - Breakout, profit sur mouvement directionnel fort:
     /// - Volatilité ÉLEVÉE (50% pondération) = source de profit
     /// - Noise Ratio BAS (20% pondération inverse) = entrées fiables, pas de rejets
-    /// - Body Range BAS (15% pondération inverse) = marché indécis, volatilité aléatoire (pas directionnel)
-    /// - Direction Strength BAS (10% pondération inverse) = pas de tendance préférentielle
+    /// - Body Range ÉLEVÉ (15% pondération) = mouvement directionnel clair (Breakout)
+    /// - Direction Strength ÉLEVÉE (10% pondération) = tendance forte (Breakout)
     /// - Range (5% pondération) = mouvement exploitable
     ///
-    /// Le Straddle diffère du Scalping:
-    /// - Straddle = veut volatilité SANS direction (bidirectionnelle)
-    /// - Scalping = veut direction CLAIRE avec peu de bruit
+    /// Le Straddle V5 cherche le Breakout:
+    /// - On veut que le prix PARTE loin du point d'entrée (Grand Corps)
+    /// - On veut éviter les mèches (Whipsaw) qui déclenchent les deux ordres puis reviennent
     ///
     /// Retourne (hour, quarter) du meilleur moment de la journée
     pub(super) fn find_best_quarter(stats_15min: &[Stats15Min]) -> Option<(u8, u8)> {
@@ -35,11 +35,11 @@ impl BestQuarterFinder {
             .filter(|q| q.candle_count > 0)
             .map(|q| {
                 // ============================================
-                // SCORE COMPOSITE STRADDLE (V4)
+                // SCORE COMPOSITE STRADDLE (V5 - Breakout)
                 // ============================================
 
                 // 1. VOLATILITÉ (50%) - PRIMARY
-                // Straddle profite de volatilité élevée, peu importe la direction
+                // Straddle profite de volatilité élevée
                 let volatility_score = (q.volatility_mean / VOLATILITY_IDEAL).min(1.0) * 50.0;
 
                 // 2. NOISE RATIO INVERSE (20%) - LOWER IS BETTER
@@ -63,19 +63,16 @@ impl BestQuarterFinder {
                     0.0
                 };
 
-                // 3. BODY RANGE INVERSE (15%) - LOWER IS BETTER FOR STRADDLE
-                // Body Range ÉLEVÉ = marché directionnel (mauvais pour Straddle)
-                // Body Range BAS (30-40%) = marché indécis = volatilité aléatoire (idéal)
-                // Formule inverse : plus le body range est bas, meilleur le score
-                let body_range_inverse = (100.0 - q.body_range_mean).max(0.0); // 0-70
-                let body_range_score = (body_range_inverse / 60.0).min(1.0) * 15.0; // Max 15 pts
+                // 3. BODY RANGE (15%) - HIGHER IS BETTER FOR BREAKOUT
+                // Body Range ÉLEVÉ = mouvement directionnel fort (Breakout réussi)
+                // Body Range BAS = indécision (Whipsaw risk)
+                // Cible : > 50%
+                let body_range_score = (q.body_range_mean / 60.0).min(1.0) * 15.0;
 
-                // 4. DIRECTION STRENGTH INVERSE (10%) - LOWER IS BETTER
-                // Direction Strength ÉLEVÉE = tendance claire (mauvais pour Straddle)
-                // Direction Strength BASSE = mouvements aléatoires (idéal)
-                // Formule inverse : si direction_strength < 10%, score max
-                let direction_inverse = (20.0 - q.volume_imbalance_mean).max(0.0);
-                let direction_score = (direction_inverse / 20.0).min(1.0) * 10.0; // Max 10 pts
+                // 4. DIRECTION STRENGTH (10%) - HIGHER IS BETTER
+                // Direction Strength ÉLEVÉE = tendance claire (Breakout)
+                // Cible : > 10%
+                let direction_score = (q.volume_imbalance_mean / 15.0).min(1.0) * 10.0;
 
                 // 5. RANGE (5%) - SECONDARY
                 let range_score = (q.range_mean / RANGE_IDEAL).min(1.0) * 5.0;
@@ -95,31 +92,25 @@ impl BestQuarterFinder {
                     total_score += 15.0;
                 }
 
-                // BONUS: Volatilité bidirectionnelle idéale (35-40% body range = indécision)
-                if q.body_range_mean > 35.0 && q.body_range_mean < 45.0 {
-                    total_score += 10.0; // Marché vraiment indécis
+                // BONUS: Breakout clair (Body Range > 50%)
+                if q.body_range_mean > 50.0 {
+                    total_score += 15.0;
                 }
 
-                // BONUS: Signal ultra-propre (noise < 2.0 AND body range équilibré)
-                if q.noise_ratio_mean < 2.0 && q.body_range_mean < 45.0 {
+                // BONUS: Signal ultra-propre (noise < 2.0 AND body range > 50%)
+                if q.noise_ratio_mean < 2.0 && q.body_range_mean > 50.0 {
                     total_score += 12.0;
                 }
 
-                // PÉNALITÉ MAJEURE: Tendance directionnelle très forte (body range > 55%)
-                // Mauvais pour Straddle (profit réduit ou risque de perte)
-                if q.body_range_mean > 55.0 {
+                // PÉNALITÉ MAJEURE: Indécision totale (body range < 30%)
+                // Risque extrême de Whipsaw (mèches des deux côtés)
+                if q.body_range_mean < 30.0 {
                     total_score -= 25.0;
                 }
 
                 // PÉNALITÉ: Bruit excessif (noise > 3.5)
                 if q.noise_ratio_mean > 3.5 {
                     total_score -= 15.0;
-                }
-
-                // PÉNALITÉ: Direction Strength très élevée (> 17%)
-                // Indica que le marché a une préférence directionnelle forte
-                if q.volume_imbalance_mean > 17.0 {
-                    total_score -= 12.0;
                 }
 
                 // PÉNALITÉ: Volatilité trop basse (< 25% = peu de profit)
