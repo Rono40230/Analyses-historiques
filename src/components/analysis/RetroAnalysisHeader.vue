@@ -4,11 +4,8 @@
       <div class="title-row">
         <span class="title-text">📊 Impact de l'événement {{ eventLabel || eventType }}{{ pair ? ' sur la volatilité de ' + pair : '' }}</span>
         <span class="separator">-</span>
-        <span v-if="volatilityIncreasePercent > 0" class="conclusion-positive">
-          ✅ Événement génère {{ (volatilityIncreasePercent).toFixed(1) }}% de volatilité {{ noiseQualityAfter === 'clean' ? 'directionnelle' : 'avec bruit' }}
-        </span>
-        <span v-else class="conclusion-negative">
-          ⚠️ Événement peu corrélé à la volatilité sur {{ pair }}
+        <span :class="advice.class">
+          {{ advice.text }}
         </span>
       </div>
     </div>
@@ -39,7 +36,36 @@ const props = withDefaults(defineProps<Props>(), {
 
 defineEmits<{ archive: [] }>()
 
-const noiseQualityAfter = computed(() => props.noiseRatioAfter < 1.5 ? 'clean' : props.noiseRatioAfter < 2.5 ? 'mixed' : 'choppy')
+const advice = computed(() => {
+  const vol = props.volatilityIncreasePercent
+  const noise = props.noiseRatioAfter
+
+  if (vol < 10) {
+    return {
+      text: `⚠️ Impact faible (+${vol.toFixed(1)}%) - Pas d'opportunité claire`,
+      class: 'conclusion-neutral'
+    }
+  }
+
+  if (noise > 3.0) {
+    return {
+      text: `⛔ DANGER (+${vol.toFixed(1)}% Vol) : Trop de bruit (Whipsaw) - Ratio R/R défavorable`,
+      class: 'conclusion-danger'
+    }
+  }
+
+  if (noise > 2.0) {
+    return {
+      text: `⚠️ PRUDENCE (+${vol.toFixed(1)}% Vol) : Mouvement bruyant - Nécessite SL large`,
+      class: 'conclusion-warning'
+    }
+  }
+
+  return {
+    text: `✅ OPPORTUNITÉ (+${vol.toFixed(1)}% Vol) : Mouvement directionnel propre`,
+    class: 'conclusion-success'
+  }
+})
 </script>
 
 <style scoped>
@@ -76,12 +102,20 @@ const noiseQualityAfter = computed(() => props.noiseRatioAfter < 1.5 ? 'clean' :
   color: #8b949e;
 }
 
-.conclusion-positive {
+.conclusion-success {
   color: #3fb950;
 }
 
-.conclusion-negative {
+.conclusion-warning {
+  color: #d29922;
+}
+
+.conclusion-danger {
   color: #f85149;
+}
+
+.conclusion-neutral {
+  color: #8b949e;
 }
 
 .btn-archive {
