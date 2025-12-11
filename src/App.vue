@@ -305,6 +305,8 @@ body {
 .content-area {
   padding: 30px;
   min-height: 400px;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .loading {

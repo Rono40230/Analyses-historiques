@@ -147,10 +147,8 @@ function openArchiveModal() {
   // Construction du titre personnalisé
   const eventName = store.selectedEventType
   const eventNameFr = getEventLabel(eventName)
-  const translation = eventTranslations[eventName]
-  const flag = translation ? translation.flag : ''
   
-  archiveDefaultTitle.value = `📊 Impact de l'événement ${eventName} (${eventNameFr}) ${flag} sur la volatilité de ${store.selectedPair}`
+  archiveDefaultTitle.value = `📊 Impact de l'événement ${eventNameFr} sur la volatilité de ${store.selectedPair}`
 
   archiveDataJson.value = JSON.stringify({
     atrTimelineBefore: store.graphData.atr_timeline_before,

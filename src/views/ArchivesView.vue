@@ -153,7 +153,7 @@
                   <span class="meta-label">🕒</span>
                   <span class="meta-value">{{ formatDate(archive.created_at) }}</span>
                 </div>
-                <div v-if="archive.archive_type === 'Métriques Rétrospectives' && extractEventLabel(archive) !== 'Événement inconnu'" class="meta-row">
+                <div v-if="(archive.archive_type === 'Métriques Rétrospectives' || archive.archive_type === 'Correlation de la volatilité Paire/Evenement') && extractEventLabel(archive) !== 'Événement inconnu'" class="meta-row">
                   <span class="meta-label">📊</span>
                   <span class="meta-value">{{ extractEventLabel(archive) }}</span>
                 </div>
@@ -182,7 +182,7 @@
 
     <!-- Modale de visualisation -->
     <MetricsAnalysisModal 
-      v-if="showViewer && (selectedArchive?.archive_type === 'Volatilité brute' || selectedArchive?.archive_type === 'METRICS')"
+      v-if="showViewer && (selectedArchive?.archive_type === 'Volatilité brute' || selectedArchive?.archive_type === 'Volatilité brute Paire/Période' || selectedArchive?.archive_type === 'METRICS')"
       :analysis-result="viewerData.analysisResult"
       :is-open="showViewer"
       :is-archive-mode="true"
@@ -191,7 +191,7 @@
     />
 
     <RetroactiveAnalysisResultsViewer
-      v-else-if="showViewer && (selectedArchive?.archive_type === 'Métriques Rétrospectives' || selectedArchive?.archive_type === 'RETRO_ANALYSIS')"
+      v-else-if="showViewer && (selectedArchive?.archive_type === 'Métriques Rétrospectives' || selectedArchive?.archive_type === 'Correlation de la volatilité Paire/Evenement' || selectedArchive?.archive_type === 'RETRO_ANALYSIS')"
       :data="viewerData"
       @close="closeViewer"
     />
@@ -329,7 +329,9 @@ const availablePairs = computed(() => {
 function getTypeClass(type: string): string {
   const mapping: Record<string, string> = {
     'Volatilité brute': 'type-metrics',
+    'Volatilité brute Paire/Période': 'type-metrics',
     'Métriques Rétrospectives': 'type-default',
+    'Correlation de la volatilité Paire/Evenement': 'type-default',
     'Corrélation événement/paire': 'type-event',
     'Corrélation paire/événement': 'type-pair',
     'Heatmap': 'type-heatmap',
