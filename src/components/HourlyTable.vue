@@ -238,6 +238,7 @@ const props = defineProps<{
   bestQuarter: [number, number]  // [hour, quarter] - meilleur quarter de la journée
   stats15min?: Stats15Min[]  // Stats 15-minutes optionnels
   globalMetrics?: GlobalMetrics // Pour normalisation (ATR, Tick Quality)
+  pointValue?: number // Valeur d'un point pour normalisation (ex: 0.001 pour JPY)
 }>()
 
 const emit = defineEmits<{
@@ -246,6 +247,13 @@ const emit = defineEmits<{
 
 // Fonction helper pour estimer le prix moyen (pour normalisation)
 function getEstimatedPrice(): number {
+  if (props.pointValue) {
+    // Si pointValue est fourni (ex: 0.001), on peut déduire l'échelle
+    // Pour JPY (0.001), on veut afficher ~100.000
+    // Pour EURUSD (0.00001), on veut afficher ~1.00000
+    return 1.0 / props.pointValue
+  }
+
   if (!props.globalMetrics) {
     return 100000 // Valeur par défaut
   }
@@ -258,6 +266,13 @@ function getEstimatedPrice(): number {
 
 // Formatte l'ATR en points (arrondir à l'unité supérieure) au lieu du pourcentage
 function formatATR(atr: number): string {
+  if (props.pointValue) {
+    // Conversion explicite : Valeur Brute / Valeur Point
+    // Ex: 0.15 / 0.001 = 150 points
+    const points = atr / props.pointValue
+    return `${Math.ceil(points)} pts`
+  }
+  // Fallback ancien comportement (si pointValue manquant)
   return `${Math.ceil(atr)} pts`
 }
 

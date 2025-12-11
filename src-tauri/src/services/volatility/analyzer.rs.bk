@@ -11,6 +11,7 @@ use crate::db::DbPool;
 use crate::models::{
     AnalysisResult, Candle, Result, RiskLevel, TradingRecommendation, VolatilityError,
 };
+use crate::services::pair_data::get_point_value;
 use chrono::Datelike;
 use tracing::info;
 
@@ -211,6 +212,8 @@ impl VolatilityAnalyzer {
             confidence_score, recommendation, risk_level
         );
 
+        let point_value = get_point_value(symbol);
+
         Ok(AnalysisResult {
             symbol: symbol.to_string(),
             period_start,
@@ -223,6 +226,7 @@ impl VolatilityAnalyzer {
             recommendation,
             risk_level,
             global_metrics,
+            point_value,
         })
     }
 }

@@ -13,13 +13,13 @@
       
       <div class="bidi-param recovery-param">
         <div class="bidi-label">SL RECOVERY</div>
-        <div class="bidi-value">{{ stopLossRecovery > 0 ? formatPointsWithPips(pair, stopLossRecovery, 0) : '—' }}</div>
+        <div class="bidi-value">{{ stopLossRecovery > 0 ? formatValue(stopLossRecovery, 0) : '—' }}</div>
         <div class="bidi-description">Pour couvrir le retournement</div>
       </div>
 
       <div class="bidi-param">
         <div class="bidi-label">Trailing Stop</div>
-        <div class="bidi-value">{{ trailingStop > 0 ? formatPointsWithPips(pair, trailingStop, 1) : '—' }}</div>
+        <div class="bidi-value">{{ trailingStop > 0 ? formatValue(trailingStop, 1) : '—' }}</div>
         <div class="bidi-description">Stop dynamique adapté au noise</div>
       </div>
 
@@ -73,6 +73,7 @@ interface Props {
   trailingStop?: number
   timeout?: number
   pair: string
+  pointValue?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -83,6 +84,11 @@ const props = withDefaults(defineProps<Props>(), {
   timeout: 60,
   pair: 'EURUSD'
 })
+
+function formatValue(val: number, decimals: number = 0): string {
+  // val is already in points (thanks to backend fix)
+  return formatPointsWithPips(props.pair, val, decimals)
+}
 
 // Simple scaling function for visualization
 const scaleY = (val: number) => {

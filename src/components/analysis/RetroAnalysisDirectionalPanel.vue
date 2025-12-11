@@ -13,24 +13,24 @@
       
       <div class="bidi-param buy-param">
         <div class="bidi-label">BUY STOP</div>
-        <div class="bidi-value">+{{ offset > 0 ? formatPointsWithPips(pair, offset, 0) : '—' }}</div>
+        <div class="bidi-value">+{{ offset > 0 ? formatValue(offset, 0) : '—' }}</div>
         <div class="bidi-description">Entrée Achat (au-dessus du prix)</div>
       </div>
 
       <div class="bidi-param sell-param">
         <div class="bidi-label">SELL STOP</div>
-        <div class="bidi-value">-{{ offset > 0 ? formatPointsWithPips(pair, offset, 0) : '—' }}</div>
+        <div class="bidi-value">-{{ offset > 0 ? formatValue(offset, 0) : '—' }}</div>
         <div class="bidi-description">Entrée Vente (en-dessous du prix)</div>
       </div>
 
       <div class="bidi-param">
         <div class="bidi-label">Stop Loss</div>
-        <div class="bidi-value">{{ stopLoss > 0 ? formatPointsWithPips(pair, stopLoss, 0) : '—' }}</div>
+        <div class="bidi-value">{{ stopLoss > 0 ? formatValue(stopLoss, 0) : '—' }}</div>
         <div class="bidi-description">Distance d'arrêt (Risque)</div>
       </div>
       <div class="bidi-param">
         <div class="bidi-label">Trailing Stop</div>
-        <div class="bidi-value">{{ trailingStop > 0 ? formatPointsWithPips(pair, trailingStop, 1) : '—' }}</div>
+        <div class="bidi-value">{{ trailingStop > 0 ? formatValue(trailingStop, 1) : '—' }}</div>
         <div class="bidi-description">Stop dynamique adapté au noise</div>
       </div>
       <div class="bidi-param">
@@ -83,6 +83,7 @@ interface Props {
   trailingStop?: number
   timeout?: number
   pair: string
+  pointValue?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -93,6 +94,11 @@ const props = withDefaults(defineProps<Props>(), {
   timeout: 60,
   pair: 'EURUSD'
 })
+
+function formatValue(val: number, decimals: number = 0): string {
+  // val is already in points (thanks to backend fix)
+  return formatPointsWithPips(props.pair, val, decimals)
+}
 
 // Simple scaling function for visualization
 // Max range to display is roughly SL * 1.5

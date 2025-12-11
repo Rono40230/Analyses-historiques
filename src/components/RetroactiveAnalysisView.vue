@@ -39,6 +39,7 @@
       :timeout="store.graphData?.timeout ?? 60"
       :offset="store.graphData?.offset ?? 0"
       :stop-loss-recovery="store.graphData?.stop_loss_recovery ?? 0"
+      :point-value="store.graphData?.point_value"
       :event-label="getEventLabel(store.selectedEventType)"
       @archive="openArchiveModal"
     />

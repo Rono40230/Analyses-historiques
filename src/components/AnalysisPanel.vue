@@ -80,6 +80,7 @@
     <MetricsDisplay 
       :global-metrics="props.result.global_metrics" 
       :estimated-price="getEstimatedPrice()"
+      :point-value="props.result.point_value"
     />
     <ColorLegendSection @analyze="openAnalysisModal" />
   </div>
@@ -138,6 +139,7 @@ interface AnalysisResult {
   hourly_stats: HourlyStats[]
   best_hours?: number[]
   stats_15min?: Stats15Min[]
+  point_value?: number
 }
 
 const props = defineProps<{
@@ -197,18 +199,14 @@ function formatCandlesCount(count: number): string {
 }
 
 function getRiskClass(risk: string): string {
-  const map: { [key: string]: string } = { 'Low': 'low', 'Medium': 'medium', 'High': 'high' }
-  return map[risk] || ''
+  return { 'Low': 'low', 'Medium': 'medium', 'High': 'high' }[risk] || ''
 }
 
 function getEstimatedPrice(): number {
-  if (!props.result?.hourly_stats || props.result.hourly_stats.length === 0) {
-    return 100000
-  }
+  if (props.result?.point_value) return 1.0 / props.result.point_value
+  if (!props.result?.hourly_stats?.length) return 100000
   const atr = props.result.global_metrics.mean_atr
-  if (atr > 1000) return 100000
-  if (atr > 10) return 10000
-  return 1.0
+  return atr > 1000 ? 100000 : atr > 10 ? 10000 : 1.0
 }
 
 function openAnalysisModal() {

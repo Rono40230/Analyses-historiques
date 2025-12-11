@@ -17,6 +17,7 @@ pub struct AnalysisResult {
     pub recommendation: TradingRecommendation,
     pub risk_level: RiskLevel,
     pub global_metrics: GlobalMetrics,
+    pub point_value: f64, // Valeur d'un point pour normalisation (ex: 0.001 pour JPY)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

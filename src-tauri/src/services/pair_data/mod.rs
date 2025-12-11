@@ -5,7 +5,9 @@ mod converter;
 mod datetime_parser;
 mod formats;
 mod metadata;
+pub mod symbol_properties;
 mod types;
 
 // Ré-exports publics
 pub use converter::PairDataConverter;
+pub use symbol_properties::*;

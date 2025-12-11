@@ -10,12 +10,13 @@ impl BidiCalculator {
         noise_during: f64,
         volatility_increase: f64,
         _event_count: usize,
+        point_value: f64,
     ) -> (f64, f64, f64, i32, f64, f64) {
         let best_moment = Self::calculate_best_moment(atr_before);
-        let stop_loss = Self::calculate_stop_loss(atr_before, atr_after, noise_during);
-        let trailing_stop = Self::calculate_trailing_stop(atr_before, atr_after, noise_during);
+        let stop_loss = Self::calculate_stop_loss(atr_before, atr_after, noise_during, point_value);
+        let trailing_stop = Self::calculate_trailing_stop(atr_before, atr_after, noise_during, point_value);
         let timeout = Self::calculate_timeout(atr_after, volatility_increase);
-        let offset = Self::calculate_offset(atr_before, noise_during);
+        let offset = Self::calculate_offset(atr_before, noise_during, point_value);
 
         // Calcul du SL Recovery pour Straddle Simultané
         // Il doit être suffisant pour atteindre l'autre côté (2x offset) + une marge de sécurité
@@ -40,7 +41,7 @@ impl BidiCalculator {
         (29.0 - peak_idx as f64).max(0.0)
     }
 
-    fn calculate_offset(atr_before: &[f64], noise_during: f64) -> f64 {
+    fn calculate_offset(atr_before: &[f64], noise_during: f64, point_value: f64) -> f64 {
         if atr_before.is_empty() {
             return 10.0; // Valeur par défaut
         }
@@ -50,16 +51,17 @@ impl BidiCalculator {
         let start_idx = atr_before.len().saturating_sub(5);
         let recent_atr_sum: f64 = atr_before[start_idx..].iter().sum();
         let count = atr_before.len() - start_idx;
-        let recent_atr = if count > 0 { recent_atr_sum / count as f64 } else { 10.0 };
+        let recent_atr = if count > 0 { recent_atr_sum / count as f64 } else { 10.0 * point_value };
 
         // Si le marché est bruyant (Noise > 2.0), on s'écarte davantage (1.5x ATR)
         // Sinon on reste assez proche (1.2x ATR) pour ne pas rater le départ
         let multiplier = if noise_during > 2.0 { 1.5 } else { 1.2 };
 
-        (recent_atr * multiplier).ceil()
+        let raw_offset = recent_atr * multiplier;
+        (raw_offset / point_value).ceil()
     }
 
-    fn calculate_stop_loss(atr_before: &[f64], atr_after: &[f64], noise_during: f64) -> f64 {
+    fn calculate_stop_loss(atr_before: &[f64], atr_after: &[f64], noise_during: f64, point_value: f64) -> f64 {
         let atr_mean = (atr_before.iter().sum::<f64>() + atr_after.iter().sum::<f64>())
             / (atr_before.len() + atr_after.len()) as f64;
 
@@ -75,10 +77,11 @@ impl BidiCalculator {
             1.5
         };
 
-        (atr_mean * sl_ratio).ceil()
+        let raw_sl = atr_mean * sl_ratio;
+        (raw_sl / point_value).ceil()
     }
 
-    fn calculate_trailing_stop(atr_before: &[f64], atr_after: &[f64], noise_during: f64) -> f64 {
+    fn calculate_trailing_stop(atr_before: &[f64], atr_after: &[f64], noise_during: f64, point_value: f64) -> f64 {
         let atr_mean = (atr_before.iter().sum::<f64>() + atr_after.iter().sum::<f64>())
             / (atr_before.len() + atr_after.len()) as f64;
 
@@ -94,7 +97,8 @@ impl BidiCalculator {
             0.6 // Bruit faible -> TS = 0.6x ATR (ex: ATR 40 -> TS 24)
         };
 
-        (atr_mean * ts_ratio).ceil()
+        let raw_ts = atr_mean * ts_ratio;
+        (raw_ts / point_value).ceil()
     }
 
     fn calculate_timeout(atr_after: &[f64], volatility_increase: f64) -> i32 {

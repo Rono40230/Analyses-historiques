@@ -22,6 +22,7 @@ export interface RetroGraphData {
   timeout: number                    // Timeout en minutes
   offset: number                     // Offset d'entrée en points
   stop_loss_recovery: number         // SL Recovery en points
+  point_value: number                // Valeur d'un point pour normalisation
 }
 
 export function useRetroAnalysisGraphData() {

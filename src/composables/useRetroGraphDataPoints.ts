@@ -4,10 +4,12 @@ export function useRetroGraphDataPoints(props: {
   atrTimelineBefore?: number[],
   atrTimelineAfter?: number[],
   meilleurMoment?: number,
-  eventDatetime?: string
+  eventDatetime?: string,
+  pointValue?: number
 }) {
   const screenWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1024)
   const Y_BASELINE = 380, Y_MID = 215, Y_TOP = 50
+  const pointValue = computed(() => props.pointValue || 1.0)
 
   const svgMargins = computed(() => {
     if (screenWidth.value > 1024) return { left: 20, right: 999, t0: 445, labelY: 15 }
@@ -23,9 +25,9 @@ export function useRetroGraphDataPoints(props: {
   const minAtr = computed(() => Math.min(...allAtrValues.value, 0))
   const maxAtr = computed(() => Math.max(...allAtrValues.value, 0.001))
 
-  const minAtrLabel = computed(() => Math.ceil(minAtr.value).toString())
-  const maxAtrLabel = computed(() => Math.ceil(maxAtr.value).toString())
-  const midAtrLabel = computed(() => Math.ceil((minAtr.value + maxAtr.value) / 2).toString())
+  const minAtrLabel = computed(() => Math.ceil(minAtr.value / pointValue.value).toString())
+  const maxAtrLabel = computed(() => Math.ceil(maxAtr.value / pointValue.value).toString())
+  const midAtrLabel = computed(() => Math.ceil(((minAtr.value + maxAtr.value) / 2) / pointValue.value).toString())
 
   const mapAtrToY = (atr: number): number => {
     if (maxAtr.value === minAtr.value) return Y_BASELINE
@@ -87,6 +89,8 @@ export function useRetroGraphDataPoints(props: {
     return `M${pts.join('L')}Z`
   })
 
+  const formatValue = (val: number) => Math.ceil(val / pointValue.value)
+
   return {
     svgMargins,
     yAxisBaseline: Y_BASELINE,
@@ -100,6 +104,7 @@ export function useRetroGraphDataPoints(props: {
     getXPositionBefore,
     getXPositionAfter,
     ceilValue: Math.ceil,
+    formatValue,
     bestMomentX,
     beforePointsString,
     afterPointsString,

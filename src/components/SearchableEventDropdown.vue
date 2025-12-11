@@ -53,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, watch } from 'vue'
 import { useSearchableEventDropdown, type EventOption } from '../composables/useSearchableEventDropdown'
 
 interface Props {
@@ -78,12 +78,37 @@ const inputRef = ref<HTMLInputElement | null>(null)
 const highlightedIndex = ref(-1)
 const { searchQuery, isOpen, closeDropdown, openDropdown, toggleDropdown } = useSearchableEventDropdown()
 
+// Sync searchQuery with modelValue
+watch(() => props.modelValue, (newVal) => {
+  const event = props.events.find(e => e.name === newVal)
+  if (event) {
+    searchQuery.value = event.label
+  }
+}, { immediate: true })
+
+// Also watch events list, in case it loads AFTER modelValue is set
+watch(() => props.events, () => {
+  if (props.modelValue && !searchQuery.value) {
+    const event = props.events.find(e => e.name === props.modelValue)
+    if (event) searchQuery.value = event.label
+  }
+})
+
 const filteredEvents = computed(() => {
-  if (!searchQuery.value.trim()) return props.events
-  const query = searchQuery.value.toLowerCase()
+  const query = searchQuery.value.trim()
+  if (!query) return props.events
+
+  // If the search query matches the currently selected item's label exactly,
+  // we assume the user hasn't started searching yet, so we show the full list.
+  const selectedEvent = props.events.find(e => e.name === props.modelValue)
+  if (selectedEvent && query === selectedEvent.label) {
+    return props.events
+  }
+
+  const lowerQuery = query.toLowerCase()
   return props.events.filter(e =>
-    e.label.toLowerCase().includes(query) ||
-    e.name.toLowerCase().includes(query)
+    e.label.toLowerCase().includes(lowerQuery) ||
+    e.name.toLowerCase().includes(lowerQuery)
   )
 })
 

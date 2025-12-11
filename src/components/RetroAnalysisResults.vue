@@ -22,6 +22,7 @@
           :trailing-stop="props.trailingStop"
           :timeout="props.timeout"
           :pair="props.pair"
+          :point-value="props.pointValue"
         />
       </div>
 
@@ -44,6 +45,7 @@
           :is-archive-mode="props.isArchiveMode"
           :event-label="props.eventLabel"
           :meilleur-moment="props.meilleurMoment"
+          :point-value="props.pointValue"
         />
       </div>
 
@@ -56,6 +58,7 @@
           :trailing-stop="trailingStopRecovery"
           :timeout="props.timeout"
           :pair="props.pair"
+          :point-value="props.pointValue"
         />
       </div>
     </div>
@@ -91,6 +94,7 @@ const props = defineProps<{
   timeout?: number
   offset?: number
   stopLossRecovery?: number
+  pointValue?: number
 }>()
 
 defineEmits<{ archive: [] }>()

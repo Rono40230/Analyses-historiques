@@ -70,6 +70,7 @@ interface MetricConfig {
 const props = defineProps<{
   globalMetrics: GlobalMetrics
   estimatedPrice: number
+  pointValue?: number
 }>()
 
 function getMetricQuality(metric: string, value: number): string {
@@ -123,6 +124,9 @@ function getMetricQuality(metric: string, value: number): string {
 
 function formatATR(atr: number): string {
   // Afficher l'ATR en points (arrondir à l'unité supérieure) au lieu du pourcentage
+  if (props.pointValue) {
+    return `${Math.ceil(atr / props.pointValue)} pts`
+  }
   return `${Math.ceil(atr)} pts`
 }
 
@@ -145,7 +149,7 @@ const displayedMetrics = computed(() => [
     key: 'range',
     label: 'True Range',
     value: props.globalMetrics.mean_range,
-    formattedValue: `${Math.ceil(props.globalMetrics.mean_range)} pts`,
+    formattedValue: formatATR(props.globalMetrics.mean_range),
     definition: 'True Range (H-L avec gaps) : capture le mouvement RÉEL exploitable en points (contrairement au simple range). Évalue l\'amplitude vraie que le straddle peut capturer.',
     usage: '>80 pts = mouvement énorme exploitable\n40-80 pts = bon range, straddle bien positionné\n20-40 pts = acceptable mais serré\n<20 pts = peu de mouvement.',
     scoring: '🟢 Excellent (>80 pts) = Énorme amplitude, profit assuré\n🔵 Bon (40-80 pts) = Range parfait straddle\n🟡 Acceptable (20-40 pts) = Limité mais jouable\n🔴 Pauvre (<20 pts) = Mouvement insuffisant',

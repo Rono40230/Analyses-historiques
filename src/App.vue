@@ -169,6 +169,7 @@ function switchTab(tab: 'volatility' | 'heatmap' | 'retrospective' | 'archives' 
                 :best-quarter="analysisResult.best_quarter"
                 :stats15min="analysisResult.stats_15min"
                 :global-metrics="analysisResult.global_metrics"
+                :point-value="analysisResult.point_value"
                 @open-bidi-params="handleOpenBidiParams"
               />
             </template>

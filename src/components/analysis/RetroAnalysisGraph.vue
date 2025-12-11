@@ -53,13 +53,13 @@
         <template v-if="atrTimelineBefore && atrTimelineBefore.length > 1">
           <path :d="curvePathBefore" fill="url(#beforeGradient)" stroke="none" />
           <polyline :points="beforePointsString" fill="none" stroke="#58a6ff" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
-          <text x="130" y="100" font-size="13" fill="#58a6ff" font-weight="bold">ATR Avant: {{ ceilValue(atrTimelineBefore[Math.floor(atrTimelineBefore.length / 2)]) }}</text>
+          <text x="130" y="100" font-size="13" fill="#58a6ff" font-weight="bold">ATR Avant: {{ formatValue(atrTimelineBefore[Math.floor(atrTimelineBefore.length / 2)]) }}</text>
         </template>
 
         <template v-if="atrTimelineAfter && atrTimelineAfter.length > 1">
           <path :d="curvePathAfter" fill="url(#afterGradient)" stroke="none" />
           <polyline :points="afterPointsString" fill="none" stroke="#f85149" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
-          <text x="600" y="100" font-size="13" fill="#f85149" font-weight="bold">ATR Après: {{ ceilValue(atrTimelineAfter[Math.floor(atrTimelineAfter.length / 2)]) }}</text>
+          <text x="600" y="100" font-size="13" fill="#f85149" font-weight="bold">ATR Après: {{ formatValue(atrTimelineAfter[Math.floor(atrTimelineAfter.length / 2)]) }}</text>
         </template>
       </svg>
     </div>
@@ -87,6 +87,7 @@ interface Props {
   isArchiveMode?: boolean
   eventLabel?: string
   meilleurMoment?: number
+  pointValue?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -105,7 +106,8 @@ const props = withDefaults(defineProps<Props>(), {
   timezoneOffset: 'UTC+0',
   isArchiveMode: false,
   eventLabel: '',
-  meilleurMoment: 0
+  meilleurMoment: 0,
+  pointValue: 1.0
 })
 
 const {
@@ -119,6 +121,7 @@ const {
   getXPositionBefore,
   getXPositionAfter,
   ceilValue,
+  formatValue,
   bestMomentX,
   beforePointsString,
   afterPointsString,
@@ -128,7 +131,8 @@ const {
   atrTimelineBefore: props.atrTimelineBefore,
   atrTimelineAfter: props.atrTimelineAfter,
   meilleurMoment: props.meilleurMoment,
-  eventDatetime: props.eventDatetime
+  eventDatetime: props.eventDatetime,
+  pointValue: props.pointValue
 })
 </script>
 

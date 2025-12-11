@@ -80,6 +80,7 @@ pub struct EventImpactResult {
     pub timeout: i32,                     // Timeout recommandé en minutes (basé sur decay de volatilité)
     pub offset: f64,                      // Offset d'entrée en points (distance du prix)
     pub stop_loss_recovery: f64,          // Stop Loss pour mode Simultané (Recovery)
+    pub point_value: f64,                 // Valeur d'un point pour normalisation (ex: 0.001 pour JPY)
 }
 
 /// Available event types with count

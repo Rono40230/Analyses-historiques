@@ -1,6 +1,7 @@
 use super::helpers::calculate_atr;
 use super::bidi_calculator::BidiCalculator;
 use super::simple_analyzers::{PeakDelayAnalyzer, DecayProfileAnalyzer};
+use crate::services::pair_data::get_point_value;
 use chrono::Duration;
 
 pub struct RetroAnalysisService;
@@ -105,20 +106,14 @@ impl RetroAnalysisService {
             }
 
             // Calculer Noise Ratio pour avant/pendant/après
-            // Noise Ratio = Range / Body (avant event)
             for i in 0..event_index.min(atrs.len()) {
-                let range = if bodies[i] > 0.0 { 100.0 / bodies[i] } else { 1.0 };
-                noise_before_sum += range;
+                noise_before_sum += if bodies[i] > 0.0 { 100.0 / bodies[i] } else { 1.0 };
             }
-            // Noise pendant event (1 candle autour du T0)
             if event_index < atrs.len() {
-                let range = if bodies[event_index] > 0.0 { 100.0 / bodies[event_index] } else { 1.0 };
-                noise_during_sum += range;
+                noise_during_sum += if bodies[event_index] > 0.0 { 100.0 / bodies[event_index] } else { 1.0 };
             }
-            // Noise après event
             for i in (event_index + 1)..atrs.len().min(event_index + 90) {
-                let range = if bodies[i] > 0.0 { 100.0 / bodies[i] } else { 1.0 };
-                noise_after_sum += range;
+                noise_after_sum += if bodies[i] > 0.0 { 100.0 / bodies[i] } else { 1.0 };
             }
         }
 
@@ -149,29 +144,26 @@ impl RetroAnalysisService {
         // Calculer l'augmentation de volatilité
         let atr_mean_before = atr_timeline_before.iter().sum::<f64>() / 30.0;
         let atr_mean_after = atr_timeline_after.iter().sum::<f64>() / 90.0;
-        let volatility_increase = if atr_mean_before > 0.0 {
-            ((atr_mean_after - atr_mean_before) / atr_mean_before) * 100.0
-        } else {
-            0.0
-        };
+        let volatility_increase = if atr_mean_before > 0.0 { ((atr_mean_after - atr_mean_before) / atr_mean_before) * 100.0 } else { 0.0 };
 
         // Calculer l'heure moyenne de l'événement
         let avg_timestamp = if event_count > 0 {
             events.iter().take(event_count).map(|e| e.event_time.and_utc().timestamp()).sum::<i64>() / event_count as i64
-        } else {
-            0
-        };
+        } else { 0 };
         let event_datetime = chrono::DateTime::<chrono::Utc>::from_timestamp(avg_timestamp, 0)
             .map(|dt| dt.format("%Y-%m-%dT%H:%M:%SZ").to_string())
             .unwrap_or_else(|| "Unknown".into());
 
         // === CALCUL DES PARAMÈTRES BIDI POUR STRADDLE ===
+        let point_value = get_point_value(pair);
+
         let bidi_params = BidiCalculator::calculate_from_impact(
             &atr_timeline_before,
             &atr_timeline_after,
             noise_during,
             volatility_increase,
             event_count,
+            point_value,
         );
 
         Ok(super::types::EventImpactResult {
@@ -194,6 +186,7 @@ impl RetroAnalysisService {
             timeout: bidi_params.3,
             offset: bidi_params.4,
             stop_loss_recovery: bidi_params.5,
+            point_value,
         })
     }
 }
