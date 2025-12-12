@@ -3,7 +3,8 @@
 
 use super::utils::{max, mean};
 use crate::models::{Candle, Result, Stats15Min};
-use crate::services::{MetricsCalculator, VolatilityDurationAnalyzer};
+use crate::services::pair_data::get_point_value;
+use crate::services::{MetricsCalculator, StraddleParameterService, VolatilityDurationAnalyzer};
 use chrono::Timelike;
 use std::collections::HashMap;
 use tracing::debug;
@@ -75,6 +76,9 @@ impl<'a> Stats15MinCalculator<'a> {
                         peak_duration_mean: None,
                         volatility_half_life_mean: None,
                         recommended_trade_expiration_mean: None,
+                        straddle_parameters: None,
+                        volatility_profile: None,
+                        optimal_entry_minute: None,
                     });
                 }
             }
@@ -117,6 +121,9 @@ impl<'a> Stats15MinCalculator<'a> {
                 peak_duration_mean: None,
                 volatility_half_life_mean: None,
                 recommended_trade_expiration_mean: None,
+                straddle_parameters: None,
+                volatility_profile: None,
+                optimal_entry_minute: None,
             });
         }
 
@@ -177,6 +184,44 @@ impl<'a> Stats15MinCalculator<'a> {
                 }
             };
 
+                // Calcul des paramètres Straddle (Harmonisation Bidi V2)
+        let symbol = candles.first().map(|c| c.symbol.as_str()).unwrap_or("EURUSD");
+        let point_value = get_point_value(symbol);
+        let straddle_params = StraddleParameterService::calculate_parameters(
+            atr_mean,
+            noise_ratio_mean,
+            point_value,
+        );
+
+        // Calcul du profil de volatilité minute par minute (0-14) pour le graphique
+        let mut minute_ranges: Vec<Vec<f64>> = vec![Vec::new(); 15];
+        for candle in candles {
+            let minute_idx = (candle.datetime.minute() % 15) as usize;
+            if minute_idx < 15 {
+                let range = candle.high - candle.low;
+                minute_ranges[minute_idx].push(range);
+            }
+        }
+
+        let volatility_profile: Vec<f64> = minute_ranges
+            .iter()
+            .map(|ranges| {
+                if ranges.is_empty() {
+                    0.0
+                } else {
+                    ranges.iter().sum::<f64>() / ranges.len() as f64
+                }
+            })
+            .collect();
+
+        // Détermination de la minute optimale (début de l'accélération ou pic)
+        // On cherche le pic de volatilité moyenne
+        let optimal_entry_minute = volatility_profile
+            .iter()
+            .enumerate()
+            .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+            .map(|(index, _)| index as u8);
+
         Ok(Stats15Min {
             hour,
             quarter,
@@ -187,16 +232,19 @@ impl<'a> Stats15MinCalculator<'a> {
             range_mean,
             body_range_mean,
             shadow_ratio_mean,
-            volume_imbalance_mean: direction_strength, // Remplacé par direction_strength
+            volume_imbalance_mean: direction_strength,
             noise_ratio_mean,
             breakout_percentage,
             events: Vec::new(),
             peak_duration_minutes: peak_duration,
             volatility_half_life_minutes: half_life,
             recommended_trade_expiration_minutes: trade_exp,
-            peak_duration_mean: None,
-            volatility_half_life_mean: None,
-            recommended_trade_expiration_mean: None,
+            peak_duration_mean: peak_duration,
+            volatility_half_life_mean: half_life,
+            recommended_trade_expiration_mean: trade_exp,
+            straddle_parameters: Some(straddle_params),
+            volatility_profile: Some(volatility_profile),
+            optimal_entry_minute,
         })
     }
 }

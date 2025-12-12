@@ -1,5 +1,5 @@
 // models/stats_15min.rs - Statistiques par 15 minutes (pour scalping)
-use crate::models::EventInHour;
+use crate::models::{EventInHour, StraddleParameters};
 use serde::{Deserialize, Serialize};
 
 /// Statistiques de volatilité pour une tranche de 15 minutes spécifique
@@ -32,6 +32,15 @@ pub struct Stats15Min {
     pub volatility_half_life_mean: Option<u16>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub recommended_trade_expiration_mean: Option<u16>,
+    // Paramètres Straddle calculés (Harmonisation Bidi V2)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub straddle_parameters: Option<StraddleParameters>,
+    // Profil de volatilité minute par minute (0-14) pour le graphique
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub volatility_profile: Option<Vec<f64>>,
+    // Minute optimale d'entrée (0-14) basée sur le profil
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub optimal_entry_minute: Option<u8>,
 }
 
 impl Stats15Min {

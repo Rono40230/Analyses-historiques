@@ -71,6 +71,13 @@ pub fn get_pip_value(symbol: &str) -> f64 {
     point
 }
 
+/// Normalise une valeur en pips selon le symbole
+pub fn normalize_to_pips(value: f64, symbol: &str) -> f64 {
+    let pip_value = get_pip_value(symbol);
+    if pip_value == 0.0 { return 0.0; }
+    value / pip_value
+}
+
 /// Détermine si c'est une paire Forex
 #[allow(dead_code)]
 fn is_forex_pair(symbol: &str) -> bool {

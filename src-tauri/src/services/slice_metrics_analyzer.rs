@@ -72,7 +72,7 @@ fn calculate_metrics_from_candles(
     candles: &[Candle],
     symbol: &str,
 ) -> Result<SliceMetrics, String> {
-    use crate::services::straddle_simulator::normalize_to_pips;
+    use crate::services::pair_data::symbol_properties::normalize_to_pips;
 
     if candles.is_empty() {
         return Ok(SliceMetrics::default());

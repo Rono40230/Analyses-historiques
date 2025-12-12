@@ -135,8 +135,10 @@ impl VolatilityAnalyzer {
         let calculator_15min = Stats15MinCalculator::new(&self.candles);
         let mut stats_15min = calculator_15min.calculate()?;
 
+        let point_value = get_point_value(symbol);
+
         // 1.6 Agrège les stats par quarter pour obtenir les moyennes historiques
-        stats_15min = QuarterlyAggregator::aggregate(&stats_15min);
+        stats_15min = QuarterlyAggregator::aggregate(&stats_15min, point_value);
 
         // 1b. Charge les événements économiques et les associe aux heures
         if let Err(e) = EventLoader::load_and_associate_events(
@@ -211,8 +213,6 @@ impl VolatilityAnalyzer {
             "Analysis complete: confidence={:.1}, recommendation={:?}, risk={:?}",
             confidence_score, recommendation, risk_level
         );
-
-        let point_value = get_point_value(symbol);
 
         Ok(AnalysisResult {
             symbol: symbol.to_string(),

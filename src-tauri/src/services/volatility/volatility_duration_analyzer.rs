@@ -66,13 +66,15 @@ impl VolatilityDurationAnalyzer {
     }
 
     fn calculate_atr_values(candles: &[&Candle]) -> Result<Vec<f64>, VolatilityError> {
-        if candles.len() < 2 {
+        if candles.len() < 4 {
             return Err(VolatilityError::InsufficientData(
-                "Min 2 bougies pour ATR".to_string(),
+                "Min 4 bougies pour ATR (période 3)".to_string(),
             ));
         }
         let mut atr_values = Vec::new();
-        const PERIOD: f64 = 14.0;
+        const PERIOD: f64 = 3.0;
+        const PERIOD_USIZE: usize = 3;
+        
         let mut tr_values = Vec::new();
         for i in 0..candles.len() {
             let curr = candles[i];
@@ -86,9 +88,16 @@ impl VolatilityDurationAnalyzer {
                 tr_values.push(hl.max(hc).max(lc));
             }
         }
-        let mut atr = tr_values.iter().take(14).sum::<f64>() / PERIOD;
+        
+        if tr_values.len() < PERIOD_USIZE {
+             return Err(VolatilityError::InsufficientData(
+                "Pas assez de données TR".to_string(),
+            ));
+        }
+
+        let mut atr = tr_values.iter().take(PERIOD_USIZE).sum::<f64>() / PERIOD;
         atr_values.push(atr);
-        for tr in tr_values.iter().skip(14) {
+        for tr in tr_values.iter().skip(PERIOD_USIZE) {
             atr = (atr * (PERIOD - 1.0) + tr) / PERIOD;
             atr_values.push(atr);
         }

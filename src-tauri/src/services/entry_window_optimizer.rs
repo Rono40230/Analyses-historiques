@@ -2,7 +2,7 @@
 // Optimise le moment d'entrée dans le créneau (Entry Window)
 
 use crate::models::Candle;
-use crate::services::straddle_simulator::normalize_to_pips;
+use crate::services::pair_data::symbol_properties::normalize_to_pips;
 use chrono::Timelike;
 use std::collections::HashMap;
 

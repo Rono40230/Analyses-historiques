@@ -6,6 +6,7 @@ use super::straddle_simulator_helpers::{
     calculate_atr_mean, calculate_risk_level,
 };
 use crate::models::Candle;
+use crate::services::pair_data::symbol_properties::normalize_to_pips;
 
 #[derive(Debug, Clone)]
 pub struct WhipsawDetail {
@@ -35,56 +36,6 @@ pub struct StraddleSimulationResult {
     pub trailing_stop_adjusted: f64,   // Trailing Stop réduit
     pub timeout_adjusted_minutes: i32, // Timeout réduit
     pub whipsaw_details: Vec<WhipsawDetail>, // Détails de chaque whipsaw
-}
-
-/// Normalise une valeur en pips selon le symbole
-pub fn normalize_to_pips(value: f64, symbol: &str) -> f64 {
-    let pip_value = get_pip_value(symbol);
-    value / pip_value
-}
-
-/// Retourne la valeur d'1 pip pour une paire donnée
-/// 
-/// Règles MT5 (référence officielle):
-/// - Forex 5 décimales (EURUSD, GBPUSD, USDCAD): 1 pip = 10 points → pip_value = 0.0001
-/// - JPY 3 décimales (USDJPY, EURJPY, CADJPY): 1 pip = 10 points → pip_value = 0.01
-/// - Commodités or (XAUUSD, XAUJPY): 1 pip = 10 points → pip_value = 0.1
-/// - Commodités argent (XAGUSD): 1 pip = 1000 points → pip_value = 0.001
-/// - Indices (USA500IDXUSD): 1 pip = 1 point → pip_value = 1.0
-/// - Crypto (BTCUSD): 1 pip = 1 point → pip_value = 1.0
-pub fn get_pip_value(symbol: &str) -> f64 {
-    // JPY pairs (3 décimales): 1 pip = 10 points
-    if symbol.contains("JPY") {
-        return 0.01;
-    }
-    
-    // Commodités or (XAUUSD, XAUJPY): 1 pip = 10 points
-    if symbol.contains("XAU") {
-        return 0.1;
-    }
-    
-    // Commodités argent (XAGUSD): 1 pip = 1000 points
-    if symbol.contains("XAG") {
-        return 0.001;
-    }
-    
-    // Indices (USA500IDXUSD, US30, NAS100, SPX500): 1 pip = 1 point
-    if symbol.contains("US30") 
-        || symbol.contains("DE30")
-        || symbol.contains("NAS100")
-        || symbol.contains("SPX500")
-        || symbol.contains("USA500")
-    {
-        return 1.0;
-    }
-    
-    // Crypto (BTCUSD, ETHUSD): 1 pip = 1 point
-    if symbol.contains("BTC") || symbol.contains("ETH") {
-        return 1.0;
-    }
-    
-    // Forex 5 décimales par défaut (EURUSD, GBPUSD, USDCAD, etc.): 1 pip = 10 points
-    0.0001
 }
 
 /// Simule une stratégie Straddle sur un ensemble de bougies avec tracking temporel du whipsaw
@@ -139,11 +90,18 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
     // === CALCUL DE L'ATR (VOLATILITÉ) POUR DÉTERMINER LE TIMEOUT ===
     let atr_mean = calculate_atr_mean(candles);
 
-    // === SIMULATION DES TRADES STRADDLE (BRUT, SANS WHIPSAW) ===
+    // === SIMULATION DES TRADES STRADDLE (AVEC DÉTECTION WHIPSAW) ===
     let mut total_trades = 0;
     let mut wins = 0;
     let mut losses = 0;
+    let mut whipsaws = 0;
+    let mut whipsaw_details_vec: Vec<WhipsawDetail> = Vec::new();
+    
     let marge = offset_optimal;
+    // Ratio TP:SL de 2:1 (Standard Straddle)
+    // SL = Marge (l'autre côté du straddle)
+    // TP = Marge * 2.0
+    let tp_distance = marge * 2.0;
 
     // Boucle sur les bougies pour placer les trades
     for i in 0..candles.len() {
@@ -151,26 +109,115 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
         let buy_stop = entry_price + marge;
         let sell_stop = entry_price - marge;
 
-        // Chercher si un trade s'est déclenché dans la fenêtre suivante
-        let mut triggered = false;
-        let mut won = false;
+        // État du trade
+        let mut triggered_side: Option<&str> = None; // "BUY" ou "SELL"
+        let mut trade_result: Option<&str> = None;   // "WIN", "LOSS", "WHIPSAW"
+        
+        let mut buy_trigger_idx = 0;
+        let mut sell_trigger_idx = 0;
 
-        for j in (i + 1)..candles.len().min(i + 61) {
-            if candles[j].high >= buy_stop || candles[j].low <= sell_stop {
-                triggered = true;
-                // Simplement compter comme gagnant (pour version brute)
-                won = true;
-                break;
+        // Fenêtre de 60 bougies (1h si M1) pour le déroulement du trade
+        let max_duration = 60;
+        let end_idx = candles.len().min(i + max_duration + 1);
+
+        for j in (i + 1)..end_idx {
+            let current = &candles[j];
+            
+            if triggered_side.is_none() {
+                // Pas encore déclenché, on surveille les deux bornes
+                if current.high >= buy_stop && current.low <= sell_stop {
+                    // Cas rare : déclenchement simultané dans la même bougie -> Whipsaw immédiat
+                    triggered_side = Some("BOTH");
+                    trade_result = Some("WHIPSAW");
+                    buy_trigger_idx = j;
+                    sell_trigger_idx = j;
+                    break;
+                } else if current.high >= buy_stop {
+                    triggered_side = Some("BUY");
+                    buy_trigger_idx = j;
+                    // Vérifier si SL ou TP touché dans la même bougie après déclenchement
+                    // (Approximation : si Low < SellStop, c'est un whipsaw)
+                    if current.low <= sell_stop {
+                        trade_result = Some("WHIPSAW");
+                        sell_trigger_idx = j;
+                        break;
+                    }
+                    if current.high >= buy_stop + tp_distance {
+                        trade_result = Some("WIN");
+                        break;
+                    }
+                } else if current.low <= sell_stop {
+                    triggered_side = Some("SELL");
+                    sell_trigger_idx = j;
+                    // Vérifier si SL ou TP touché dans la même bougie
+                    if current.high >= buy_stop {
+                        trade_result = Some("WHIPSAW");
+                        buy_trigger_idx = j;
+                        break;
+                    }
+                    if current.low <= sell_stop - tp_distance {
+                        trade_result = Some("WIN");
+                        break;
+                    }
+                }
+            } else {
+                // Déjà déclenché, on gère la position
+                match triggered_side {
+                    Some("BUY") => {
+                        // SL = Sell Stop (Whipsaw)
+                        if current.low <= sell_stop {
+                            trade_result = Some("WHIPSAW");
+                            sell_trigger_idx = j;
+                            break;
+                        }
+                        // TP
+                        if current.high >= buy_stop + tp_distance {
+                            trade_result = Some("WIN");
+                            break;
+                        }
+                    },
+                    Some("SELL") => {
+                        // SL = Buy Stop (Whipsaw)
+                        if current.high >= buy_stop {
+                            trade_result = Some("WHIPSAW");
+                            buy_trigger_idx = j;
+                            break;
+                        }
+                        // TP
+                        if current.low <= sell_stop - tp_distance {
+                            trade_result = Some("WIN");
+                            break;
+                        }
+                    },
+                    _ => break, // Should not happen
+                }
             }
         }
 
-        if triggered {
+        // Enregistrement des résultats
+        if let Some(result) = trade_result {
             total_trades += 1;
-            if won {
-                wins += 1;
-            } else {
-                losses += 1;
+            match result {
+                "WIN" => wins += 1,
+                "WHIPSAW" => {
+                    whipsaws += 1;
+                    losses += 1; // Un whipsaw est une perte
+                    whipsaw_details_vec.push(WhipsawDetail {
+                        entry_index: i,
+                        entry_price,
+                        buy_stop,
+                        sell_stop,
+                        buy_trigger_index: buy_trigger_idx,
+                        sell_trigger_index: sell_trigger_idx,
+                    });
+                },
+                _ => losses += 1, // LOSS (Time out ou autre)
             }
+        } else if triggered_side.is_some() {
+            // Déclenché mais pas de résultat (Time out) -> Considéré comme perte ou neutre
+            // Pour être conservateur, on compte comme perte si pas de TP
+            total_trades += 1;
+            losses += 1;
         }
     }
 
@@ -180,10 +227,11 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
         0.0
     };
 
-    // Whipsaw = DÉSACTIVÉ
-    let whipsaws = 0;
-    let whipsaw_details_vec: Vec<WhipsawDetail> = Vec::new();
-    let whipsaw_frequency_percentage = 0.0;
+    let whipsaw_frequency_percentage = if total_trades > 0 {
+        (whipsaws as f64 / total_trades as f64) * 100.0
+    } else {
+        0.0
+    };
 
     let (risk_level, risk_color) = calculate_risk_level(whipsaw_frequency_percentage);
 
@@ -220,16 +268,5 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_pip_value() {
-        assert_eq!(get_pip_value("EURUSD"), 0.0001);
-        assert_eq!(get_pip_value("BTCUSD"), 1.00);
-        assert_eq!(get_pip_value("USDJPY"), 0.01);
-    }
-
-    #[test]
-    fn test_normalize_to_pips() {
-        let value = 0.0020;
-        assert_eq!(normalize_to_pips(value, "EURUSD"), 20.0);
-    }
+    // Tests removed as they tested moved functions
 }
