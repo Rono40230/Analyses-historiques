@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineEmits, defineProps } from 'vue'
+import { defineEmits, defineProps, watch } from 'vue'
 import GlobalStatsBlock from './analysis/GlobalStatsBlock.vue'
 import EventAnalysisBlock from './analysis/EventAnalysisBlock.vue'
 import PairAnalysisBlock from './analysis/PairAnalysisBlock.vue'
@@ -59,7 +59,13 @@ const emit = defineEmits<{
   close: []
 }>()
 
-useArchiveStatistics()
+const { loadAllArchives } = useArchiveStatistics()
+
+watch(() => props.isOpen, (newValue) => {
+  if (newValue) {
+    loadAllArchives()
+  }
+})
 
 function close() {
   emit('close')

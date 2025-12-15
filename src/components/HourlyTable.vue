@@ -6,7 +6,7 @@
     <!-- Header simple avec titre -->
     <div class="table-header">
       <div class="header-left">
-        <h3>📅 Statistiques par Heure (Heure de Paris)</h3>
+        <h3>📅 Statistiques par Heure (UTC)</h3>
       </div>
     </div>
     
@@ -21,6 +21,7 @@
             <th>Heure</th>
             <th>ATR Moyen</th>
             <th>True Range</th>
+            <th>Max Spike</th>
             <th>Volatilite %</th>
             <th>Body Range %</th>
             <th>Direction Strength</th>
@@ -57,9 +58,12 @@
                   class="star"
                 >⭐</span>
               </td>
-              <td>{{ formatATR(stat.atr_mean) }}</td>
+              <td><UnitDisplay :value="stat.atr_mean" :unit="props.unit || 'pts'" /></td>
               <td>
-                {{ formatATR(stat.range_mean) }}
+                <UnitDisplay :value="stat.range_mean" :unit="props.unit || 'pts'" />
+              </td>
+              <td>
+                <UnitDisplay :value="stat.max_true_range" :unit="props.unit || 'pts'" />
               </td>
               <td>{{ (stat.volatility_mean * 100).toFixed(2) }}%</td>
               <td>
@@ -92,7 +96,7 @@
               class="accordion-row"
             >
               <td
-                :colspan="props.stats15min ? 14 : 10"
+                :colspan="props.stats15min ? 16 : 12"
                 class="accordion-cell"
               >
                 <div class="scalping-details">
@@ -102,6 +106,7 @@
                         <th>Tranche</th>
                         <th>ATR Moyen</th>
                         <th>True Range</th>
+                        <th>Max Spike</th>
                         <th>Volatilité %</th>
                         <th>Body Range %</th>
                         <th>Direction Strength</th>
@@ -134,8 +139,9 @@
                           >⭐</span>
                           {{ formatQuarterLabel(stat.hour, quarter.quarter) }}
                         </td>
-                        <td>{{ formatATR(quarter.atr_mean) }}</td>
-                        <td>{{ formatATR(quarter.range_mean) }}</td>
+                        <td><UnitDisplay :value="quarter.atr_mean" :unit="props.unit || 'pts'" /></td>
+                        <td><UnitDisplay :value="quarter.range_mean" :unit="props.unit || 'pts'" /></td>
+                        <td><UnitDisplay :value="quarter.max_true_range ?? 0" :unit="props.unit || 'pts'" /></td>
                         <td>{{ (quarter.volatility_mean * 100).toFixed(2) }}%</td>
                         <td>
                           {{ Math.abs(quarter.body_range_mean).toFixed(2) }}%
@@ -215,6 +221,7 @@
 import { ref, onMounted, computed } from 'vue'
 import type { HourlyStats, EventInHour, Stats15Min } from '../stores/volatility'
 import EventDetailsDrawer from './EventDetailsDrawer.vue'
+import UnitDisplay from './UnitDisplay.vue'
 
 interface GlobalMetrics {
   mean_atr: number
@@ -239,42 +246,12 @@ const props = defineProps<{
   stats15min?: Stats15Min[]  // Stats 15-minutes optionnels
   globalMetrics?: GlobalMetrics // Pour normalisation (ATR, Tick Quality)
   pointValue?: number // Valeur d'un point pour normalisation (ex: 0.001 pour JPY)
+  unit?: string // Unité d'affichage (pips, points, $)
 }>()
 
 const emit = defineEmits<{
   'open-bidi-params': [{ hour: number; quarter: number }]
 }>()
-
-// Fonction helper pour estimer le prix moyen (pour normalisation)
-function getEstimatedPrice(): number {
-  if (props.pointValue) {
-    // Si pointValue est fourni (ex: 0.001), on peut déduire l'échelle
-    // Pour JPY (0.001), on veut afficher ~100.000
-    // Pour EURUSD (0.00001), on veut afficher ~1.00000
-    return 1.0 / props.pointValue
-  }
-
-  if (!props.globalMetrics) {
-    return 100000 // Valeur par défaut
-  }
-  // Utilise l'ATR moyen pour estimer l'ordre de grandeur du prix
-  const atr = props.globalMetrics.mean_atr
-  if (atr > 1000) return 100000 // Crypto (BTCUSD ~100k)
-  if (atr > 10) return 10000    // Indices (SPX ~10k)
-  return 1.0                     // Forex (EURUSD ~1.0)
-}
-
-// Formatte l'ATR en points (arrondir à l'unité supérieure) au lieu du pourcentage
-function formatATR(atr: number): string {
-  if (props.pointValue) {
-    // Conversion explicite : Valeur Brute / Valeur Point
-    // Ex: 0.15 / 0.001 = 150 points
-    const points = atr / props.pointValue
-    return `${Math.ceil(points)} pts`
-  }
-  // Fallback ancien comportement (si pointValue manquant)
-  return `${Math.ceil(atr)} pts`
-}
 
 // Formate le label de quarter avec gestion du changement d'heure
 function formatQuarterLabel(hour: number, quarter: number): string {

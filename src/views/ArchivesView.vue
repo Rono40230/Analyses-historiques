@@ -823,7 +823,10 @@ function cancelDelete() {
 }
 
 .viewer-large {
-  max-width: 1400px;
+  width: 98vw;
+  max-width: none;
+  height: 95vh;
+  max-height: none;
 }
 
 .viewer-header {
@@ -866,7 +869,9 @@ function cancelDelete() {
 .viewer-body {
   padding: 25px;
   overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
+  width: 100%;
 }
 
 .unsupported-type {

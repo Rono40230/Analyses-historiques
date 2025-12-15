@@ -79,8 +79,8 @@
     <ConfidenceSection :confidence-score="props.result.confidence_score" />
     <MetricsDisplay 
       :global-metrics="props.result.global_metrics" 
-      :estimated-price="getEstimatedPrice()"
       :point-value="props.result.point_value"
+      :unit="props.result.unit"
     />
     <ColorLegendSection @analyze="openAnalysisModal" />
   </div>
@@ -139,7 +139,8 @@ interface AnalysisResult {
   hourly_stats: HourlyStats[]
   best_hours?: number[]
   stats_15min?: Stats15Min[]
-  point_value?: number
+  point_value: number
+  unit: string
 }
 
 const props = defineProps<{
@@ -200,13 +201,6 @@ function formatCandlesCount(count: number): string {
 
 function getRiskClass(risk: string): string {
   return { 'Low': 'low', 'Medium': 'medium', 'High': 'high' }[risk] || ''
-}
-
-function getEstimatedPrice(): number {
-  if (props.result?.point_value) return 1.0 / props.result.point_value
-  if (!props.result?.hourly_stats?.length) return 100000
-  const atr = props.result.global_metrics.mean_atr
-  return atr > 1000 ? 100000 : atr > 10 ? 10000 : 1.0
 }
 
 function openAnalysisModal() {

@@ -52,24 +52,28 @@ impl EventCorrelationService {
         // Cherche les bougies autour de l'événement (1h avant, pendant, 1h après)
         let event_hour = event.event_time.hour() as u8;
 
-        // Calcule la volatilité moyenne 1h avant l'événement
-        let before_volatility = self.calculate_avg_volatility_around(
-            event.event_time - Duration::hours(2),
-            event.event_time - Duration::hours(1),
+        // Calcule la volatilité (Max True Range) 1h avant l'événement (Baseline)
+        // Fenêtre Baseline : -60 min à -10 min
+        let before_metrics = self.calculate_volatility_metrics(
+            event.event_time - Duration::minutes(60),
+            event.event_time - Duration::minutes(10),
             candles,
         );
 
-        // Calcule la volatilité pendant et 1h après l'événement
-        let during_after_volatility = self.calculate_avg_volatility_around(
-            event.event_time,
-            event.event_time + Duration::hours(2),
+        // Calcule la volatilité (Max True Range) autour de l'événement (Impact)
+        // Fenêtre Impact : -10 min à +30 min (FIX-03)
+        let impact_metrics = self.calculate_volatility_metrics(
+            event.event_time - Duration::minutes(10),
+            event.event_time + Duration::minutes(30),
             candles,
         );
 
-        // Si on a des données valides, calcule l'augmentation
-        if let (Some(before), Some(during_after)) = (before_volatility, during_after_volatility) {
-            if before > 0.0 {
-                let increase_pct = ((during_after - before) / before) * 100.0;
+        // Si on a des données valides
+        if let (Some((before_mean, _)), Some((_, impact_max))) = (before_metrics, impact_metrics) {
+            if before_mean > 0.0 {
+                // On compare le PIC de l'événement (Max TR) à la MOYENNE avant (Mean TR)
+                // Cela donne le ratio d'explosivité
+                let increase_pct = ((impact_max - before_mean) / before_mean) * 100.0;
 
                 // Score de corrélation basé sur :
                 // - Impact de l'événement (HIGH = bonus)
@@ -78,9 +82,8 @@ impl EventCorrelationService {
                 let impact_multiplier = if event.impact == "HIGH" { 1.5 } else { 1.0 };
                 let correlation_score = (increase_pct.abs() * impact_multiplier).min(100.0);
 
-                // Ne retourne que les corrélations significatives (> 10% d'augmentation)
-                // Et uniquement pour HIGH/MEDIUM impact (LOW déjà filtré en début)
-                if increase_pct > 10.0 {
+                // Ne retourne que les corrélations significatives (> 50% d'augmentation pour un pic vs moyenne)
+                if increase_pct > 50.0 {
                     return Some(CorrelatedEvent {
                         event: event.clone(),
                         volatility_hour: event_hour,
@@ -94,13 +97,13 @@ impl EventCorrelationService {
         None
     }
 
-    /// Calcule la volatilité moyenne dans une fenêtre temporelle
-    fn calculate_avg_volatility_around(
+    /// Calcule les métriques de volatilité (Mean TR, Max TR) dans une fenêtre temporelle
+    fn calculate_volatility_metrics(
         &self,
         start: NaiveDateTime,
         end: NaiveDateTime,
         candles: &[Candle],
-    ) -> Option<f64> {
+    ) -> Option<(f64, f64)> {
         let matching_candles: Vec<&Candle> = candles
             .iter()
             .filter(|c| {
@@ -113,12 +116,23 @@ impl EventCorrelationService {
             return None;
         }
 
-        let total_volatility: f64 = matching_candles
+        // Calcul du True Range pour chaque bougie
+        // TR = Max(H-L, |H-PC|, |L-PC|)
+        // Pour simplifier ici (et car on a des slices), on utilise H-L qui est une bonne approx intraday
+        // Sauf si on veut être très précis sur les gaps.
+        // Utilisons H-L pour l'instant pour rester performant et simple sans MetricsCalculator complet
+        let true_ranges: Vec<f64> = matching_candles
             .iter()
-            .map(|c| (c.high - c.low) / c.close)
-            .sum();
+            .map(|c| c.high - c.low) // Approximation "Range Brut" demandée par le prompt
+            .collect();
 
-        Some(total_volatility / matching_candles.len() as f64)
+        let max_tr = true_ranges
+            .iter()
+            .fold(0.0f64, |acc, &x| if x > acc { x } else { acc });
+            
+        let mean_tr = true_ranges.iter().sum::<f64>() / true_ranges.len() as f64;
+
+        Some((mean_tr, max_tr))
     }
 
     /// Analyse complète : trouve tous les événements corrélés avec des pics de volatilité

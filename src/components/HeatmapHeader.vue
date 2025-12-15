@@ -11,6 +11,40 @@
         <span class="scale-color heat-very-low" />Score &lt; 40 (Faible)
       </button>
     </div>
+
+    <div class="heatmap-info">
+      <MetricTooltip title="Score de Volatilité" direction="bottom">
+        <span class="info-trigger">ℹ️ Points = Score de Volatilité (0-100)</span>
+        <template #definition>
+          <p>Indice composite évaluant la <strong>puissance de l'impact</strong> d'un événement économique sur une paire spécifique.</p>
+        </template>
+        <template #interpretation>
+          <p>Le score combine trois facteurs clés :</p>
+          <ul class="tooltip-list">
+            <li><strong>Explosion :</strong> Ratio de volatilité (Après/Avant l'annonce)</li>
+            <li><strong>Amplitude :</strong> Taille absolue du mouvement (Range en points)</li>
+            <li><strong>Fiabilité :</strong> Régularité historique de l'impact</li>
+          </ul>
+        </template>
+        <template #scoring>
+          <div class="scoring-grid">
+            <div class="score-row high">
+              <span class="score-val">≥ 70</span>
+              <span class="score-desc">Impact Majeur (Opportunité Straddle idéale)</span>
+            </div>
+            <div class="score-row medium">
+              <span class="score-val">40-70</span>
+              <span class="score-desc">Impact Modéré (Conditions à vérifier)</span>
+            </div>
+            <div class="score-row low">
+              <span class="score-val">&lt; 40</span>
+              <span class="score-desc">Impact Faible (À éviter)</span>
+            </div>
+          </div>
+        </template>
+      </MetricTooltip>
+    </div>
+
     <div class="header-actions">
       <button 
         class="action-button reload-button"
@@ -31,6 +65,8 @@
 </template>
 
 <script setup lang="ts">
+import MetricTooltip from './MetricTooltip.vue'
+
 defineProps<{
   currentFilter?: number
 }>()
@@ -45,6 +81,20 @@ defineEmits<{
 <style scoped>
 .heatmap-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #2d3748; flex-wrap: wrap; gap: 20px; }
 .heatmap-scale { display: flex; gap: 15px; align-items: center; font-size: 0.85em; color: #cbd5e0; flex-wrap: wrap; }
+.heatmap-info { color: #8b949e; font-size: 0.9em; font-weight: 500; display: flex; align-items: center; }
+.info-trigger { cursor: help; border-bottom: 1px dashed #8b949e; transition: color 0.2s; }
+.info-trigger:hover { color: #58a6ff; border-bottom-color: #58a6ff; }
+
+.tooltip-list { margin: 5px 0 0 15px; padding: 0; list-style-type: disc; color: #c9d1d9; }
+.tooltip-list li { margin-bottom: 4px; }
+.scoring-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.score-row { display: flex; align-items: center; gap: 10px; font-size: 0.9em; }
+.score-val { font-weight: bold; min-width: 45px; }
+.score-row.high .score-val { color: #238636; }
+.score-row.medium .score-val { color: #d29922; }
+.score-row.low .score-val { color: #da3633; }
+.score-desc { color: #8b949e; }
+
 .scale-item { 
   display: flex; 
   align-items: center; 

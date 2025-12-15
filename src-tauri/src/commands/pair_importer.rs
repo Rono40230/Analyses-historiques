@@ -4,7 +4,6 @@
 use crate::db::DbPool;
 use crate::services::PairDataConverter;
 use chrono::Utc;
-use std::fs;
 use std::path::Path;
 use tracing::{error, info};
 
@@ -168,17 +167,9 @@ pub fn process_single_file(
         }
     }
 
-    // 7. Supprimer le fichier source
-    info!("🗑️  Tentative suppression: {}", source_path);
-    match fs::remove_file(source_path) {
-        Ok(()) => {
-            info!("✅ Fichier source supprimé avec succès");
-        }
-        Err(e) => {
-            error!("❌ Erreur suppression fichier source: {}", e);
-            return Err(format!("Erreur suppression fichier source: {}", e));
-        }
-    }
+    // 7. Conservation du fichier source (Modification demandée : ne pas supprimer)
+    info!("✅ Fichier source conservé: {}", source_path);
+    // match fs::remove_file(source_path) { ... } // Suppression désactivée
 
     info!(
         "🎉 Import réussi: {}/{} ({} candles)",

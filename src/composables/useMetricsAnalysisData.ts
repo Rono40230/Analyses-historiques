@@ -35,7 +35,8 @@ export function useMetricsAnalysisData() {
       confidence: Math.round(result.confidence_score),
       strategy: 'SCALPING STANDARD',
       bestHours: `${bestHour}:${bestQuarter * 15}-${bestHour}:${(bestQuarter + 1) * 15}`,
-      stats_15min: result.stats_15min ?? []
+      stats_15min: result.stats_15min ?? [],
+      unit: result.unit
     }
 
     if (!result.stats_15min?.length) return

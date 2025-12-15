@@ -16,6 +16,7 @@ pub mod stats_15min;
 pub mod straddle_parameters;
 pub mod trading_recommendation;
 pub mod volatility_duration;
+pub mod asset_class;
 
 // Re-exports pour faciliter les imports
 pub use analysis_result::{AnalysisResult, CorrelatedEvent, GlobalMetrics};
@@ -32,3 +33,4 @@ pub use stats_15min::Stats15Min;
 pub use straddle_parameters::StraddleParameters;
 pub use trading_recommendation::{RiskLevel, TradingRecommendation};
 pub use volatility_duration::VolatilityDuration;
+pub use asset_class::AssetProperties;

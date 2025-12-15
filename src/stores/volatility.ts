@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { useRetroAnalysisCache } from '../composables/useRetroAnalysisCache'
 import type { SymbolInfo, AnalysisResult, HourlyStats } from './volatilityTypes'
+export type { SymbolInfo, AnalysisResult, HourlyStats, Stats15Min, GlobalMetrics, EventInHour, CalendarEvent, CorrelatedEvent } from './volatilityTypes'
 
 export const useVolatilityStore = defineStore('volatility', () => {
   const symbols = ref<SymbolInfo[]>([])

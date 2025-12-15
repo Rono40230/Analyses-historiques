@@ -1,36 +1,46 @@
-# Tâche : Mise à jour des Formules (Bidi V2)
+# Tâches du Projet Analyses Historiques
 
-## Contexte
-Les calculs du backend (Rust) ont évolué vers la logique "Bidi V2" (paramètres adaptatifs basés sur le Noise Ratio), mais la documentation frontend (`src/data/formules.ts`) affiche encore les anciennes formules statiques.
+## 🚨 CORRECTIFS CRITIQUES (PRIORITÉ ABSOLUE)
+- [x] **FIX-01 : Calcul ATR & Max Spike** <!-- id: 0 -->
+    - `src-tauri/src/services/volatility/hourly_stats.rs`
+    - Problème : L'ATR lisse trop les pics de volatilité (News).
+    - Action : Remplacer `atr_values.last()` par `mean(&atr_values)`.
+    - Action : Ajouter le calcul de `max_true_range` (le plus grand range M1 brut de l'heure) pour capturer l'explosivité réelle.
+- [x] **FIX-02 : Timezone & UTC** <!-- id: 1 -->
+    - `src-tauri/src/services/volatility/hourly_stats.rs`
+    - Problème : `PARIS_OFFSET_HOURS` hardcodé (+1).
+    - Action : Passer tout le backend en UTC strict.
+- [x] **FIX-03 : Fenêtre de Corrélation Précise** <!-- id: 2 -->
+    - `src-tauri/src/services/event_correlation.rs`
+    - Problème : Fenêtre -2h/+2h trop large.
+    - Action : Réduire à `-10 min` / `+30 min`.
+    - Action : Utiliser le `max_true_range` dans cette fenêtre pour mesurer l'impact.
+- [x] **FIX-04 : Normalisation Pips/Points** <!-- id: 8 -->
+    - `src-tauri/src/models/` & `src-tauri/src/services/`
+    - Problème : Incohérence des unités entre Forex (5 digits), JPY (3 digits), Indices et Crypto.
+    - Action : Créer un `PipValueNormalizer` qui détecte automatiquement la classe d'actif.
+    - Action : Standardiser l'affichage (Forex=Pips, Indices=Points, Crypto=$) tout en gardant la précision interne.
 
-## Objectifs
-1.  Mettre à jour `src/data/formules.ts` pour refléter exactement le code Rust.
-2.  Ajouter les nouvelles métriques (SL Recovery, Trailing Stop adaptatif).
-3.  Corriger les définitions existantes (Noise Ratio utilise True Range, pas High-Low).
+## 🛠 AMÉLIORATIONS LOGIQUES (STRADDLE V2)
+- [ ] **LOGIC-01 : Gestion du Spread & Whipsaw** <!-- id: 3 -->
+    - `src-tauri/src/services/straddle_parameter_service.rs`
+    - Action : Ajouter une "Marge de Sécurité Spread" configurable (ex: +3 pips).
+    - Action : Détecter les "Dojis Géants" (High Volatility + Low Body) et recommander `RISKY`.
+- [ ] **LOGIC-02 : Paramètres Dynamiques** <!-- id: 4 -->
+    - `src-tauri/src/services/straddle_parameter_service.rs`
+    - Action : Timeout basé sur la durée de retour au calme.
+    - Action : Seuils relatifs (`target = 2.0 * average_atr`) pour le `BestQuarterFinder`.
+- [ ] **LOGIC-03 : Analyse Conditionnelle** <!-- id: 5 -->
+    - Permettre de filtrer les stats horaires : "Seulement les jours avec Event High Impact".
 
-## Étapes
+## 🚀 FONCTIONNALITÉS (PHASE SUIVANTE)
+- [ ] **FEAT-01 : Backtest Événementiel** <!-- id: 6 -->
+    - "Comment a réagi l'EURUSD aux 10 derniers NFP ?"
+- [ ] **FEAT-02 : Export PDF** <!-- id: 7 -->
+    - Rapport propre pour le trader.
 
-### 1. Mise à jour des définitions de base
-- [ ] **Noise Ratio** : Corriger la formule pour utiliser `True Range / |Close - Open|` (au lieu de `Range / Body`).
-- [ ] **ATR** : Confirmer la méthode de lissage (Wilder's Smoothing) dans la description.
+## 📝 Tâches en cours
+- [ ] Aucune tâche active pour le moment.
 
-### 2. Mise à jour des Paramètres Straddle (Bidi V2)
-- [ ] **Offset** : Passer de `ATR * 1.75` à la logique adaptative :
-    - Base : `ATR * 1.2`
-    - Si Noise > 2.0 : `ATR * 1.5`
-- [ ] **Stop Loss (SL)** : Ajouter la logique adaptative complète :
-    - Base : `ATR * 1.5`
-    - Paliers : 1.75x (>1.5), 2.0x (>2.0), 2.5x (>2.5), 3.0x (>3.0).
-- [ ] **Trailing Stop** : Ajouter la formule adaptative :
-    - Base : `ATR * 0.6`
-    - Paliers : 0.8x (>1.5), 1.0x (>2.0), 1.2x (>3.0).
-- [ ] **SL Recovery** : Ajouter la nouvelle formule `max(SL, Offset * 3.0)`.
-- [ ] **Take Profit** : Mettre à jour pour indiquer qu'il est géré dynamiquement par le Trailing Stop ou définir un "Target Théorique" (Risk:Reward).
-
-### 3. Vérification
-- [ ] Vérifier que la modale "Formules" affiche correctement les nouvelles descriptions et exemples.
-- [ ] S'assurer que les unités (points, pips) sont cohérentes.
-
-## Références Code (Source de Vérité)
-- `src-tauri/src/services/metrics/calculator.rs` (ATR, Noise, Volatility)
-- `src-tauri/src/services/straddle_parameter_service.rs` (Offset, SL, TS, Recovery)
+## ✅ Tâches terminées
+- [x] Audit initial du code et des formules.

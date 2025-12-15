@@ -10,7 +10,13 @@
         <div
           :class="['metric-value', getColorClass(metric.key, metric.value)]"
         >
-          {{ metric.formattedValue }}
+          <UnitDisplay 
+            v-if="metric.unit" 
+            :value="metric.value" 
+            :unit="metric.unit" 
+            :decimals="1"
+          />
+          <span v-else>{{ metric.formattedValue }}</span>
         </div>
       </div>
       <template #definition>
@@ -44,6 +50,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import MetricTooltip from '../MetricTooltip.vue'
+import UnitDisplay from '../UnitDisplay.vue'
 
 interface GlobalMetrics {
   mean_atr: number
@@ -61,6 +68,7 @@ interface MetricConfig {
   label: string
   value: number
   formattedValue: string
+  unit?: string
   definition: string
   usage: string
   scoring: string
@@ -69,8 +77,8 @@ interface MetricConfig {
 
 const props = defineProps<{
   globalMetrics: GlobalMetrics
-  estimatedPrice: number
   pointValue?: number
+  unit?: string
 }>()
 
 function getMetricQuality(metric: string, value: number): string {
@@ -82,10 +90,13 @@ function getMetricQuality(metric: string, value: number): string {
       return 'poor'
     case 'atr':
     case 'range':
-      const atrPercent = value < 1 ? value * 100 : (value / props.estimatedPrice) * 100
-      if (atrPercent > 2.5) return 'excellent'
-      if (atrPercent > 1.5) return 'good'
-      if (atrPercent > 1.0) return 'acceptable'
+      // ATR is already normalized in points/pips
+      // We can use raw value for quality check if we assume standard ranges
+      // Or we can use percentage of price if we had price
+      // For now, let's keep simple thresholds based on points
+      if (value > 50) return 'excellent'
+      if (value > 20) return 'good'
+      if (value > 10) return 'acceptable'
       return 'poor'
     case 'volatility':
       if (value >= 0.30) return 'excellent'
@@ -123,11 +134,10 @@ function getMetricQuality(metric: string, value: number): string {
 }
 
 function formatATR(atr: number): string {
-  // Afficher l'ATR en points (arrondir à l'unité supérieure) au lieu du pourcentage
-  if (props.pointValue) {
-    return `${Math.ceil(atr / props.pointValue)} pts`
-  }
-  return `${Math.ceil(atr)} pts`
+  const unit = props.unit || 'pts'
+  const prefix = unit === '$' ? '$' : ''
+  const suffix = unit === '$' ? '' : ` ${unit}`
+  return `${prefix}${atr.toFixed(1)}${suffix}`
 }
 
 function getColorClass(metric: string, value: number): string {
@@ -140,6 +150,7 @@ const displayedMetrics = computed(() => [
     label: 'ATR moyen',
     value: props.globalMetrics.mean_atr,
     formattedValue: formatATR(props.globalMetrics.mean_atr),
+    unit: props.unit || 'pts',
     definition: 'Average True Range (14 périodes) : mesure la volatilité vraie en points. Détermine directement la largeur du stop-loss et take-profit pour le straddle (2-3× ATR).',
     usage: '>100 pts = volatilité excellente, spreads serrés\n50-100 pts = bon (straddle profitable)\n20-50 pts = acceptable\n<20 pts = faible (gaps risqués).',
     scoring: '🟢 Excellent (>100 pts) = ATR très élevé, gains potentiels importants\n🔵 Bon (50-100 pts) = conditions optimales straddle\n🟡 Acceptable (20-50 pts) = possible mais serré\n🔴 Pauvre (<20 pts) = straddle peu rentable',
@@ -150,6 +161,7 @@ const displayedMetrics = computed(() => [
     label: 'True Range',
     value: props.globalMetrics.mean_range,
     formattedValue: formatATR(props.globalMetrics.mean_range),
+    unit: props.unit || 'pts',
     definition: 'True Range (H-L avec gaps) : capture le mouvement RÉEL exploitable en points (contrairement au simple range). Évalue l\'amplitude vraie que le straddle peut capturer.',
     usage: '>80 pts = mouvement énorme exploitable\n40-80 pts = bon range, straddle bien positionné\n20-40 pts = acceptable mais serré\n<20 pts = peu de mouvement.',
     scoring: '🟢 Excellent (>80 pts) = Énorme amplitude, profit assuré\n🔵 Bon (40-80 pts) = Range parfait straddle\n🟡 Acceptable (20-40 pts) = Limité mais jouable\n🔴 Pauvre (<20 pts) = Mouvement insuffisant',

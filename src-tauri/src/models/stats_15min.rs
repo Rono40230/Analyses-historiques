@@ -10,6 +10,7 @@ pub struct Stats15Min {
     pub candle_count: usize,
     pub atr_mean: f64,
     pub atr_max: f64,
+    pub max_true_range: f64,
     pub volatility_mean: f64,
     pub range_mean: f64,
     pub body_range_mean: f64,

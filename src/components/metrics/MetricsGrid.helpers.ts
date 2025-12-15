@@ -22,6 +22,7 @@ export interface MetricConfig {
   goodThreshold: number
   excellentThreshold: number
   suffix?: string
+  prefix?: string
   decimals?: number
 }
 
@@ -38,25 +39,41 @@ export function buildMetricsConfig(analysis: SliceAnalysis, analysisData: Analys
   const stats = analysis.slice.stats
   const globals: GlobalMetrics = analysisData?.globalMetrics || {}
   const price = getEstimatedPrice(analysisData)
+  const unit = (analysisData?.unit as string) || 'pts'
+  const isCrypto = unit === '$'
+  const suffix = isCrypto ? '' : unit
+  const prefix = isCrypto ? '$' : ''
 
   return [
     {
       label: 'ATR Moyen',
-      value15: Math.ceil(stats.atr_mean),
-      valueGlobal: Math.ceil(globals.mean_atr ?? 0),
+      value15: stats.atr_mean,
+      valueGlobal: globals.mean_atr ?? 0,
       goodThreshold: 50,
       excellentThreshold: 100,
-      suffix: 'pts',
-      decimals: 0
+      suffix,
+      prefix,
+      decimals: 1
     },
     {
       label: 'True Range',
-      value15: Math.ceil(stats.range_mean),
-      valueGlobal: Math.ceil(globals.mean_range ?? 0),
+      value15: stats.range_mean,
+      valueGlobal: globals.mean_range ?? 0,
       goodThreshold: 40,
       excellentThreshold: 80,
-      suffix: 'pts',
-      decimals: 0
+      suffix,
+      prefix,
+      decimals: 1
+    },
+    {
+      label: 'Max Spike',
+      value15: stats.max_true_range ?? 0,
+      valueGlobal: 0,
+      goodThreshold: 50,
+      excellentThreshold: 100,
+      suffix,
+      prefix,
+      decimals: 1
     },
     {
       label: 'Volatilité %',

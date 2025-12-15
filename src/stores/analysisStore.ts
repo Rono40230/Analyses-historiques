@@ -75,7 +75,7 @@ export interface EventImpactResult {
 
 export interface HeatmapData {
   pairs: string[]
-  event_types: Array<{ name: string; has_data?: boolean }>
+  event_types: Array<{ name: string; count: number; has_data?: boolean }>
   data: Record<string, Record<string, number>>
 }
 

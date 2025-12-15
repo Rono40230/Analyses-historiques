@@ -15,20 +15,32 @@
           <td class="row-label">Valeur pour la période</td>
           <td v-for="metric in displayedMetrics" :key="`value-${metric.label}`" class="metric-value">
             <span :class="['value-cell', getMetricStatus(metric.value15, metric.goodThreshold, metric.excellentThreshold)]">
-              {{ formatNumber(metric.value15, metric.decimals ?? 2) }}<span class="suffix">{{ metric.suffix }}</span>
+              <UnitDisplay 
+                :value="metric.value15" 
+                :unit="metric.suffix || ''" 
+                :decimals="metric.decimals ?? 2" 
+              />
             </span>
           </td>
         </tr>
         <tr class="average-row">
           <td class="row-label">Moyenne globale</td>
           <td v-for="metric in displayedMetrics" :key="`avg-${metric.label}`" class="metric-average">
-            {{ formatNumber(metric.valueGlobal, metric.decimals ?? 2) }}<span class="suffix">{{ metric.suffix }}</span>
+            <UnitDisplay 
+              :value="metric.valueGlobal" 
+              :unit="metric.suffix || ''" 
+              :decimals="metric.decimals ?? 2" 
+            />
           </td>
         </tr>
         <tr class="threshold-row">
           <td class="row-label">Seuil</td>
           <td v-for="metric in displayedMetrics" :key="`thr-${metric.label}`" class="metric-threshold">
-            >{{ formatNumber(metric.excellentThreshold, metric.decimals ?? 2) }}
+            ><UnitDisplay 
+              :value="metric.excellentThreshold" 
+              :unit="metric.suffix || ''" 
+              :decimals="metric.decimals ?? 2" 
+            />
           </td>
         </tr>
         <tr class="status-row">
@@ -47,6 +59,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { SliceAnalysis } from '../../utils/straddleAnalysis'
+import UnitDisplay from '../UnitDisplay.vue'
 import {
   buildMetricsConfig,
   formatNumber,
@@ -157,7 +170,14 @@ const displayedMetrics = computed(() => buildMetricsConfig(props.analysis, props
 
 .suffix {
   font-size: 0.8em;
+  opacity: 0.7;
   margin-left: 2px;
+}
+
+.prefix {
+  font-size: 0.8em;
+  opacity: 0.7;
+  margin-right: 2px;
 }
 
 .average-row {

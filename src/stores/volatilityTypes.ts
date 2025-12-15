@@ -15,6 +15,7 @@ export interface HourlyStats {
   candle_count: number
   atr_mean: number
   atr_max: number
+  max_true_range: number
   volatility_mean: number
   range_mean: number
   body_range_mean: number
@@ -31,6 +32,7 @@ export interface Stats15Min {
   candle_count: number
   atr_mean: number
   atr_max: number
+  max_true_range: number
   volatility_mean: number
   range_mean: number
   body_range_mean: number
@@ -99,5 +101,7 @@ export interface AnalysisResult {
   recommendation: string
   risk_level: string
   global_metrics: GlobalMetrics
+  point_value: number
+  unit: string
   correlated_events: CorrelatedEvent[]
 }

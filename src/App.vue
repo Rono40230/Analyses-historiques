@@ -8,6 +8,7 @@ import AnalysisPanel from './components/AnalysisPanel.vue'
 import HourlyTable from './components/HourlyTable.vue'
 import MetricsAnalysisModal from './components/MetricsAnalysisModal.vue'
 import FormulasModal from './components/FormulasModal.vue'
+import ExportModal from './components/ExportModal.vue'
 import ImportHub from './components/ImportHub.vue'
 import EventCorrelationView from './components/EventCorrelationView.vue'
 import ArchivesView from './views/ArchivesView.vue'
@@ -39,6 +40,7 @@ const showBidiModal = ref(false)
 const bidiModalHour = ref(0)
 const bidiModalQuarter = ref(0)
 const showFormulasModal = ref(false)
+const showExportModal = ref(false)
 
 async function handleSymbolSelected(symbol: string) {
   await volatilityStore.analyzeSymbol(symbol)
@@ -106,6 +108,13 @@ function switchTab(tab: 'volatility' | 'heatmap' | 'retrospective' | 'archives' 
       >
         🧮 Formules
       </button>
+      <button 
+        class="tab-button export-btn"
+        @click="showExportModal = true"
+        title="Exporter les analyses en PDF"
+      >
+        🖨️ Exports
+      </button>
     </nav>
 
     <main class="app-main">
@@ -170,6 +179,7 @@ function switchTab(tab: 'volatility' | 'heatmap' | 'retrospective' | 'archives' 
                 :stats15min="analysisResult.stats_15min"
                 :global-metrics="analysisResult.global_metrics"
                 :point-value="analysisResult.point_value"
+                :unit="analysisResult.unit"
                 @open-bidi-params="handleOpenBidiParams"
               />
             </template>
@@ -207,6 +217,12 @@ function switchTab(tab: 'volatility' | 'heatmap' | 'retrospective' | 'archives' 
     <FormulasModal 
       :is-open="showFormulasModal"
       @close="showFormulasModal = false"
+    />
+
+    <ExportModal 
+      :is-open="showExportModal"
+      :current-symbol="selectedSymbolLocal"
+      @close="showExportModal = false"
     />
   </div>
 </template>
@@ -281,6 +297,15 @@ body {
 .formulas-btn:hover {
   background: rgba(210, 153, 34, 0.15);
   color: #e3b341;
+}
+
+.export-btn {
+  color: #4a9eff;
+}
+
+.export-btn:hover {
+  background: rgba(74, 158, 255, 0.15);
+  color: #7abaff;
 }
 
 .app-main {

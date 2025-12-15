@@ -18,6 +18,7 @@ pub struct AnalysisResult {
     pub risk_level: RiskLevel,
     pub global_metrics: GlobalMetrics,
     pub point_value: f64, // Valeur d'un point pour normalisation (ex: 0.001 pour JPY)
+    pub unit: String,     // Unité d'affichage (pips, points, $)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

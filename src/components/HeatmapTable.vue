@@ -114,11 +114,11 @@ function getCellClass(eventName: string, pair: string): string {
 </script>
 
 <style scoped>
-.heatmap-wrapper { overflow-x: auto; margin-bottom: 20px; }
-.heatmap-table { width: 100%; border-collapse: collapse; background: #0d1117; border: 1px solid #30363d; }
+.heatmap-wrapper { overflow-x: auto; margin-bottom: 20px; width: 100%; }
+.heatmap-table { min-width: 100%; width: auto; border-collapse: collapse; background: #0d1117; border: 1px solid #30363d; }
 .heatmap-table thead { background: #161b22; }
 .heatmap-table th { padding: 12px; text-align: center; color: #8b949e; font-weight: 600; border-bottom: 1px solid #30363d; }
-.sortable-header { cursor: pointer; user-select: none; transition: background 0.2s; }
+.sortable-header { cursor: pointer; user-select: none; transition: background 0.2s; white-space: nowrap; }
 .sortable-header:hover { background: #1c2128; color: #58a6ff; }
 .header-content { display: flex; align-items: center; justify-content: center; gap: 6px; }
 .sort-icon { font-size: 0.8em; opacity: 0.7; }
@@ -128,7 +128,7 @@ function getCellClass(eventName: string, pair: string): string {
 .event-type-cell.no-data { opacity: 0.6; }
 .event-type-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 8px; }
 .event-count { font-size: 0.85em; color: #8b949e; font-weight: 400; }
-.heatmap-cell { padding: 12px; text-align: center; border: 1px solid #30363d; }
+.heatmap-cell { padding: 12px; text-align: center; border: 1px solid #30363d; white-space: nowrap; }
 .heatmap-cell.empty-cell { background: #0d1117; color: #6e7681; }
 .heatmap-cell.no-data-cell { background: #161b22; color: #484f58; font-style: italic; font-size: 0.8em; }
 .heatmap-cell.filtered-cell { background: #0d1117; color: #484f58; }

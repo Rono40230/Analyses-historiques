@@ -82,6 +82,10 @@ export function useEventCorrelationHeatmap(isArchiveMode = false, archiveData?: 
     }
 
     loadingHeatmap.value = true
+    
+    // Réinitialiser temporairement pour forcer la réactivité et montrer le chargement
+    analysisStore.setPersistentHeatmapData({ pairs: [], event_types: [], data: {} }, pairs, calendarId)
+
     try {
       const result = await invoke<HeatmapData>('get_correlation_heatmap', { 
         pairs: pairs,
