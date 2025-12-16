@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import type { ArchivedAnalysisData } from '../../composables/useMetricsModalLoad'
+import type { ArchivedBacktestData } from './dataFetcher'
 
 export async function generateBidiReport(doc: jsPDF, dataList: ArchivedAnalysisData[]) {
   doc.setFontSize(16)
@@ -183,3 +184,4 @@ export async function generateIdentityReport(doc: jsPDF, dataList: ArchivedAnaly
     yPos = doc.lastAutoTable.finalY + 15
   })
 }
+

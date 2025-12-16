@@ -3,6 +3,12 @@
     <h3>1. Sélectionner les rapports</h3>
     <div class="checkbox-group">
       <label class="checkbox-label">
+        <input type="checkbox" :checked="selectedReports.includes('backtest')" @change="toggleReport('backtest')">
+        <span class="label-text">Rapport de Backtest</span>
+        <span class="label-desc">Performance (Win Rate, Drawdown, Equity Curve)</span>
+      </label>
+
+      <label class="checkbox-label">
         <input type="checkbox" :checked="selectedReports.includes('bidi')" @change="toggleReport('bidi')">
         <span class="label-text">Fiche Paramètres Bidi</span>
         <span class="label-desc">Paramètres optimaux (Offset, TP, SL) pour le robot</span>
