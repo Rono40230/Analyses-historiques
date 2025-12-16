@@ -20,7 +20,7 @@ export function usePdfExport() {
   const progress = ref(0)
   const error = ref<string | null>(null)
 
-  async function generatePdf(reportTypes: string[], filters: ExportFilters) {
+  async function generatePdf(reportTypes: string[], filters: ExportFilters, preview = false) {
     isGenerating.value = true
     progress.value = 0
     error.value = null
@@ -106,7 +106,12 @@ export function usePdfExport() {
         progress.value = startGen + ((currentReport / totalReports) * 25)
       }
 
-      doc.save(`analyse_export_${new Date().toISOString().split('T')[0]}.pdf`)
+      if (preview) {
+        return doc.output('bloburl')
+      } else {
+        doc.save(`analyse_export_${new Date().toISOString().split('T')[0]}.pdf`)
+        return true
+      }
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e)
       return false

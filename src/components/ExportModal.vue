@@ -1,41 +1,50 @@
 <template>
-  <div v-if="isOpen" class="modal-overlay" @click.self="close">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div class="header-title">🖨️ Export PDF</div>
-        <button class="close-btn" @click="close">✕</button>
-      </div>
-
-      <div class="modal-section">
-        <ExportForm
-          v-model:selectedReports="selectedReports"
-          v-model:selectedCalendarId="selectedCalendarId"
-          v-model:selectedPairMode="selectedPairMode"
-          :calendars="calendars"
-          :symbols="volatilityStore.symbols"
-        />
-
-        <div v-if="isGenerating" class="progress-section">
-          <div class="spinner">⏳</div>
-          <p>Génération du PDF en cours... {{ Math.round(progress) }}%</p>
+  <div v-if="isOpen">
+    <div v-if="!showPreview" class="modal-overlay" @click.self="close">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="header-title">🖨️ Export PDF</div>
+          <button class="close-btn" @click="close">✕</button>
         </div>
-        
-        <div v-if="error" class="error-message">
-          {{ error }}
-        </div>
-      </div>
 
-      <div class="modal-footer">
-        <button class="btn-secondary" @click="close">Annuler</button>
-        <button 
-          class="btn-primary" 
-          @click="handleGenerate"
-          :disabled="isGenerating || selectedReports.length === 0 || !selectedCalendarId"
-        >
-          {{ isGenerating ? 'Génération...' : 'Télécharger PDF' }}
-        </button>
+        <div class="modal-section">
+          <ExportForm
+            v-model:selectedReports="selectedReports"
+            v-model:selectedCalendarId="selectedCalendarId"
+            v-model:selectedPairMode="selectedPairMode"
+            :calendars="calendars"
+            :symbols="volatilityStore.symbols"
+          />
+
+          <div v-if="isGenerating" class="progress-section">
+            <div class="spinner">⏳</div>
+            <p>Génération du PDF en cours... {{ Math.round(progress) }}%</p>
+          </div>
+          
+          <div v-if="error" class="error-message">
+            {{ error }}
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-secondary" @click="close">Annuler</button>
+          <button 
+            class="btn-primary" 
+            @click="handleGenerate"
+            :disabled="isGenerating || selectedReports.length === 0 || !selectedCalendarId"
+          >
+            {{ isGenerating ? 'Génération...' : 'Prévisualiser' }}
+          </button>
+        </div>
       </div>
     </div>
+
+    <PdfPreviewModal 
+      :is-open="showPreview"
+      :pdf-url="previewUrl"
+      @close="closePreview"
+      @download="handleDownload"
+    />
   </div>
 </template>
 
@@ -45,6 +54,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { usePdfExport } from '../composables/usePdfExport'
 import { useVolatilityStore } from '../stores/volatility'
 import ExportForm, { type CalendarMetadata } from './export/ExportForm.vue'
+import PdfPreviewModal from './export/PdfPreviewModal.vue'
 
 const props = defineProps<{
   isOpen: boolean
@@ -62,6 +72,8 @@ const selectedReports = ref<string[]>(['bidi', 'ranking'])
 const selectedPairMode = ref('all')
 const calendars = ref<CalendarMetadata[]>([])
 const selectedCalendarId = ref<number | null>(null)
+const showPreview = ref(false)
+const previewUrl = ref<string | null>(null)
 
 onMounted(async () => {
   await loadCalendars()
@@ -72,6 +84,12 @@ onMounted(async () => {
 
 watch(() => props.isOpen, async (newVal) => {
   if (newVal) {
+    showPreview.value = false
+    if (previewUrl.value) {
+      URL.revokeObjectURL(previewUrl.value)
+      previewUrl.value = null
+    }
+    
     await loadCalendars()
     // Sélectionner le calendrier actif par défaut
     const activeId = localStorage.getItem('activeCalendarId')
@@ -80,6 +98,12 @@ watch(() => props.isOpen, async (newVal) => {
     } else if (calendars.value.length > 0) {
       selectedCalendarId.value = calendars.value[0].id
     }
+  } else {
+    if (previewUrl.value) {
+      URL.revokeObjectURL(previewUrl.value)
+      previewUrl.value = null
+    }
+    showPreview.value = false
   }
 })
 
@@ -111,15 +135,36 @@ async function handleGenerate() {
   // Sauvegarder le calendrier sélectionné pour l'analyse
   localStorage.setItem('activeCalendarId', selectedCalendarId.value.toString())
 
-  await generatePdf(selectedReports.value, {
+  const result = await generatePdf(selectedReports.value, {
     periodStart: selectedCal.start_date || new Date().toISOString(),
     periodEnd: selectedCal.end_date || new Date().toISOString(),
     pairs
-  })
+  }, true)
   
-  if (!error.value) {
+  if (result && typeof result === 'string') {
+    previewUrl.value = result
+    showPreview.value = true
+  }
+}
+
+function handleDownload() {
+  if (previewUrl.value) {
+    const link = document.createElement('a')
+    link.href = previewUrl.value
+    link.download = `analyse_export_${new Date().toISOString().split('T')[0]}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
     close()
   }
+}
+
+function closePreview() {
+  if (previewUrl.value) {
+    URL.revokeObjectURL(previewUrl.value)
+    previewUrl.value = null
+  }
+  showPreview.value = false
 }
 </script>
 
