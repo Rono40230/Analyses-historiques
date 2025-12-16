@@ -84,6 +84,13 @@ export const categories: Categorie[] = [
       'volatility_decay_profile',
       'directional_bias_score'
     ]
+  },
+  {
+    id: 'backtest',
+    titre: 'Backtest & Performance',
+    emoji: '🧪',
+    description: 'Métriques de performance issues des simulations',
+    formules: ['win_rate', 'profit_factor', 'max_drawdown', 'average_pips']
   }
 ]
 
@@ -261,19 +268,18 @@ export const formules: Record<string, Formule> = {
     titre: 'Offset (Distance ordres)',
     categorieId: 'straddle',
     definition: 'Distance des ordres Buy Stop et Sell Stop par rapport au prix d\'entrée. Adaptatif selon le Noise Ratio.',
-    explication_litterale: 'Cette formule calcule à quelle distance on place nos ordres. Si le marché est "propre" (Noise < 2.0), on place les ordres près (ATR × 1.2). Si le marché est "bruyant" (Noise > 2.0), on les écarte (ATR × 1.5) pour éviter les faux déclenchements causés par les mèches.',
-    formule: 'IF Noise > 2.0 → Offset = ATR × 1.5\nELSE → Offset = ATR × 1.2',
-    inputs: ['ATR', 'Noise Ratio'],
+    explication_litterale: 'Cette formule calcule à quelle distance on place nos ordres. Si le marché est "propre" (Noise < 2.0), on place les ordres près (ATR × 1.2). Si le marché est "bruyant" (Noise > 2.0), on les écarte (ATR × 1.5). On ajoute toujours le spread pour compenser les coûts.',
+    formule: 'IF Noise > 2.0 → Offset = (ATR × 1.5) + Spread\nELSE → Offset = (ATR × 1.2) + Spread',
+    inputs: ['ATR', 'Noise Ratio', 'Spread'],
     output: {
       type: 'float',
       range: '0.0 - ∞',
       unite: 'points'
     },
-    exemple: 'ATR=20, Noise=1.5 → Offset = 20 × 1.2 = 24 points\nATR=20, Noise=2.5 → Offset = 20 × 1.5 = 30 points',
+    exemple: 'ATR=20, Noise=1.5, Spread=3 → Offset = (20 × 1.2) + 3 = 27 points',
     notes: [
       'Adaptatif pour filtrer le bruit',
-      'Noise > 2.0 = marché nerveux → on s\'écarte',
-      'Noise < 2.0 = marché directionnel → on resserre',
+      'Inclut une marge de sécurité (spread)',
       'Arrondi au point supérieur (.ceil())'
     ]
   },
@@ -430,20 +436,20 @@ export const formules: Record<string, Formule> = {
     id: 'timeout',
     titre: 'Timeout (Durée position)',
     categorieId: 'straddle',
-    definition: 'Durée maximale pour tenir la position. Fixé court pour le News Trading (Scalping).',
-    explication_litterale: 'Pour le trading d\'annonces économiques (News Trading), l\'impulsion est très rapide. Si le mouvement ne part pas tout de suite, il ne partira probablement pas. On ferme donc la position rapidement (3 minutes) pour libérer le capital et éviter de rester piégé dans un marché qui se range.',
-    formule: 'Timeout = 3 minutes (Fixe)',
-    inputs: ['Fixe'],
+    definition: 'Durée maximale pour tenir la position. Dynamique basé sur la décroissance de volatilité (Half-Life).',
+    explication_litterale: 'Pour le trading d\'annonces, l\'impulsion est rapide. On utilise la "demi-vie" de la volatilité pour savoir quand sortir. Si la volatilité retombe vite, on sort vite. Sinon, on garde jusqu\'à 15 minutes max. Par défaut 3 minutes si pas de données.',
+    formule: 'Timeout = Half-Life (clamped 1-15 min) OR 3 min (default)',
+    inputs: ['Half-Life', 'Default (3 min)'],
     output: {
       type: 'integer',
-      range: '3',
+      range: '1 - 15',
       unite: 'minutes'
     },
-    exemple: 'Toujours 3 minutes',
+    exemple: 'Half-Life=5 min → Timeout=5 min | Half-Life=20 min → Timeout=15 min',
     notes: [
-      'Optimisé pour le scalping haute fréquence',
-      'Évite le "time decay" de l\'option implicite',
-      'Si pas de profit en 3 min → Exit'
+      'Optimisé pour capturer l\'impulsion principale',
+      'Évite le "time decay" et le retournement',
+      'Min 1 min, Max 15 min'
     ]
   },
 
@@ -789,6 +795,88 @@ export const formules: Record<string, Formule> = {
       'Straddle fonctionne mal sur événements biaisés',
       'Meilleur sur événements NEUTRAL',
       'Si biaisé, utiliser pour stratégies directionnelles'
+    ]
+  },
+
+  // === BACKTEST & PERFORMANCE ===
+  win_rate: {
+    id: 'win_rate',
+    titre: 'Win Rate (Taux de réussite)',
+    categorieId: 'backtest',
+    definition: 'Pourcentage de trades gagnants par rapport au nombre total de trades exécutés.',
+    explication_litterale: 'Cette formule calcule simplement combien de fois la stratégie a gagné de l\'argent. Si on a fait 100 trades et gagné 60 fois, le Win Rate est de 60%. C\'est l\'indicateur de base de la fiabilité.',
+    formule: 'Win Rate = (Winning Trades / Total Trades) × 100',
+    inputs: ['Winning Trades', 'Total Trades'],
+    output: {
+      type: 'float',
+      range: '0 - 100',
+      unite: '%'
+    },
+    exemple: '60 gagnants / 100 total = 60%',
+    notes: [
+      '> 50% est généralement requis pour être profitable (sauf si Risk:Reward très élevé)',
+      'Inclut les trades directionnels et simultanés'
+    ]
+  },
+
+  profit_factor: {
+    id: 'profit_factor',
+    titre: 'Profit Factor',
+    categorieId: 'backtest',
+    definition: 'Ratio entre les gains bruts et les pertes brutes.',
+    explication_litterale: 'Le Profit Factor nous dit combien on gagne pour chaque dollar perdu. Un PF de 1.5 signifie qu\'on gagne 1.50$ pour chaque 1.00$ perdu. C\'est la mesure ultime de la rentabilité.',
+    formule: 'Profit Factor = Gross Profit / Gross Loss',
+    inputs: ['Gross Profit (somme gains)', 'Gross Loss (somme pertes)'],
+    output: {
+      type: 'float',
+      range: '0.0 - ∞',
+      unite: 'ratio'
+    },
+    exemple: 'Gains totaux 1500, Pertes totales 1000 → PF = 1.5',
+    notes: [
+      '< 1.0 = Stratégie perdante',
+      '> 1.5 = Stratégie solide',
+      '> 2.0 = Stratégie excellente'
+    ]
+  },
+
+  max_drawdown: {
+    id: 'max_drawdown',
+    titre: 'Max Drawdown',
+    categorieId: 'backtest',
+    definition: 'La plus grande baisse de capital (du pic au creux) durant la période de test.',
+    explication_litterale: 'C\'est le "pire scénario" historique. Si tu avais commencé au pire moment, combien aurais-tu perdu avant de remonter? Ça mesure le risque psychologique et financier.',
+    formule: 'MDD = Max(Peak - Current_PnL)',
+    inputs: ['Equity Curve'],
+    output: {
+      type: 'float',
+      range: '0.0 - ∞',
+      unite: 'pips'
+    },
+    exemple: 'Compte monte à +100, descend à +60 → Drawdown = 40 pips',
+    notes: [
+      'Doit être acceptable par rapport au capital',
+      'Un drawdown trop élevé tue le compte même si la stratégie est gagnante à long terme'
+    ]
+  },
+
+  average_pips: {
+    id: 'average_pips',
+    titre: 'Average Pips per Trade',
+    categorieId: 'backtest',
+    definition: 'Gain moyen (ou perte) par trade en pips.',
+    explication_litterale: 'En moyenne, combien chaque trade rapporte-t-il? C\'est l\'espérance mathématique par trade. Si c\'est positif, la stratégie est gagnante. Si c\'est négatif, elle est perdante.',
+    formule: 'Avg Pips = Total Net Pips / Total Trades',
+    inputs: ['Total Net Pips', 'Total Trades'],
+    output: {
+      type: 'float',
+      range: '-∞ - +∞',
+      unite: 'pips'
+    },
+    exemple: 'Total +500 pips / 100 trades = +5 pips/trade',
+    notes: [
+      'Doit couvrir le spread et les commissions',
+      'Si < Spread, la stratégie perdra en réel'
     ]
   }
 }

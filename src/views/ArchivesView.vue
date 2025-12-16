@@ -27,19 +27,11 @@
             </select>
           </div>
         </div>
-        <button
-          class="ai-btn"
-          @click="isGlobalAnalysisOpen = true"
-        >
-          ✨ IAnalyse
-        </button>
+        <!-- Bouton IAnalyse supprimé -->
       </div>
     </div>
 
-    <GlobalAnalysisModal 
-      :is-open="isGlobalAnalysisOpen"
-      @close="isGlobalAnalysisOpen = false"
-    />
+    <!-- GlobalAnalysisModal supprimé -->
 
     <div v-if="showDeleteConfirmModal" class="delete-confirm-overlay">
       <div class="delete-confirm-modal">
@@ -245,14 +237,12 @@ import MetricsAnalysisModal from '../components/MetricsAnalysisModal.vue'
 import RetroactiveAnalysisResultsViewer from '../components/RetroactiveAnalysisResultsViewer.vue'
 import EventCorrelationHeatmap from '../components/EventCorrelationHeatmap.vue'
 import BacktestResultsPanel from '../components/BacktestResultsPanel.vue'
-import GlobalAnalysisModal from '../components/GlobalAnalysisModal.vue'
 import type { Archive as ArchiveType } from '../stores/archiveStore'
 
 const archiveStore = useArchiveStore()
 const selectedArchive = ref<Archive | null>(null)
 const showViewer = ref(false)
 const viewerData = ref<any>(null)
-const isGlobalAnalysisOpen = ref(false)
 const showDeleteConfirmModal = ref(false)
 const archiveToDelete = ref<Archive | null>(null)
 const selectedPair = ref<string>('all')
