@@ -262,9 +262,3 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // Tests removed as they tested moved functions
-}

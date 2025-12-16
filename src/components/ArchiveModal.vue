@@ -95,7 +95,7 @@ watch(() => props.show, (newVal) => {
     
     comment.value = ''
   }
-})
+}, { immediate: true })
 
 async function handleSave() {
   if (!archiveTitle.value.trim()) {

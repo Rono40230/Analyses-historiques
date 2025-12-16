@@ -203,7 +203,7 @@
     >
       <div
         class="viewer-content"
-        :class="{ 'viewer-large': selectedArchive?.archive_type === 'Heatmap' || selectedArchive?.archive_type === 'HEATMAP' }"
+        :class="{ 'viewer-large': selectedArchive?.archive_type === 'Heatmap' || selectedArchive?.archive_type === 'HEATMAP' || selectedArchive?.archive_type === 'Backtest' }"
       >
         <div class="viewer-header">
           <h2>{{ selectedArchive?.title }}</h2>
@@ -219,6 +219,11 @@
             v-if="selectedArchive?.archive_type === 'Heatmap' || selectedArchive?.archive_type === 'HEATMAP'"
             :archive-data="viewerData.heatmapData"
             :is-archive-mode="true"
+          />
+
+          <BacktestResultsPanel
+            v-else-if="selectedArchive?.archive_type === 'Backtest'"
+            :archived-data="viewerData"
           />
            
           <div
@@ -239,6 +244,7 @@ import { useArchiveStore, type Archive } from '../stores/archiveStore'
 import MetricsAnalysisModal from '../components/MetricsAnalysisModal.vue'
 import RetroactiveAnalysisResultsViewer from '../components/RetroactiveAnalysisResultsViewer.vue'
 import EventCorrelationHeatmap from '../components/EventCorrelationHeatmap.vue'
+import BacktestResultsPanel from '../components/BacktestResultsPanel.vue'
 import GlobalAnalysisModal from '../components/GlobalAnalysisModal.vue'
 import type { Archive as ArchiveType } from '../stores/archiveStore'
 

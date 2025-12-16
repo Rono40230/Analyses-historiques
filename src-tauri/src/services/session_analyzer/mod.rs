@@ -166,7 +166,7 @@ mod tests {
 
     #[test]
     fn test_get_sessions() {
-        let sessions = SessionAnalyzer::get_sessions();
+        let sessions = SessionAnalyzer::obtenir_sessions();
         assert_eq!(sessions.len(), 4);
         assert_eq!(sessions[0].name, "Sydney");
         assert_eq!(sessions[1].name, "Tokyo");
@@ -176,17 +176,17 @@ mod tests {
 
     #[test]
     fn test_format_paris_hours() {
-        let sydney = &SessionAnalyzer::get_sessions()[0];
-        let hours = SessionAnalyzer::format_paris_hours(sydney, false);
+        let sydney = &SessionAnalyzer::obtenir_sessions()[0];
+        let hours = SessionAnalyzer::formater_heures_paris(sydney, false);
         assert!(!hours.is_empty());
         assert!(hours.contains("h"));
     }
 
     #[test]
     fn test_is_in_session() {
-        let london = &SessionAnalyzer::get_sessions()[2];
-        assert!(SessionAnalyzer::is_in_session(10, london)); // 8-17 UTC
-        assert!(!SessionAnalyzer::is_in_session(20, london));
+        let london = &SessionAnalyzer::obtenir_sessions()[2];
+        assert!(SessionAnalyzer::est_dans_session(10, london)); // 8-17 UTC
+        assert!(!SessionAnalyzer::est_dans_session(20, london));
     }
 
     #[test]
@@ -209,14 +209,14 @@ mod tests {
                 candle_count: 500,
             },
         ];
-        let recommendations = SessionAnalyzer::generate_recommendations(&sessions, 75.0);
+        let recommendations = SessionAnalyzer::generer_recommandations(&sessions, 75.0);
         assert!(recommendations.len() >= 3);
         assert!(recommendations[0].title.contains("recommandée"));
     }
 
     #[test]
     fn test_generate_recommendations_empty() {
-        let recommendations = SessionAnalyzer::generate_recommendations(&[], 75.0);
+        let recommendations = SessionAnalyzer::generer_recommandations(&[], 75.0);
         assert!(recommendations.len() > 0); // Au moins la recommandation info
     }
 
@@ -230,7 +230,7 @@ mod tests {
             percentage: 50.0,
             candle_count: 1000,
         }];
-        let recs = SessionAnalyzer::generate_recommendations(&sessions, 75.0);
+        let recs = SessionAnalyzer::generer_recommandations(&sessions, 75.0);
         for rec in recs {
             assert!(!rec.icon.is_empty());
             assert!(!rec.title.is_empty());

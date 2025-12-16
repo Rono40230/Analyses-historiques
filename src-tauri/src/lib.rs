@@ -175,6 +175,7 @@ pub fn run() {
             get_pair_event_history,  // Historique des événements pour une paire
             // Pair data import commands (Phase 4)
             import_pair_data,
+            get_symbol_properties, // NEW: Récupérer point_value et pip_value
             clean_csv_files,        // Nouveau: nettoyage CSV européens
             import_and_clean_files, // Nouveau: import unifié (clean + import)
             // Session analysis commands (Phase 5)
@@ -231,6 +232,9 @@ pub fn run() {
             get_event_types,
             // PDF export commands
             exporter_formules_pdf,
+            // Backtest commands
+            run_backtest,
+            run_backtest_time,
         ]);
 
     tracing::info!("✅ Tauri Builder configuré");

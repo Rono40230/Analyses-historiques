@@ -108,7 +108,7 @@ mod tests {
             .into();
 
         let analyzer = EventDurationAnalyzer::new(&candles, event_time);
-        let index_result = analyzer.find_event_index();
+        let index_result = analyzer.trouver_index_evenement();
         assert!(index_result.is_ok());
         if let Ok(idx) = index_result {
             assert!(idx < candles.len());

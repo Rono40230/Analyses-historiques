@@ -187,7 +187,7 @@ impl<'a> Stats15MinCalculator<'a> {
             .unwrap_or("EURUSD");
         let point_value = get_point_value(symbol);
         let straddle_params =
-            StraddleParameterService::calculate_parameters(atr_mean, noise_ratio_mean, point_value);
+            StraddleParameterService::calculate_parameters(atr_mean, noise_ratio_mean, point_value, None, half_life);
 
         // Calcul du profil de volatilité minute par minute (0-14) pour le graphique
         let mut minute_ranges: Vec<Vec<f64>> = vec![Vec::new(); 15];

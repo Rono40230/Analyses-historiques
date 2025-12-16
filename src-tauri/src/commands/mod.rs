@@ -1,5 +1,6 @@
 // commands/mod.rs - Exports des commandes Tauri
 pub mod archive_commands;
+pub mod backtest;
 pub mod calendar_commands;
 pub mod calendar_import_commands;
 pub mod calendar_parser;
@@ -26,6 +27,7 @@ pub mod volatility;
 pub mod volatility_duration_commands;
 
 pub use archive_commands::*;
+pub use backtest::*;
 pub use calendar_commands::get_upcoming_events;
 pub use calendar_import_commands::*;
 pub use candle_index_commands::{
@@ -53,7 +55,7 @@ pub use metadata::{
     get_pair_metadata_from_db, get_pairs_metadata,
 };
 pub use movement_analysis_commands::{analyze_movement_quality, get_movement_qualities};
-pub use pair_data::import_pair_data;
+pub use pair_data::{import_pair_data, get_symbol_properties};
 // Phase 7: Retrospective analysis commands (fully integrated)
 pub use retrospective_analysis::{analyze_decay_profile, analyze_peak_delay, get_event_types};
 pub use session_commands::*;

@@ -132,6 +132,8 @@ impl QuarterlyAggregator {
                             raw_atr_mean_avg,
                             noise_ratio_mean_avg,
                             point_value,
+                            None,
+                            volatility_half_life_mean,
                         );
 
                         // Agrégation du profil de volatilité (moyenne minute par minute)

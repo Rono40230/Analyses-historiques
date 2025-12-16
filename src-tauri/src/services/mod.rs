@@ -1,5 +1,6 @@
 // services/mod.rs - Exports publics des services
 pub mod archive_service;
+pub mod backtest;
 pub mod breakout_detector;
 pub mod calendar_converter;
 pub mod calendar_scraper;

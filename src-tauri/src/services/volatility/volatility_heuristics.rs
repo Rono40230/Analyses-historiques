@@ -58,6 +58,33 @@ impl VolatilityHeuristics {
         let half_life = ((peak_duration as f64) * ratio) as u16;
         Ok(half_life.max(30).min((peak_duration as f64 * 0.9) as u16))
     }
+
+    /// Détecte si le quarter présente un risque de "Doji Géant" (Whipsaw statique)
+    ///
+    /// Critères :
+    /// 1. Volatilité significative (ATR > seuil minimal)
+    /// 2. Corps petit par rapport au range (Indécision)
+    ///
+    /// Un Doji Géant signifie que le prix explose mais revient au point de départ.
+    /// C'est le pire scénario pour un Straddle (déclenche les deux ordres + SL).
+    pub fn is_giant_doji(stats: &Stats15Min) -> bool {
+        // Seuil de volatilité minimale (pour ne pas flagger les dojis de nuit sans volume)
+        // Stats15Min contient des valeurs normalisées (Pips/Points) après agrégation
+        const MIN_ATR_FOR_WHIPSAW: f64 = 15.0; // 15 pips/points min pour considérer ça dangereux
+        const MAX_BODY_RATIO: f64 = 35.0; // Corps < 35% du range (Indécision marquée)
+
+        // Si l'ATR est faible, ce n'est pas un "Giant" Doji, juste un Doji calme (pas grave)
+        if stats.atr_mean < MIN_ATR_FOR_WHIPSAW {
+            return false;
+        }
+
+        // Si le corps moyen est petit (< 35%) alors que ça bouge bien
+        if stats.body_range_mean.abs() < MAX_BODY_RATIO {
+            return true;
+        }
+
+        false
+    }
 }
 
 #[cfg(test)]
@@ -95,6 +122,10 @@ mod tests {
             peak_duration_mean: None,
             volatility_half_life_mean: None,
             recommended_trade_expiration_mean: None,
+            max_true_range: 0.0,
+            straddle_parameters: None,
+            volatility_profile: None,
+            optimal_entry_minute: None,
         }
     }
 
@@ -122,5 +153,24 @@ mod tests {
     fn test_estimate_half_life_noisy() {
         let half_life = VolatilityHeuristics::estimate_half_life(100, 3.0).expect("Half life");
         assert!(half_life > 0);
+    }
+
+    #[test]
+    fn test_is_giant_doji_true() {
+        let slice = create_test_slice(0.003, 1);
+        assert!(VolatilityHeuristics::is_giant_doji(&slice));
+    }
+
+    #[test]
+    fn test_is_giant_doji_false_atr() {
+        let slice = create_test_slice(0.001, 1);
+        assert!(!VolatilityHeuristics::is_giant_doji(&slice));
+    }
+
+    #[test]
+    fn test_is_giant_doji_false_body() {
+        let mut slice = create_test_slice(0.004, 1);
+        slice.body_range_mean = 40.0;
+        assert!(!VolatilityHeuristics::is_giant_doji(&slice));
     }
 }

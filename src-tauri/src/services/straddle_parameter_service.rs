@@ -14,13 +14,19 @@ impl StraddleParameterService {
         atr: f64,
         noise_ratio: f64,
         point_value: f64,
+        spread_margin: Option<f64>,
+        half_life_minutes: Option<u16>,
     ) -> StraddleParameters {
+        // Marge de sécurité spread (défaut 3.0 pips)
+        let spread_safety = spread_margin.unwrap_or(3.0);
+
         // 1. Offset Adaptatif
         // Si bruit > 2.0, on s'écarte plus (1.5x) pour éviter les mèches
         // Sinon on reste proche (1.2x)
         let offset_multiplier = if noise_ratio > 2.0 { 1.5 } else { 1.2 };
         let raw_offset = atr * offset_multiplier;
-        let offset_pips = (raw_offset / point_value).ceil();
+        // Ajout de la marge de sécurité au calcul final en pips
+        let offset_pips = (raw_offset / point_value).ceil() + spread_safety;
 
         // 2. Stop Loss Adaptatif (Sécurité)
         // Plus il y a de bruit, plus le SL doit être large
@@ -57,9 +63,12 @@ impl StraddleParameterService {
         // Max(SL standard, 3x Offset)
         let sl_recovery_pips = stop_loss_pips.max(offset_pips * 3.0).ceil();
 
-        // 5. Timeout
-        // Par défaut 3 minutes pour le scalping/news
-        let timeout_minutes = 3;
+        // 5. Timeout Dynamique
+        // Basé sur la demi-vie de la volatilité si disponible
+        // Sinon par défaut 3 minutes pour le scalping/news
+        let timeout_minutes = half_life_minutes
+            .map(|hl| hl.clamp(1, 15) as i32) // Min 1 min, Max 15 min
+            .unwrap_or(3);
 
         // 6. Risk/Reward (Théorique, basé sur volatilité attendue vs SL)
         // Ici on met juste un indicateur
@@ -78,6 +87,7 @@ impl StraddleParameterService {
             timeout_minutes,
             sl_recovery_pips,
             risk_reward_ratio,
+            spread_safety_margin_pips: spread_safety,
         }
     }
 }

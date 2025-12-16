@@ -234,7 +234,7 @@ mod tests {
             });
         }
 
-        let result = simulate_straddle_win_rate(&candles, 10.0);
+        let result = simuler_taux_reussite_straddle(&candles, 10.0);
         assert!(result.total_trades > 0);
         assert!(result.wins > 0);
     }
@@ -242,7 +242,7 @@ mod tests {
     #[test]
     fn test_empty_candles() {
         let candles = vec![];
-        let result = simulate_straddle_win_rate(&candles, 10.0);
+        let result = simuler_taux_reussite_straddle(&candles, 10.0);
         assert_eq!(result.total_trades, 0);
         assert_eq!(result.win_rate, 0.0);
     }

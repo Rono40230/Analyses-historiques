@@ -7,6 +7,7 @@ use super::hourly_stats::HourlyStatsCalculator;
 use super::metrics::MetricsAggregator;
 use super::quarterly_aggregator::QuarterlyAggregator;
 use super::stats_15min::Stats15MinCalculator;
+use super::volatility_heuristics::VolatilityHeuristics;
 use crate::db::DbPool;
 use crate::models::{
     AnalysisResult, AssetProperties, Candle, Result, RiskLevel, TradingRecommendation,
@@ -207,7 +208,20 @@ impl VolatilityAnalyzer {
 
         // 6b. VALIDE LA COHÉRENCE RECOMMENDATION × RISK
         // Si incohérent, ajuste la recommandation pour matcher le risque
-        let recommendation = recommendation.validate_with_risk(&risk_level);
+        let mut recommendation = recommendation.validate_with_risk(&risk_level);
+
+        // LOGIC-01: Détection Whipsaw (Doji Géant) sur le meilleur quarter
+        // Si détecté, on force la recommandation à RISKY pour protéger le capital
+        // Cette vérification doit se faire APRÈS la validation de risque pour avoir le dernier mot
+        if let Some(best_stats) = stats_15min
+            .iter()
+            .find(|s| s.hour == best_quarter.0 && s.quarter == best_quarter.1)
+        {
+            if VolatilityHeuristics::is_giant_doji(best_stats) {
+                tracing::warn!("⚠️ Whipsaw detected on best quarter! Downgrading recommendation to RISKY.");
+                recommendation = TradingRecommendation::StraddleRisky;
+            }
+        }
 
         // NOTE: Corrélation événements économiques gérée séparément via EventCorrelationService
         // (voir EventCorrelationView.vue pour affichage)

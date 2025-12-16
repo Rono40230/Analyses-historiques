@@ -1,6 +1,5 @@
 <template>
   <div class="symbol-selector-container">
-    <label for="symbol-select">Sélectionnez une paire forex :</label>
     <select 
       id="symbol-select"
       v-model="selectedSymbol" 
@@ -9,7 +8,7 @@
       @change="onSymbolChange"
     >
       <option value="">
-        -- Choisir un symbole --
+        -- Choisir --
       </option>
       <option 
         v-for="symbol in symbols" 
@@ -23,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useVolatilityStore } from '../stores/volatility'
 import { useDataRefresh } from '../composables/useDataRefresh'
 import { storeToRefs } from 'pinia'
@@ -32,11 +31,22 @@ const store = useVolatilityStore()
 const { symbols, loading } = storeToRefs(store)
 const selectedSymbol = ref('')
 
+const props = defineProps<{
+  modelValue?: string
+}>()
+
 const { onPairDataRefresh } = useDataRefresh()
 
 const emit = defineEmits<{
-  symbolSelected: [symbol: string]
+  (e: 'update:modelValue', value: string): void
+  (e: 'symbolSelected', value: string): void
 }>()
+
+watch(() => props.modelValue, (newVal) => {
+  if (newVal !== undefined) {
+    selectedSymbol.value = newVal
+  }
+}, { immediate: true })
 
 onMounted(() => {
   store.loadSymbols()
@@ -51,60 +61,42 @@ onMounted(() => {
 })
 
 function onSymbolChange() {
-  if (selectedSymbol.value) {
-    emit('symbolSelected', selectedSymbol.value)
-  }
+  emit('update:modelValue', selectedSymbol.value)
+  emit('symbolSelected', selectedSymbol.value)
 }
 </script>
 
 <style scoped>
 .symbol-selector-container {
-  background: #1a202c;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-  margin-bottom: 30px;
-  border: 1px solid #2d3748;
-}
-
-.symbol-selector-container label {
-  display: block;
-  color: #e2e8f0;
-  font-weight: 600;
-  margin-bottom: 10px;
-  font-size: 1.05em;
+  width: 100%;
 }
 
 .symbol-select {
   width: 100%;
-  padding: 12px 16px;
-  font-size: 1.1em;
-  border: 2px solid #4a5568;
-  border-radius: 8px;
-  background: #2d3748;
-  color: #e2e8f0;
+  padding: 0 12px;
+  height: 42px;
+  font-size: 0.9rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #000000;
   cursor: pointer;
   transition: all 0.3s;
+  box-sizing: border-box;
 }
 
 .symbol-select:hover:not(:disabled) {
-  border-color: #667eea;
-  background: #374151;
+  border-color: #a0aec0;
 }
 
 .symbol-select:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
 }
 
 .symbol-select:disabled {
-  opacity: 0.6;
+  opacity: 0.7;
   cursor: not-allowed;
-}
-
-.symbol-select option {
-  background: #2d3748;
-  color: #e2e8f0;
 }
 </style>

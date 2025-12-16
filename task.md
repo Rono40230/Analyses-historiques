@@ -1,46 +1,54 @@
 # Tâches du Projet Analyses Historiques
 
-## 🚨 CORRECTIFS CRITIQUES (PRIORITÉ ABSOLUE)
-- [x] **FIX-01 : Calcul ATR & Max Spike** <!-- id: 0 -->
-    - `src-tauri/src/services/volatility/hourly_stats.rs`
-    - Problème : L'ATR lisse trop les pics de volatilité (News).
-    - Action : Remplacer `atr_values.last()` par `mean(&atr_values)`.
-    - Action : Ajouter le calcul de `max_true_range` (le plus grand range M1 brut de l'heure) pour capturer l'explosivité réelle.
-- [x] **FIX-02 : Timezone & UTC** <!-- id: 1 -->
-    - `src-tauri/src/services/volatility/hourly_stats.rs`
-    - Problème : `PARIS_OFFSET_HOURS` hardcodé (+1).
-    - Action : Passer tout le backend en UTC strict.
-- [x] **FIX-03 : Fenêtre de Corrélation Précise** <!-- id: 2 -->
-    - `src-tauri/src/services/event_correlation.rs`
-    - Problème : Fenêtre -2h/+2h trop large.
-    - Action : Réduire à `-10 min` / `+30 min`.
-    - Action : Utiliser le `max_true_range` dans cette fenêtre pour mesurer l'impact.
-- [x] **FIX-04 : Normalisation Pips/Points** <!-- id: 8 -->
-    - `src-tauri/src/models/` & `src-tauri/src/services/`
-    - Problème : Incohérence des unités entre Forex (5 digits), JPY (3 digits), Indices et Crypto.
-    - Action : Créer un `PipValueNormalizer` qui détecte automatiquement la classe d'actif.
-    - Action : Standardiser l'affichage (Forex=Pips, Indices=Points, Crypto=$) tout en gardant la précision interne.
+## 🚀 FEAT-01 : Backtest Événementiel (Simulation de Performance) <!-- id: 6 -->
+Objectif : Valider la "Recette" (Paramètres Straddle) en la rejouant sur les événements passés pour estimer la rentabilité et le risque.
 
-## 🛠 AMÉLIORATIONS LOGIQUES (STRADDLE V2)
-- [ ] **LOGIC-01 : Gestion du Spread & Whipsaw** <!-- id: 3 -->
-    - `src-tauri/src/services/straddle_parameter_service.rs`
-    - Action : Ajouter une "Marge de Sécurité Spread" configurable (ex: +3 pips).
-    - Action : Détecter les "Dojis Géants" (High Volatility + Low Body) et recommander `RISKY`.
-- [ ] **LOGIC-02 : Paramètres Dynamiques** <!-- id: 4 -->
-    - `src-tauri/src/services/straddle_parameter_service.rs`
-    - Action : Timeout basé sur la durée de retour au calme.
-    - Action : Seuils relatifs (`target = 2.0 * average_atr`) pour le `BestQuarterFinder`.
-- [ ] **LOGIC-03 : Analyse Conditionnelle** <!-- id: 5 -->
-    - Permettre de filtrer les stats horaires : "Seulement les jours avec Event High Impact".
+### 1. Backend : Moteur de Simulation (Rust)
+- [x] **Architecture du Service**
+    - Créer le module `src-tauri/src/services/backtest/`
+    - Définir les structures de données :
+        - `StrategyMode` (Enum : `Directionnel` | `Simultane`)
+        - `BacktestConfig` (Paramètres : Offset, SL, TP, Timeout, Spread)
+        - `TradeResult` (Date, Pips, Duration, Outcome: TP/SL/Timeout)
+        - `BacktestSummary` (WinRate, TotalPips, MaxDrawdown, ProfitFactor)
 
-## 🚀 FONCTIONNALITÉS (PHASE SUIVANTE)
-- [ ] **FEAT-01 : Backtest Événementiel** <!-- id: 6 -->
-    - "Comment a réagi l'EURUSD aux 10 derniers NFP ?"
-- [ ] **FEAT-02 : Export PDF** <!-- id: 7 -->
-    - Rapport propre pour le trader.
+- [x] **Implémentation du Moteur (`engine.rs`)**
+    - Logique de chargement des bougies (T-5min à T+60min pour chaque événement).
+    - **Simulation Mode Directionnel (Breakout)** :
+        - Ordres OCO (Buy Stop / Sell Stop).
+        - Gestion du Whipsaw (si SL touché -> Perte).
+    - **Simulation Mode Simultané (Recovery)** :
+        - Ordres initiaux.
+        - Si SL touché -> Activation du trade inverse avec `stop_loss_recovery`.
+        - Gestion de la "Double Perte" (Pire scénario).
 
-## 📝 Tâches en cours
-- [ ] Aucune tâche active pour le moment.
+- [x] **Commande Tauri**
+    - Créer `src-tauri/src/commands/backtest.rs`.
+    - Exposer `run_backtest_command(pair, event_type, params, mode)`.
 
-## ✅ Tâches terminées
-- [x] Audit initial du code et des formules.
+### 2. Frontend : Interface de Simulation (Vue.js)
+- [x] **Composant d'Affichage (`BacktestResultsPanel.vue`)**
+    - Design "Accordéon" qui s'ouvre sous les paramètres.
+    - Affichage des KPIs (Win Rate, Gain Total, etc.).
+    - Liste déroulante des trades individuels (Date | Résultat | Détail).
+
+- [x] **Intégration dans `BacktestView.vue`** (Adaptation: Vue dédiée créée)
+    - Création d'une vue dédiée pour le Backtest.
+    - Configuration via `BacktestConfigPanel.vue`.
+    - Affichage des résultats via `BacktestResultsPanel.vue`.
+    - Ajout de l'onglet "Backtest" dans `App.vue`.
+
+### 3. Export & Archivage
+- [ ] **Adaptation de `ArchiveModal.vue`**
+    - Supporter le type d'archive "Backtest".
+    - Permettre de sauvegarder le JSON complet des résultats.
+- [ ] **Visualisation des Archives**
+    - Permettre de rouvrir un Backtest archivé dans le `BacktestResultsPanel` (mode lecture seule).
+
+---
+
+## ✅ Tâches terminées (Historique)
+- [x] **FIX-01 à FIX-04** : Correctifs critiques (ATR, Timezone, Corrélation, Normalisation).
+- [x] **LOGIC-01** : Gestion du Spread & Whipsaw.
+- [x] **LOGIC-02** : Paramètres Dynamiques.
+- [x] **LOGIC-03** : Harmonisation de la Corrélation (BidiCalculator utilise StraddleParameterService).

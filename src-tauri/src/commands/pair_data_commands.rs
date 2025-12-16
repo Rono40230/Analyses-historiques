@@ -102,3 +102,19 @@ pub async fn import_pair_data(
     
     Ok(summary)
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SymbolProperties {
+    pub point_value: f64,
+    pub pip_value: f64,
+}
+
+#[tauri::command]
+pub fn get_symbol_properties(symbol: String) -> SymbolProperties {
+    use crate::services::pair_data::{get_point_value, get_pip_value};
+    
+    SymbolProperties {
+        point_value: get_point_value(&symbol),
+        pip_value: get_pip_value(&symbol),
+    }
+}

@@ -1,3 +1,5 @@
+use crate::services::straddle_parameter_service::StraddleParameterService;
+
 /// Calcul des paramètres Bidi Straddle à partir des données d'impact volatilité
 pub struct BidiCalculator;
 
@@ -12,25 +14,39 @@ impl BidiCalculator {
         _event_count: usize,
         point_value: f64,
     ) -> (f64, f64, f64, i32, f64, f64) {
-        let best_moment = Self::calculer_meilleur_moment(atr_before);
-        let stop_loss = Self::calculer_stop_loss(atr_before, atr_after, noise_during, point_value);
-        let trailing_stop =
-            Self::calculer_trailing_stop(atr_before, atr_after, noise_during, point_value);
-        let timeout = Self::calculer_timeout(atr_after, volatility_increase);
-        let offset = Self::calculer_offset(atr_before, noise_during, point_value);
+        // 1. Calcul de l'ATR récent (5 dernières minutes avant l'événement)
+        // C'est ce que le robot verrait en temps réel
+        let start_idx = atr_before.len().saturating_sub(5);
+        let recent_atr_sum: f64 = atr_before[start_idx..].iter().sum();
+        let count = atr_before.len() - start_idx;
+        let recent_atr = if count > 0 {
+            recent_atr_sum / count as f64
+        } else {
+            10.0 * point_value
+        };
 
-        // Calcul du SL Recovery pour Straddle Simultané
-        // Il doit être suffisant pour atteindre l'autre côté (2x offset) + une marge de sécurité
-        // On prend le max entre le SL standard et 3.0x l'offset (augmenté de 2.5 pour plus de sécurité)
-        let stop_loss_recovery = stop_loss.max(offset * 3.0).ceil();
+        // 2. Calcul du Timeout optimal basé sur la durée réelle du mouvement (rétrospectif)
+        let timeout = Self::calculer_timeout(atr_after, volatility_increase);
+
+        // 3. Utilisation du Service Unifié pour les paramètres (Offset, SL, TS, Recovery)
+        // Cela garantit l'harmonisation avec l'analyse de volatilité brute (Spread Margin, etc.)
+        let params = StraddleParameterService::calculate_parameters(
+            recent_atr,
+            noise_during,
+            point_value,
+            None, // Utilise la marge de spread par défaut (+3.0 pips)
+            Some(timeout as u16),
+        );
+
+        let best_moment = Self::calculer_meilleur_moment(atr_before);
 
         (
             best_moment,
-            stop_loss,
-            trailing_stop,
-            timeout,
-            offset,
-            stop_loss_recovery,
+            params.stop_loss_pips,
+            params.trailing_stop_pips,
+            params.timeout_minutes,
+            params.offset_pips,
+            params.sl_recovery_pips,
         )
     }
 
@@ -47,80 +63,6 @@ impl BidiCalculator {
             .map(|(i, _)| i)
             .unwrap_or(29);
         (29.0 - peak_idx as f64).max(0.0)
-    }
-
-    fn calculer_offset(atr_before: &[f64], noise_during: f64, point_value: f64) -> f64 {
-        if atr_before.is_empty() {
-            return 10.0; // Valeur par défaut
-        }
-
-        // On regarde l'ATR moyen sur les 5 dernières minutes avant l'événement
-        // C'est la volatilité "récente" au moment où on place l'ordre
-        let start_idx = atr_before.len().saturating_sub(5);
-        let recent_atr_sum: f64 = atr_before[start_idx..].iter().sum();
-        let count = atr_before.len() - start_idx;
-        let recent_atr = if count > 0 {
-            recent_atr_sum / count as f64
-        } else {
-            10.0 * point_value
-        };
-
-        // Si le marché est bruyant (Noise > 2.0), on s'écarte davantage (1.5x ATR)
-        // Sinon on reste assez proche (1.2x ATR) pour ne pas rater le départ
-        let multiplier = if noise_during > 2.0 { 1.5 } else { 1.2 };
-
-        let raw_offset = recent_atr * multiplier;
-        (raw_offset / point_value).ceil()
-    }
-
-    fn calculer_stop_loss(
-        atr_before: &[f64],
-        atr_after: &[f64],
-        noise_during: f64,
-        point_value: f64,
-    ) -> f64 {
-        let atr_mean = (atr_before.iter().sum::<f64>() + atr_after.iter().sum::<f64>())
-            / (atr_before.len() + atr_after.len()) as f64;
-
-        let sl_ratio = if noise_during > 3.0 {
-            3.0
-        } else if noise_during > 2.5 {
-            2.5
-        } else if noise_during > 2.0 {
-            2.0
-        } else if noise_during > 1.5 {
-            1.75
-        } else {
-            1.5
-        };
-
-        let raw_sl = atr_mean * sl_ratio;
-        (raw_sl / point_value).ceil()
-    }
-
-    fn calculer_trailing_stop(
-        atr_before: &[f64],
-        atr_after: &[f64],
-        noise_during: f64,
-        point_value: f64,
-    ) -> f64 {
-        let atr_mean = (atr_before.iter().sum::<f64>() + atr_after.iter().sum::<f64>())
-            / (atr_before.len() + atr_after.len()) as f64;
-
-        // NOUVELLE LOGIQUE : Plus de bruit = Plus d'espace pour respirer
-        // On suit la logique du SL mais avec un ratio plus serré (environ 30-40% du SL)
-        let ts_ratio = if noise_during > 3.0 {
-            1.2 // Bruit extrême (>3) -> TS = 1.2x ATR (ex: ATR 40 -> TS 48)
-        } else if noise_during > 2.0 {
-            1.0 // Bruit fort (>2) -> TS = 1.0x ATR (ex: ATR 40 -> TS 40)
-        } else if noise_during > 1.5 {
-            0.8 // Bruit moyen (>1.5) -> TS = 0.8x ATR (ex: ATR 40 -> TS 32)
-        } else {
-            0.6 // Bruit faible -> TS = 0.6x ATR (ex: ATR 40 -> TS 24)
-        };
-
-        let raw_ts = atr_mean * ts_ratio;
-        (raw_ts / point_value).ceil()
     }
 
     fn calculer_timeout(atr_after: &[f64], volatility_increase: f64) -> i32 {

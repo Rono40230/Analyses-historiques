@@ -12,13 +12,14 @@ import ExportModal from './components/ExportModal.vue'
 import ImportHub from './components/ImportHub.vue'
 import EventCorrelationView from './components/EventCorrelationView.vue'
 import ArchivesView from './views/ArchivesView.vue'
+import BacktestView from './views/BacktestView.vue'
 
 const volatilityStore = useVolatilityStore()
 const analysisStore = useAnalysisStore()
 const { analysisResult, loading, error } = storeToRefs(volatilityStore)
 
-const savedTab = localStorage.getItem('activeTab') as 'volatility' | 'heatmap' | 'retrospective' | 'archives' | 'calendar' | null
-const activeTab = ref<'volatility' | 'heatmap' | 'retrospective' | 'archives' | 'calendar'>(savedTab || 'heatmap')
+const savedTab = localStorage.getItem('activeTab') as 'volatility' | 'heatmap' | 'retrospective' | 'archives' | 'calendar' | 'backtest' | null
+const activeTab = ref<'volatility' | 'heatmap' | 'retrospective' | 'archives' | 'calendar' | 'backtest'>(savedTab || 'heatmap')
 const selectedSymbolLocal = ref('')
 
 watch(activeTab, (newTab) => {
@@ -58,7 +59,7 @@ function handleOpenBidiParams(data: { hour: number; quarter: number }) {
   showBidiModal.value = true
 }
 
-function switchTab(tab: 'volatility' | 'heatmap' | 'retrospective' | 'archives' | 'calendar') {
+function switchTab(tab: 'volatility' | 'heatmap' | 'retrospective' | 'archives' | 'calendar' | 'backtest') {
   activeTab.value = tab
 }
 </script>
@@ -86,6 +87,13 @@ function switchTab(tab: 'volatility' | 'heatmap' | 'retrospective' | 'archives' 
         @click="switchTab('retrospective')"
       >
         📊 Correlation de la volatilité Paire/Evénement
+      </button>
+      <button 
+        class="tab-button" 
+        :class="{ active: activeTab === 'backtest' }"
+        @click="switchTab('backtest')"
+      >
+        🧪 Backtest
       </button>
       <button 
         class="tab-button" 
@@ -201,6 +209,10 @@ function switchTab(tab: 'volatility' | 'heatmap' | 'retrospective' | 'archives' 
 
       <template v-if="activeTab === 'archives'">
         <ArchivesView />
+      </template>
+
+      <template v-if="activeTab === 'backtest'">
+        <BacktestView />
       </template>
     </main>
 
@@ -332,7 +344,9 @@ body {
   padding: 30px;
   min-height: 400px;
   flex: 1;
-  overflow-y: auto;
+  overflow: hidden; /* Changed from overflow-y: auto to allow children to manage scroll */
+  display: flex;
+  flex-direction: column;
 }
 
 .loading {
