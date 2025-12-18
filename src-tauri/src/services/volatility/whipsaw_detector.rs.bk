@@ -11,13 +11,15 @@ use tracing::{debug, info};
 /// 2. Fenêtre : quarter optimal + 1 heure (60 candles M1)
 /// 3. Whipsaw = Buy + Sell triggers + au moins 1 SL hit
 /// 4. Compte win/loss réels avec TP/SL dynamiques
-pub fn calculer_frequence_whipsaw(candles: &[Candle], offset_pips: f64) -> WhipsawAnalysis {
+pub fn calculer_frequence_whipsaw(candles: &[Candle], offset_pips: f64, symbol: &str) -> WhipsawAnalysis {
     if candles.len() < 61 {
         // Besoin au moins 61 candles (1 min entry + 60 min test window)
         return WhipsawAnalysis::default();
     }
 
-    info!("🔄 Calculant whipsaw frequency (mode réaliste)");
+    let asset_props = crate::models::AssetProperties::from_symbol(symbol);
+
+    info!("🔄 Calculant whipsaw frequency (mode réaliste) pour {}", symbol);
     info!("   - Offset: {} pips", offset_pips);
     info!("   - Fenêtre: 60 candles (quarter + 1h)");
 
@@ -66,7 +68,7 @@ pub fn calculer_frequence_whipsaw(candles: &[Candle], offset_pips: f64) -> Whips
 
         // Simuler le Straddle
         let result =
-            simulate_straddle_trade(entry_price, offset_pips, sl_pips, tp_pips, test_window);
+            simulate_straddle_trade(entry_price, offset_pips, sl_pips, tp_pips, test_window, asset_props.pip_value);
 
         debug!(
             "📊 {}: Trade simulation - entry={:.4}, offset={}, SL={}, TP={}, result={:?}",
@@ -80,8 +82,8 @@ pub fn calculer_frequence_whipsaw(candles: &[Candle], offset_pips: f64) -> Whips
                 whipsaws.push(WhipsawDetail {
                     entry_index,
                     entry_price,
-                    buy_stop: entry_price + (offset_pips / 10000.0),
-                    sell_stop: entry_price - (offset_pips / 10000.0),
+                    buy_stop: entry_price + asset_props.denormalize(offset_pips),
+                    sell_stop: entry_price - asset_props.denormalize(offset_pips),
                     buy_trigger_index: 0,
                     sell_trigger_index: 0,
                 });
@@ -235,17 +237,18 @@ mod tests {
     #[test]
     fn test_whipsaw_detection_basic() {
         let mut candles = Vec::new();
-        for i in 0..20 {
-            candles.push(create_test_candle(i, 1.0875, 1.0835));
+        for i in 0..100 {
+            // Range large pour déclencher des trades avec un petit offset
+            candles.push(create_test_candle(i, 1.0895, 1.0815));
         }
-        let result = calculer_frequence_whipsaw(&candles, 50.0);
+        let result = calculer_frequence_whipsaw(&candles, 10.0, "EURUSD");
         assert!(result.total_trades > 0);
     }
 
     #[test]
     fn test_whipsaw_empty_data() {
         let candles = vec![];
-        let result = calculer_frequence_whipsaw(&candles, 50.0);
+        let result = calculer_frequence_whipsaw(&candles, 50.0, "EURUSD");
         assert_eq!(result.total_trades, 0);
     }
 }

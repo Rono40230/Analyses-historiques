@@ -71,14 +71,14 @@ impl Stats15Min {
         }
         let mut score: f64 = 0.0;
 
-        // ATR adapté Forex M1 scalping (30 pts)
-        if self.atr_mean > 0.00025 {
+        // ATR adapté Forex M15 (Pips) (30 pts)
+        if self.atr_mean > 2.5 {
             score += 30.0;
-        } else if self.atr_mean > 0.00015 {
+        } else if self.atr_mean > 1.5 {
             score += 25.0;
-        } else if self.atr_mean > 0.00010 {
+        } else if self.atr_mean > 1.0 {
             score += 20.0;
-        } else if self.atr_mean > 0.00005 {
+        } else if self.atr_mean > 0.5 {
             score += 10.0;
         }
 

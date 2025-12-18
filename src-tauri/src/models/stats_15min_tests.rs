@@ -46,10 +46,10 @@ mod tests {
             hour: 14,
             quarter: 0,
             candle_count: 100,
-            atr_mean: 0.0003,
-            atr_max: 0.0005,
+            atr_mean: 3.0, // 3 pips
+            atr_max: 5.0,
             volatility_mean: 0.15,
-            range_mean: 0.0008,
+            range_mean: 8.0,
             body_range_mean: 50.0,
             shadow_ratio_mean: 1.2,
             volume_imbalance_mean: 0.15,

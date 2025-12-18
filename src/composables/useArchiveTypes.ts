@@ -11,6 +11,7 @@ export interface NormalizedArchive {
   impactScore?: number
   eventCount?: number
   timestamp: string
+  unit?: string
 }
 
 export interface RawArchive {
@@ -34,6 +35,7 @@ export interface EventStats {
   variance?: number
   heatmapImpact?: number
   tradabilityScore?: number
+  unit?: string
 }
 
 export interface PairStats {

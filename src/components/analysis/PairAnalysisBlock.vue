@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useArchiveStatistics } from '../../composables/useArchiveStatistics'
-import { formatPointsWithPips } from '../../utils/pipConverter'
+import UnitDisplay from '../UnitDisplay.vue'
+import { getPointsPerPip } from '../../utils/pipConverter'
+
 const { pairStatistics } = useArchiveStatistics()
 interface PairDisplay {
   pair: string
@@ -49,6 +51,10 @@ function getTopSensitiveEvent(eventSensitivity: Record<string, number>): { event
     sensitivity: entries[0][1],
   })
 }
+
+function getUnit(pair: string): string {
+  return getPointsPerPip(pair) === 1 ? 'pts' : 'pips'
+}
 </script>
 <template>
   <div class="pair-analysis-block">
@@ -73,7 +79,9 @@ function getTopSensitiveEvent(eventSensitivity: Record<string, number>): { event
           </div>
           <div class="metric-row">
             <span class="metric-label">Volatilité ATR</span>
-            <span class="metric-value">{{ formatPointsWithPips(pairItem.pair, pairItem.stats.avgATR) }}</span>
+            <span class="metric-value">
+              <UnitDisplay :value="pairItem.stats.avgATR" :unit="getUnit(pairItem.pair)" :symbol="pairItem.pair" />
+            </span>
           </div>
           <div class="metric-row">
             <span class="metric-label">Performance</span>

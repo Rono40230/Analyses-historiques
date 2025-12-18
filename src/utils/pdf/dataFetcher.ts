@@ -45,7 +45,11 @@ export async function fetchArchivedData(pairs: string[], onProgress: (progress: 
     let bestArchiveDate = 0
 
     for (const archive of archives) {
-      // Vérifier si la période correspond (à 24h près)
+      // MODIFICATION: On ne filtre plus strictement par date de calendrier.
+      // On cherche simplement l'archive la plus récente pour ce symbole.
+      // L'utilisateur sait ce qu'il a archivé.
+      
+      /* 
       const archStart = new Date(archive.period_start).getTime()
       const archEnd = new Date(archive.period_end).getTime()
       
@@ -53,6 +57,7 @@ export async function fetchArchivedData(pairs: string[], onProgress: (progress: 
                             Math.abs(archEnd - calEnd) < 86400000
       
       if (!isPeriodMatch) continue
+      */
 
       try {
         const data = JSON.parse(archive.data_json) as ArchivedAnalysisData
@@ -73,10 +78,8 @@ export async function fetchArchivedData(pairs: string[], onProgress: (progress: 
     if (bestArchive) {
       results.push(bestArchive)
     } else {
-      if (!archive) {
       // Aucune archive trouvée pour ce symbole
       continue
-    }
     }
 
     current++

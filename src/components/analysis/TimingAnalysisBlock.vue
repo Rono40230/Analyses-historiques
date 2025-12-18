@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import UnitDisplay from '../UnitDisplay.vue'
 import { useArchiveStatistics } from '../../composables/useArchiveStatistics'
 const { eventStatistics } = useArchiveStatistics()
 interface TimingEvent {
@@ -10,6 +11,7 @@ interface TimingEvent {
   estimatedGain: number
   confidence: number
   tradabilityScore: number
+  unit: string
 }
 const sortedByTiming = computed<TimingEvent[]>(() => {
   if (!eventStatistics.value) return []
@@ -22,6 +24,7 @@ const sortedByTiming = computed<TimingEvent[]>(() => {
       estimatedGain: Math.round(stats.avgATR * 2.5),
       confidence: stats.confidence,
       tradabilityScore: stats.tradabilityScore,
+      unit: stats.unit || 'pts'
     }))
     .sort((a, b) => a.peakDelay - b.peakDelay)
 })
@@ -80,7 +83,9 @@ const avgPlacement = computed(() => {
         <div class="col-event">{{ event.eventType }}</div>
         <div class="col-placement">{{ event.placementSeconds }}sec</div>
         <div class="col-duration">{{ event.exitMinutes }}min</div>
-        <div class="col-gain">+{{ event.estimatedGain }}p</div>
+        <div class="col-gain">
+          +<UnitDisplay :value="event.estimatedGain" :unit="event.unit || 'pts'" :decimals="1" />
+        </div>
         <div class="col-score">
           <span v-if="event.tradabilityScore >= 80" class="score-good">{{ Math.round(event.tradabilityScore) }}</span>
           <span v-else-if="event.tradabilityScore >= 60" class="score-medium">{{ Math.round(event.tradabilityScore) }}</span>

@@ -81,6 +81,7 @@
       :global-metrics="props.result.global_metrics" 
       :point-value="props.result.point_value"
       :unit="props.result.unit"
+      :symbol="props.result.symbol"
     />
     <ColorLegendSection @analyze="openAnalysisModal" />
   </div>

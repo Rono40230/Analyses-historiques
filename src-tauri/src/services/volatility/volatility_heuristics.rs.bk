@@ -98,8 +98,8 @@ mod tests {
             atr_mean: atr,
             atr_max: atr * 1.2,
             volatility_mean: 0.2,
-            range_mean: 0.003,
-            body_range_mean: 50.0,
+            range_mean: atr * 1.1,
+            body_range_mean: 20.0,
             shadow_ratio_mean: 0.5,
             volume_imbalance_mean: 0.1,
             noise_ratio_mean: 2.0,
@@ -131,14 +131,14 @@ mod tests {
 
     #[test]
     fn test_estimate_peak_high_vol() {
-        let slice = create_test_slice(0.0025, 1);
+        let slice = create_test_slice(25.0, 1); // 25 pips
         let duration = VolatilityHeuristics::estimate_peak_duration(&slice).expect("Peak duration");
         assert!(duration >= 100);
     }
 
     #[test]
     fn test_estimate_peak_low_vol() {
-        let slice = create_test_slice(0.0008, 0);
+        let slice = create_test_slice(8.0, 0); // 8 pips
         let duration = VolatilityHeuristics::estimate_peak_duration(&slice).expect("Peak duration");
         assert!(duration <= 300);
     }
@@ -157,19 +157,19 @@ mod tests {
 
     #[test]
     fn test_is_giant_doji_true() {
-        let slice = create_test_slice(0.003, 1);
+        let slice = create_test_slice(30.0, 1); // 30 pips
         assert!(VolatilityHeuristics::is_giant_doji(&slice));
     }
 
     #[test]
     fn test_is_giant_doji_false_atr() {
-        let slice = create_test_slice(0.001, 1);
+        let slice = create_test_slice(10.0, 1); // 10 pips
         assert!(!VolatilityHeuristics::is_giant_doji(&slice));
     }
 
     #[test]
     fn test_is_giant_doji_false_body() {
-        let mut slice = create_test_slice(0.004, 1);
+        let mut slice = create_test_slice(40.0, 1); // 40 pips
         slice.body_range_mean = 40.0;
         assert!(!VolatilityHeuristics::is_giant_doji(&slice));
     }

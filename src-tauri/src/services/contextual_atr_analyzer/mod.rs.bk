@@ -110,7 +110,8 @@ mod tests {
         let mut candles = Vec::new();
 
         for i in 0..100 {
-            candles.push(create_test_candle(i, 1.1000, 0.0005));
+            // Range très faible pour être classifié comme "Low"
+            candles.push(create_test_candle(i, 1.1000, 0.00005));
         }
 
         let event_time = DateTime::from_timestamp(1609459200 + 3000, 0)

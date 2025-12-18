@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { useArchiveStatistics } from '../../composables/useArchiveStatistics'
 import { useEventPairCorrelation } from '../../composables/useEventPairCorrelation'
 import { useEventTranslation } from '../../composables/useEventTranslation'
-import { formatPointsWithPips } from '../../utils/pipConverter'
+import UnitDisplay from '../UnitDisplay.vue'
 import type { EventDetailState } from '../../composables/useEventDetail'
 
 interface EventDisplay {
@@ -169,7 +169,9 @@ function openEventDetail(eventType: string, pair: string) {
           <div class="metrics-grid">
             <div class="metric-box">
               <div class="metric-label">Volatilité ATR</div>
-              <div class="metric-value">{{ formatPointsWithPips('EURUSD', event.stats.avgATR) }}</div>
+              <div class="metric-value">
+                <UnitDisplay :value="event.stats.avgATR" unit="pips" />
+              </div>
             </div>
             <div class="metric-box">
               <div class="metric-label">Pic (+/-)</div>

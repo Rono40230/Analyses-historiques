@@ -3,6 +3,7 @@ use crate::services::session_analyzer::{
     OverlapStats, SessionAnalysisResult, SessionAnalyzer, SessionStats, TradingSession,
 };
 use crate::services::{CalendarCorrelator, CsvLoader};
+use crate::models::AssetProperties;
 use chrono::{NaiveDateTime, Timelike};
 use std::collections::HashMap;
 use tauri::State;
@@ -78,6 +79,8 @@ pub async fn analyze_sessions(
     // On utilise l'heure d'hiver par défaut pour l'affichage
     let is_winter = true;
 
+    let asset_props = AssetProperties::from_symbol(&pair_symbol);
+
     for session in &sessions {
         let vols = session_volatilities
             .get(&session.name)
@@ -93,7 +96,7 @@ pub async fn analyze_sessions(
             name: session.name.clone(),
             icon: session.icon.clone(),
             paris_hours: SessionAnalyzer::formater_heures_paris(session, is_winter),
-            avg_volatility: (avg_vol * 10000.0 * 100.0).round() / 100.0, // Convertir en pips avec 2 décimales
+            avg_volatility: (asset_props.normalize(avg_vol) * 100.0).round() / 100.0, // Convertir en pips avec 2 décimales
             percentage: (percentage * 100.0).round() / 100.0,
             candle_count: vols.len(),
         });
@@ -107,7 +110,7 @@ pub async fn analyze_sessions(
     });
 
     // Calculer les chevauchements
-    let overlaps = calculer_chevauchements(&sessions, &candles, is_winter, avg_daily_volatility)?;
+    let overlaps = calculer_chevauchements(&sessions, &candles, is_winter, avg_daily_volatility, &pair_symbol)?;
 
     // Corrélation avec calendrier (vraies données DB)
     let pool_guard = _state
@@ -131,7 +134,7 @@ pub async fn analyze_sessions(
     Ok(SessionAnalysisResult {
         period,
         total_candles,
-        avg_daily_volatility: (avg_daily_volatility * 10000.0 * 100.0).round() / 100.0,
+        avg_daily_volatility: (asset_props.normalize(avg_daily_volatility) * 100.0).round() / 100.0,
         sessions: session_stats,
         overlaps,
         calendar_correlation,
@@ -144,7 +147,9 @@ fn calculer_chevauchements(
     candles: &[(i64, f64, f64)],
     is_winter: bool,
     avg_daily_vol: f64,
+    symbol: &str,
 ) -> Result<Vec<OverlapStats>, String> {
+    let asset_props = AssetProperties::from_symbol(symbol);
     let mut overlaps = Vec::new();
 
     // Définir les chevauchements connus
@@ -170,7 +175,7 @@ fn calculer_chevauchements(
 
         if !overlap_vols.is_empty() {
             let avg_vol: f64 = overlap_vols.iter().sum::<f64>() / overlap_vols.len() as f64;
-            let avg_vol_pips = (avg_vol * 10000.0 * 100.0).round() / 100.0;
+            let avg_vol_pips = (asset_props.normalize(avg_vol) * 100.0).round() / 100.0;
             let multiplier = (avg_vol / (avg_daily_vol / 24.0) * 10.0).round() / 10.0;
 
             let offset = if is_winter { 1 } else { 2 };

@@ -30,7 +30,23 @@ impl Candle {
         low: f64,
         close: f64,
         volume: f64,
-    ) -> Result<Self, validator::ValidationErrors> {
+    ) -> crate::models::Result<Self> {
+        if high < low {
+            return Err(crate::models::VolatilityError::ValidationError(
+                "High cannot be lower than low".to_string(),
+            ));
+        }
+        if high < open || high < close {
+            return Err(crate::models::VolatilityError::ValidationError(
+                "High must be greater than or equal to open and close".to_string(),
+            ));
+        }
+        if low > open || low > close {
+            return Err(crate::models::VolatilityError::ValidationError(
+                "Low must be less than or equal to open and close".to_string(),
+            ));
+        }
+
         let candle = Self {
             id: None,
             symbol,
@@ -41,7 +57,11 @@ impl Candle {
             close,
             volume,
         };
-        candle.validate()?;
+        
+        candle.validate().map_err(|e| {
+            crate::models::VolatilityError::ValidationError(e.to_string())
+        })?;
+        
         Ok(candle)
     }
 

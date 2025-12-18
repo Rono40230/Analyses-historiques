@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import type { TradeResult } from '../../stores/backtest'
+import UnitDisplay from '../UnitDisplay.vue'
 
-defineProps<{
+const props = defineProps<{
   trades: TradeResult[]
+  unit: string
+  symbol?: string
 }>()
 
 function formatDate(iso: string) {
@@ -45,7 +48,7 @@ function getOutcomeClass(outcome: string) {
             <td>{{ trade.exit_time ? formatDate(trade.exit_time).split(' ')[1] : '-' }}</td>
             <td>{{ trade.duration_minutes }}m</td>
             <td :class="trade.pips_net > 0 ? 'win' : (trade.pips_net < 0 ? 'loss' : 'neutral')">
-              {{ trade.pips_net.toFixed(1) }}
+              <UnitDisplay :value="trade.pips_net" :unit="unit" :decimals="1" :symbol="symbol" />
             </td>
             <td>
               <span :class="['outcome-badge', getOutcomeClass(trade.outcome)]">
@@ -53,8 +56,8 @@ function getOutcomeClass(outcome: string) {
               </span>
             </td>
             <td class="excursion">
-              <span class="mfe" title="Max Favorable Excursion">+{{ trade.max_favorable_excursion.toFixed(1) }}</span> / 
-              <span class="mae" title="Max Adverse Excursion">-{{ trade.max_adverse_excursion.toFixed(1) }}</span>
+              <span class="mfe" title="Max Favorable Excursion">+<UnitDisplay :value="trade.max_favorable_excursion" :unit="unit" :decimals="1" :symbol="symbol" /></span> / 
+              <span class="mae" title="Max Adverse Excursion">-<UnitDisplay :value="trade.max_adverse_excursion" :unit="unit" :decimals="1" :symbol="symbol" /></span>
             </td>
           </tr>
         </tbody>

@@ -16,10 +16,11 @@ pub fn simulate_straddle_trade(
     sl_pips: f64,
     tp_pips: f64,
     test_window: &[&Candle],
+    pip_value: f64,
 ) -> TradeResult {
-    let offset_points = offset_pips / 10000.0;
-    let sl_points = sl_pips / 10000.0;
-    let tp_points = tp_pips / 10000.0;
+    let offset_points = offset_pips * pip_value;
+    let sl_points = sl_pips * pip_value;
+    let tp_points = tp_pips * pip_value;
 
     let buy_stop = entry_price + offset_points;
     let sell_stop = entry_price - offset_points;

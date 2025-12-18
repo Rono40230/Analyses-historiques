@@ -31,7 +31,7 @@
           </td>
           <td v-for="pair in pairs" :key="`${eventType.name}-${pair}`" :class="['heatmap-cell', getCellClass(eventType.name, pair)]">
             <span v-if="shouldShowValue(eventType.name, pair)" class="cell-value">
-              {{ getHeatmapValue(eventType.name, pair).toFixed(1) }}<span class="unit">pts</span>
+              {{ formatPointsWithPips(pair, getHeatmapValue(eventType.name, pair)) }}
             </span>
             <span v-else-if="getHeatmapValue(eventType.name, pair) === -1" class="no-data-indicator">N/A</span>
           </td>
@@ -43,6 +43,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { formatPointsWithPips } from '../utils/pipConverter'
 
 interface EventTypeEntry {
   name: string
@@ -133,7 +134,6 @@ function getCellClass(eventName: string, pair: string): string {
 .heatmap-cell.no-data-cell { background: #161b22; color: #484f58; font-style: italic; font-size: 0.8em; }
 .heatmap-cell.filtered-cell { background: #0d1117; color: #484f58; }
 .cell-value { font-weight: 600; font-size: 0.9em; }
-.unit { font-size: 0.7em; opacity: 0.7; margin-left: 2px; font-weight: 400; }
 .no-data-indicator { opacity: 0.5; }
 .heat-very-high { background: #238636; color: white; } /* Excellent (Vert) */
 .heat-medium { background: #d29922; color: black; }    /* Moyen (Orange) */

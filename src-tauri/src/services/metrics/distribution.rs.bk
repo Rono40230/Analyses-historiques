@@ -16,6 +16,8 @@ pub struct TrueRangeDistribution {
     /// NOTE: Ce field est public pour introspection (utilisé par clients externes)
     #[allow(dead_code)]
     pub percentile_80: f64,
+    /// 95e percentile du TR (Max Spike stabilisé)
+    pub percentile_95: f64,
     /// Indicateur de breakout pour chaque bougie
     pub is_breakout: Vec<bool>,
 }
@@ -46,15 +48,16 @@ impl TrueRangeDistribution {
             true_ranges.push(candles[i].true_range(prev_close));
         }
 
-        // Calcule le 80e percentile (FIX: plus d'unwrap())
+        // Calcule les percentiles (FIX: plus d'unwrap())
         let mut sorted_ranges = true_ranges.clone();
         sorted_ranges.sort_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal));
 
-        let percentile_index = (sorted_ranges.len() as f64 * 0.80) as usize;
-        let percentile_80 = sorted_ranges
-            .get(percentile_index.min(sorted_ranges.len() - 1))
-            .copied()
-            .unwrap_or(0.0);
+        let len = sorted_ranges.len();
+        let p80_index = ((len - 1) as f64 * 0.80) as usize;
+        let percentile_80 = sorted_ranges[p80_index];
+
+        let p95_index = ((len - 1) as f64 * 0.95) as usize;
+        let percentile_95 = sorted_ranges[p95_index];
 
         // Calcule la médiane pour un seuil de breakout plus dynamique
         let median_index = sorted_ranges.len() / 2;
@@ -68,8 +71,8 @@ impl TrueRangeDistribution {
         let breakout_threshold = median * 2.0;
 
         debug!(
-            "80th percentile: {:.5}, Median: {:.5}, Breakout threshold (2x median): {:.5}",
-            percentile_80, median, breakout_threshold
+            "80th percentile: {:.5}, 95th percentile: {:.5}, Median: {:.5}, Breakout threshold (2x median): {:.5}",
+            percentile_80, percentile_95, median, breakout_threshold
         );
 
         // Détecte les breakouts (TR > 2x médiane)
@@ -88,7 +91,47 @@ impl TrueRangeDistribution {
         Ok(Self {
             true_ranges,
             percentile_80,
+            percentile_95,
             is_breakout,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::Candle;
+    use chrono::Utc;
+
+    #[test]
+    fn test_percentile_95() {
+        let mut candles = Vec::new();
+        // 100 candles avec True Range = 1.0
+        for _ in 0..100 {
+            candles.push(Candle {
+                id: None,
+                symbol: "EURUSD".to_string(),
+                datetime: Utc::now(),
+                open: 1.0,
+                high: 2.0,
+                low: 1.0,
+                close: 1.5,
+                volume: 100.0,
+            });
+        }
+        // Ajouter quelques outliers (5 candles avec TR = 10.0)
+        // Le 95e percentile devrait être la valeur à l'index 94 (0-indexed) après tri.
+        // Si on a 105 candles, 95% de 105 = 99.75.
+        // Restons sur 100 candles pour simplifier.
+        for i in 0..5 {
+            candles[i].high = 11.0;
+        }
+
+        let dist = TrueRangeDistribution::calculer(&candles).expect("Calcul distribution échoué");
+
+        // Le 95e percentile devrait ignorer les 5 outliers les plus hauts
+        // et retourner 1.0 (la valeur du 95e élément après tri)
+        assert!(dist.percentile_95 < 2.0);
+        assert!(dist.percentile_95 >= 1.0);
     }
 }

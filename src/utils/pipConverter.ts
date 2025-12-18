@@ -20,7 +20,7 @@ type SymbolType = 'forex' | 'gold' | 'silver' | 'indices' | 'crypto'
 function getSymbolType(symbol: string): SymbolType {
   if (symbol.includes('XAU')) return 'gold'
   if (symbol.includes('XAG')) return 'silver'
-  if (symbol.includes('US30') || symbol.includes('DE30') || symbol.includes('NAS100') || symbol.includes('SPX500') || symbol.includes('USA500')) return 'indices'
+  if (symbol.includes('US30') || symbol.includes('DE30') || symbol.includes('NAS100') || symbol.includes('SPX500') || symbol.includes('USA500') || symbol.includes('DEUIDX') || symbol.includes('USAIDX') || symbol.includes('USATEC')) return 'indices'
   if (symbol.includes('BTC') || symbol.includes('ETH')) return 'crypto'
   return 'forex'  // Tous les autres: EURUSD, USDJPY, CADJPY, EURJPY, etc
 }
@@ -29,7 +29,7 @@ function getSymbolType(symbol: string): SymbolType {
  * Obtenir le nombre de points par pip
  * points_per_pip = nombre de points qu'il faut pour faire 1 pip
  */
-function getPointsPerPip(symbol: string): number {
+export function getPointsPerPip(symbol: string): number {
   const type = getSymbolType(symbol)
   
   switch (type) {
@@ -84,26 +84,28 @@ export function pipsToPoints(symbol: string, pips: number): number {
 }
 
 /**
- * Formater une valeur en points avec conversion pips
- * Exemple: "150 points soit 15 pips"
+ * Formater une valeur normalisée (Pips/Points) pour affichage
  * 
  * @param symbol Symbole de trading
- * @param points Valeur en points
- * @param decimals Nombre de décimales (défaut: 2)
+ * @param normalizedValue Valeur déjà normalisée (1.0 = 1 pip ou 1 point)
+ * @param _decimals Non utilisé (gardé pour compatibilité)
  * @returns Chaîne formatée
  */
-export function formatPointsWithPips(symbol: string, points: number | undefined, decimals = 2): string {
+export function formatPointsWithPips(symbol: string, normalizedValue: number | undefined, _decimals = 2): string {
   // Gérer les valeurs undefined ou NaN
-  if (points === undefined || points === null || isNaN(points)) {
+  if (normalizedValue === undefined || normalizedValue === null || isNaN(normalizedValue)) {
     return 'N/A'
   }
   
-  const pips = pointsToPips(symbol, points)
-  const pipsFormatted = Math.round(pips)  // Arrondir à l'entier (pas de décimales)
-  const pointsFormatted = Math.round(points).toString()  // Arrondir sans décimales
+  const pointsPerPip = getPointsPerPip(symbol)
   
-  // Toujours afficher la conversion pips pour transparence
-  return `${pointsFormatted} points (soit ${pipsFormatted} pips)`
+  if (pointsPerPip === 1) {
+    return `${normalizedValue.toFixed(1)} points (soit ${normalizedValue.toFixed(1)} pips)`
+  }
+  
+  // Pour le Forex (1 pip = 10 points), normalizedValue est en pips
+  const points = normalizedValue * 10
+  return `${points.toFixed(1)} points (soit ${normalizedValue.toFixed(1)} pips)`
 }
 
 /**

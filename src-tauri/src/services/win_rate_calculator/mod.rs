@@ -162,7 +162,7 @@ mod tests {
         let calc = WinRateCalculator::new(&candles, event_time);
 
         let outcome = calc
-            .simulate_trade(15, 2.0, 3.0, 60)
+            .simulate_trade(15, 1.5, 2.0, 60)
             .expect("Failed to simulate");
         assert_eq!(outcome, TradeOutcome::Win);
     }

@@ -1,14 +1,15 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import type { ArchivedBacktestData } from './dataFetcher'
+import { formatPointsWithPips } from '../pipConverter'
 
-export async function generateBacktestReport(doc: jsPDF, dataList: ArchivedBacktestData[]) {
+export async function generateBacktestReport(doc: jsPDF, dataList: ArchivedBacktestData[], startY: number = 20) {
   doc.setFontSize(16)
-  doc.text('Rapport de Performance Backtest', 14, 20)
+  doc.text('Rapport de Performance Backtest', 14, startY)
   doc.setFontSize(10)
-  doc.text('Simulation historique sur les événements sélectionnés', 14, 26)
+  doc.text('Simulation historique sur les événements sélectionnés', 14, startY + 6)
   
-  let yPos = 35
+  let yPos = startY + 15
 
   for (const data of dataList) {
     const res = data.result
@@ -31,7 +32,10 @@ export async function generateBacktestReport(doc: jsPDF, dataList: ArchivedBackt
     // Paramètres utilisés
     doc.setFontSize(9)
     doc.setTextColor(100)
-    doc.text(`Mode: ${data.mode} | Offset: ${cfg.offset_pips} | SL: ${cfg.stop_loss_pips} | TP: ${cfg.trailing_stop_pips} (TS) | Spread: ${cfg.spread_pips}`, 14, yPos)
+    const offsetStr = formatPointsWithPips(res.symbol, cfg.offset_pips)
+    const slStr = formatPointsWithPips(res.symbol, cfg.stop_loss_pips)
+    const tsStr = formatPointsWithPips(res.symbol, cfg.trailing_stop_pips)
+    doc.text(`Mode: ${data.mode} | Offset: ${offsetStr} | SL: ${slStr} | TS: ${tsStr} | Spread: ${cfg.spread_pips}`, 14, yPos)
     doc.setTextColor(0)
     doc.setFontSize(10)
     yPos += 8
@@ -41,9 +45,9 @@ export async function generateBacktestReport(doc: jsPDF, dataList: ArchivedBackt
       ['Win Rate', `${res.win_rate_percent.toFixed(1)}%`],
       ['Profit Factor', res.profit_factor.toFixed(2)],
       ['Total Trades', res.total_trades.toString()],
-      ['Total Pips', res.total_pips.toFixed(1)],
-      ['Max Drawdown', `${res.max_drawdown_pips.toFixed(1)} pips`],
-      ['Avg Pips/Trade', res.average_pips_per_trade.toFixed(1)]
+      ['Total Pips', formatPointsWithPips(res.symbol, res.total_pips)],
+      ['Max Drawdown', formatPointsWithPips(res.symbol, res.max_drawdown_pips)],
+      ['Avg Pips/Trade', formatPointsWithPips(res.symbol, res.average_pips_per_trade)]
     ]
 
     autoTable(doc, {
@@ -67,7 +71,7 @@ export async function generateBacktestReport(doc: jsPDF, dataList: ArchivedBackt
     const lastTrades = res.trades.slice(-5).reverse().map((t: any) => [
       new Date(t.event_date).toLocaleDateString(),
       t.outcome,
-      t.pips_net.toFixed(1),
+      formatPointsWithPips(res.symbol, t.pips_net),
       `${t.duration_minutes}m`
     ])
 

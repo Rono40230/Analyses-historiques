@@ -67,7 +67,7 @@ impl ConfidenceScorer {
     /// > - 0-35   : ❌ MAUVAIS - Ne pas trader
     ///
     /// EXEMPLE : EURUSD 10:00-11:00 UTC
-    /// > - ATR 0.0003 → 30 pts (excellent volatilité)
+    /// > - ATR 2.5 (Pips) → 30 pts (excellent volatilité)
     /// > - BodyRange 52% → 25 pts (très directif)
     /// > - Volatilité 0.25 → 25 pts (bonus mouvement)
     /// > - NoiseRatio 1.8 → 10 pts (signal propre)
@@ -77,16 +77,16 @@ impl ConfidenceScorer {
     pub(super) fn calculer_score_confiance(metrics: &GlobalMetrics) -> f64 {
         let mut score: f64 = 0.0;
 
-        // 1. Score ATR (30 points max) - Seuils adaptés au Forex M1
-        // ATR Forex M1 typique : 0.00010 - 0.00030 (10-30 pips)
-        if metrics.mean_atr > 0.00025 {
-            score += 30.0; // Excellent : >25 pips
-        } else if metrics.mean_atr > 0.00015 {
-            score += 25.0; // Très bon : 15-25 pips
-        } else if metrics.mean_atr > 0.00010 {
-            score += 20.0; // Bon : 10-15 pips
-        } else if metrics.mean_atr > 0.00005 {
-            score += 10.0; // Acceptable : 5-10 pips
+        // 1. Score ATR (30 points max) - Seuils normalisés (1.0 = 1 Pip/Point)
+        // ATR Forex M1 typique : 1.0 - 3.0 pips
+        if metrics.mean_atr > 2.5 {
+            score += 30.0; // Excellent : > 2.5 pips/points
+        } else if metrics.mean_atr > 1.5 {
+            score += 25.0; // Très bon : 1.5-2.5 pips/points
+        } else if metrics.mean_atr > 1.0 {
+            score += 20.0; // Bon : 1.0-1.5 pips/points
+        } else if metrics.mean_atr > 0.5 {
+            score += 10.0; // Acceptable : 0.5-1.0 pips/points
         }
 
         // 2. Score Body Range (25 points max) - Seuils réalistes
@@ -189,13 +189,13 @@ mod tests {
     #[test]
     fn test_confidence_perfect_metrics() {
         let metrics = GlobalMetrics {
-            mean_atr: 0.0003,
+            mean_atr: 3.0, // 3.0 pips (normalized)
             mean_volatility: 0.35,
             mean_body_range: 50.0,
             mean_noise_ratio: 1.5,
             mean_breakout_percentage: 20.0,
             mean_volume_imbalance: 0.05,
-            mean_range: 0.0008,
+            mean_range: 8.0,
             total_candles: 200000,
         };
 
@@ -210,11 +210,11 @@ mod tests {
     #[test]
     fn test_confidence_bounds() {
         let test_cases = vec![
-            (0.00025, 0.05),
-            (0.0001, 0.15),
-            (0.0002, 0.30),
-            (0.0003, 0.50),
-            (0.001, 0.70),
+            (2.5, 0.05),
+            (1.0, 0.15),
+            (2.0, 0.30),
+            (3.0, 0.50),
+            (10.0, 0.70),
         ];
 
         for (atr, volatility) in test_cases {

@@ -2,8 +2,7 @@
 // Conforme .clinerules : < 150L, pas d'unwrap()
 
 use super::utils::{max, mean};
-use crate::models::{Candle, Result, Stats15Min};
-use crate::services::pair_data::get_point_value;
+use crate::models::{AssetProperties, Candle, Result, Stats15Min};
 use crate::services::{MetricsCalculator, StraddleParameterService, VolatilityDurationAnalyzer};
 use chrono::Timelike;
 use std::collections::HashMap;
@@ -135,13 +134,26 @@ impl<'a> Stats15MinCalculator<'a> {
         let noise_ratios = calc.calculer_ratio_bruit();
         let tr_dist = calc.calculer_distribution_true_range()?;
 
+        // Normalisation des valeurs (Pips/Points)
+        let symbol = candles
+            .first()
+            .map(|c| c.symbol.as_str())
+            .unwrap_or("EURUSD");
+        let asset_props = AssetProperties::from_symbol(symbol);
+
         // Calcule les moyennes
-        let atr_mean = mean(&atr_values); // FIX-01: Moyenne au lieu de last()
-        let atr_max = max(&atr_values);
+        let raw_atr_mean = mean(&atr_values); // FIX-01: Moyenne au lieu de last()
+        let raw_atr_max = max(&atr_values);
         let volatility_mean = mean(&volatility_values);
         // TÂCHE 3: Utiliser True Range au lieu de simple H-L
-        let range_mean = mean(&tr_dist.true_ranges);
-        let max_true_range = max(&tr_dist.true_ranges); // FIX-01: Max Spike
+        let raw_range_mean = mean(&tr_dist.true_ranges);
+        let raw_max_true_range = tr_dist.percentile_95; // FIX-01: Max Spike stabilisé (95e percentile)
+        
+        let atr_mean = asset_props.normalize(raw_atr_mean);
+        let atr_max = asset_props.normalize(raw_atr_max);
+        let range_mean = asset_props.normalize(raw_range_mean);
+        let max_true_range = asset_props.normalize(raw_max_true_range);
+
         let body_range_mean = mean(&body_ranges);
         let shadow_ratio_mean = mean(&shadow_ratios);
         let _tick_quality_mean = mean(&tick_qualities);
@@ -181,21 +193,17 @@ impl<'a> Stats15MinCalculator<'a> {
             };
 
         // Calcul des paramètres Straddle (Harmonisation Bidi V2)
-        let symbol = candles
-            .first()
-            .map(|c| c.symbol.as_str())
-            .unwrap_or("EURUSD");
-        let point_value = get_point_value(symbol);
         let straddle_params =
-            StraddleParameterService::calculate_parameters(atr_mean, noise_ratio_mean, point_value, None, half_life);
+            StraddleParameterService::calculate_parameters(atr_mean, noise_ratio_mean, asset_props.pip_value, None, half_life);
 
         // Calcul du profil de volatilité minute par minute (0-14) pour le graphique
         let mut minute_ranges: Vec<Vec<f64>> = vec![Vec::new(); 15];
         for candle in candles {
             let minute_idx = (candle.datetime.minute() % 15) as usize;
             if minute_idx < 15 {
-                let range = candle.high - candle.low;
-                minute_ranges[minute_idx].push(range);
+                let raw_range = candle.high - candle.low;
+                let normalized_range = asset_props.normalize(raw_range);
+                minute_ranges[minute_idx].push(normalized_range);
             }
         }
 

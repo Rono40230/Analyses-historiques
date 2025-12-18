@@ -27,6 +27,14 @@ impl DateTimeParser {
                 let datetime_utc = DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc);
                 return Ok(datetime_utc.timestamp());
             }
+            
+            // Essayer comme NaiveDate si NaiveDateTime échoue
+            if let Ok(d) = chrono::NaiveDate::parse_from_str(&cleaned, format) {
+                if let Some(dt) = d.and_hms_opt(0, 0, 0) {
+                    let datetime_utc = DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc);
+                    return Ok(datetime_utc.timestamp());
+                }
+            }
         }
 
         Err(format!("Format datetime non reconnu: {}", datetime_str))

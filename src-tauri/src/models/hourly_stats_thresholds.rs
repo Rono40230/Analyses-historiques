@@ -1,10 +1,10 @@
 /// Seuils de scoring pour HourlyStats
 ///
-/// ATR adapté Forex (30 pts)
-pub const ATR_EXCELLENT: f64 = 0.00025;
-pub const ATR_GOOD: f64 = 0.00015;
-pub const ATR_FAIR: f64 = 0.00010;
-pub const ATR_POOR: f64 = 0.00005;
+/// ATR adapté Forex (Pips) (30 pts)
+pub const ATR_EXCELLENT: f64 = 10.0;
+pub const ATR_GOOD: f64 = 7.0;
+pub const ATR_FAIR: f64 = 4.0;
+pub const ATR_POOR: f64 = 2.0;
 
 /// Body Range réaliste (25 pts)
 pub const BODY_RANGE_EXCELLENT: f64 = 45.0;

@@ -12,7 +12,7 @@ use crate::models::Candle;
 /// 6. Si 1 seul se déclenche et fait profit = WIN
 /// 7. Si 1 seul se déclenche mais pas de profit = LOSS
 /// 8. Si aucun ne se déclenche = LOSS
-pub fn simuler_taux_reussite_straddle(candles: &[Candle], offset_pips: f64) -> WinRateResult {
+pub fn simuler_taux_reussite_straddle(candles: &[Candle], offset_pips: f64, pip_value: f64) -> WinRateResult {
     if candles.len() < 16 {
         // Besoin au moins 16 candles (1 d'entrée + 15 de follow)
         return WinRateResult::default();
@@ -30,8 +30,8 @@ pub fn simuler_taux_reussite_straddle(candles: &[Candle], offset_pips: f64) -> W
         let entry_price = entry_candle.close;
 
         // Ordres Straddle
-        let buy_stop = entry_price + (offset_pips / 10000.0);
-        let sell_stop = entry_price - (offset_pips / 10000.0);
+        let buy_stop = entry_price + (offset_pips * pip_value);
+        let sell_stop = entry_price - (offset_pips * pip_value);
 
         // Analyser les 15 candles suivantes
         let follow_up_candles = &candles[i + 1..=i + 15];
@@ -58,7 +58,7 @@ pub fn simuler_taux_reussite_straddle(candles: &[Candle], offset_pips: f64) -> W
             let profit = max_price - buy_stop;
 
             // Besoin de profit > offset pour considérer comme WIN
-            if profit > (offset_pips / 10000.0) {
+            if profit > (offset_pips * pip_value) {
                 wins += 1;
                 TradeResult::Win {
                     entry_price,
@@ -85,7 +85,7 @@ pub fn simuler_taux_reussite_straddle(candles: &[Candle], offset_pips: f64) -> W
                 .unwrap_or(sell_stop);
             let profit = sell_stop - min_price;
 
-            if profit > (offset_pips / 10000.0) {
+            if profit > (offset_pips * pip_value) {
                 wins += 1;
                 TradeResult::Win {
                     entry_price,
@@ -234,7 +234,7 @@ mod tests {
             });
         }
 
-        let result = simuler_taux_reussite_straddle(&candles, 10.0);
+        let result = simuler_taux_reussite_straddle(&candles, 10.0, 0.0001);
         assert!(result.total_trades > 0);
         assert!(result.wins > 0);
     }
@@ -242,7 +242,7 @@ mod tests {
     #[test]
     fn test_empty_candles() {
         let candles = vec![];
-        let result = simuler_taux_reussite_straddle(&candles, 10.0);
+        let result = simuler_taux_reussite_straddle(&candles, 10.0, 0.0001);
         assert_eq!(result.total_trades, 0);
         assert_eq!(result.win_rate, 0.0);
     }

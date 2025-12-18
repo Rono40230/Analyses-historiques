@@ -67,14 +67,8 @@ pub fn calculer_metriques_minute(
         return Ok(MinuteMetrics::default());
     }
 
-    let avg_close = candles.iter().map(|c| c.close).sum::<f64>() / candles.len() as f64;
-    let price = if avg_close > 100.0 {
-        100000.0
-    } else if avg_close > 10.0 {
-        10000.0
-    } else {
-        1.0
-    };
+    let symbol = candles[0].symbol.as_str();
+    let asset_props = crate::models::AssetProperties::from_symbol(symbol);
 
     let mut atr_sum = 0.0;
     let mut range_sum = 0.0;
@@ -84,11 +78,11 @@ pub fn calculer_metriques_minute(
     let mut breakout_count = 0;
 
     for candle in candles {
-        let atr = candle.high - candle.low;
-        atr_sum += (atr / price) * 100.0;
+        let atr = asset_props.normalize(candle.high - candle.low);
+        atr_sum += atr;
 
-        let range = candle.high - candle.low;
-        range_sum += (range / price) * 100.0;
+        let range = asset_props.normalize(candle.high - candle.low);
+        range_sum += range;
 
         let body = (candle.close - candle.open).abs();
         let wick = candle.high - candle.low;

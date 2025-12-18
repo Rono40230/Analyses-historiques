@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import MetricTooltip from '../MetricTooltip.vue'
+import UnitDisplay from '../UnitDisplay.vue'
 import type { BacktestResult } from '../../stores/backtest'
 
 const props = defineProps<{
@@ -57,7 +58,9 @@ const ddClass = computed(() => {
     <MetricTooltip title="Total Pips">
       <div class="metric-card">
         <h4>Total Pips</h4>
-        <div :class="['metric-value', profitClass]">{{ result.total_pips.toFixed(1) }}</div>
+        <div :class="['metric-value', profitClass]">
+          <UnitDisplay :value="result.total_pips" :unit="result.unit" :decimals="1" :symbol="result.symbol" />
+        </div>
       </div>
       <template #definition>
         <div class="tooltip-section">

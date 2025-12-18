@@ -31,6 +31,8 @@
             :optimal-entry="meilleurMoment"
             :duration="volatilityDuration?.peak_duration_minutes"
             :entry-label="placementTime ? `Entrée (${placementTime})` : undefined"
+            :hour="analysis?.slice?.hour"
+            :quarter="analysis?.slice?.quarter"
           />
         </div>
         <div v-else class="graph-placeholder">

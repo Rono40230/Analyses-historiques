@@ -10,7 +10,7 @@ pub(super) struct QuarterlyAggregator;
 impl QuarterlyAggregator {
     /// Calcule les moyennes historiques pour chaque quarter (96 = 24h × 4 quarters)
     /// Prend tous les stats_15min (toute la période) et retourne les moyennes par quarter
-    pub(super) fn aggregate(stats_15min: &[Stats15Min], point_value: f64) -> Vec<Stats15Min> {
+    pub(super) fn aggregate(stats_15min: &[Stats15Min], pip_value: f64) -> Vec<Stats15Min> {
         // Groupe les stats par (hour, quarter)
         let mut quarterly_groups: std::collections::HashMap<(u8, u8), Vec<&Stats15Min>> =
             std::collections::HashMap::new();
@@ -60,13 +60,13 @@ impl QuarterlyAggregator {
                     } else {
                         // Calculer les moyennes des métriques ordinaires
                         let count = instances.len() as f64;
-                        let raw_atr_mean_avg =
+                        let atr_mean_avg =
                             instances.iter().map(|s| s.atr_mean).sum::<f64>() / count;
-                        let raw_atr_max_avg = instances.iter().map(|s| s.atr_max).sum::<f64>() / count;
-                        let raw_max_true_range_avg = instances.iter().map(|s| s.max_true_range).sum::<f64>() / count;
+                        let atr_max_avg = instances.iter().map(|s| s.atr_max).sum::<f64>() / count;
+                        let max_true_range_avg = instances.iter().map(|s| s.max_true_range).sum::<f64>() / count;
                         let volatility_mean_avg =
                             instances.iter().map(|s| s.volatility_mean).sum::<f64>() / count;
-                        let raw_range_mean_avg =
+                        let range_mean_avg =
                             instances.iter().map(|s| s.range_mean).sum::<f64>() / count;
                         let body_range_mean_avg =
                             instances.iter().map(|s| s.body_range_mean).sum::<f64>() / count;
@@ -129,9 +129,9 @@ impl QuarterlyAggregator {
 
                         // Calcul des paramètres Straddle moyens (Harmonisation Bidi V2)
                         let straddle_params = StraddleParameterService::calculate_parameters(
-                            raw_atr_mean_avg,
+                            atr_mean_avg,
                             noise_ratio_mean_avg,
-                            point_value,
+                            pip_value,
                             None,
                             volatility_half_life_mean,
                         );
@@ -175,11 +175,11 @@ impl QuarterlyAggregator {
                             hour,
                             quarter,
                             candle_count: total_candle_count,
-                            atr_mean: raw_atr_mean_avg / point_value,
-                            atr_max: raw_atr_max_avg / point_value,
-                            max_true_range: raw_max_true_range_avg / point_value,
+                            atr_mean: atr_mean_avg,
+                            atr_max: atr_max_avg,
+                            max_true_range: max_true_range_avg,
                             volatility_mean: volatility_mean_avg,
-                            range_mean: raw_range_mean_avg / point_value,
+                            range_mean: range_mean_avg,
                             body_range_mean: body_range_mean_avg,
                             shadow_ratio_mean: shadow_ratio_mean_avg,
                             volume_imbalance_mean: volume_imbalance_mean_avg,

@@ -56,16 +56,6 @@ export function buildMetricsConfig(analysis: SliceAnalysis, analysisData: Analys
       decimals: 1
     },
     {
-      label: 'True Range',
-      value15: stats.range_mean,
-      valueGlobal: globals.mean_range ?? 0,
-      goodThreshold: 40,
-      excellentThreshold: 80,
-      suffix,
-      prefix,
-      decimals: 1
-    },
-    {
       label: 'Max Spike',
       value15: stats.max_true_range ?? 0,
       valueGlobal: 0,

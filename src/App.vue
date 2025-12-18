@@ -188,6 +188,7 @@ function switchTab(tab: 'volatility' | 'heatmap' | 'retrospective' | 'archives' 
                 :global-metrics="analysisResult.global_metrics"
                 :point-value="analysisResult.point_value"
                 :unit="analysisResult.unit"
+                :symbol="analysisResult.symbol"
                 @open-bidi-params="handleOpenBidiParams"
               />
             </template>

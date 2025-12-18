@@ -37,6 +37,7 @@ export interface TradeResult {
 export interface BacktestResult {
   symbol: string
   event_name: string
+  unit: string
   total_trades: number
   winning_trades: number
   losing_trades: number

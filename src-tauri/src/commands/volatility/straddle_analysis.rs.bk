@@ -1,6 +1,5 @@
 // commands/volatility/straddle_analysis.rs - Commands pour calculs Straddle
-use crate::models::Candle;
-use crate::services::pair_data::get_point_value;
+use crate::models::{Candle, AssetProperties};
 use crate::services::straddle_simulator_helpers::calculer_atr_moyen;
 use crate::services::volatility::{
     calculer_frequence_whipsaw as service_calculer_frequence_whipsaw,
@@ -58,10 +57,12 @@ pub fn calculer_offset_optimal(
 
     // 1. Récupérer les infos du symbole
     let symbol = &candles[0].symbol;
-    let point_value = get_point_value(symbol);
+    let asset_props = AssetProperties::from_symbol(symbol);
+    let pip_value = asset_props.pip_value;
 
     // 2. Calculer les métriques nécessaires
-    let atr_mean = calculer_atr_moyen(&candles);
+    let raw_atr_mean = calculer_atr_moyen(&candles);
+    let atr_mean = asset_props.normalize(raw_atr_mean);
 
     // Calcul du Noise Ratio moyen
     let noise_ratio_mean: f64 = if !candles.is_empty() {
@@ -70,8 +71,8 @@ pub fn calculer_offset_optimal(
             .map(|c| {
                 let range = c.high - c.low;
                 let body = (c.open - c.close).abs();
-                if body < point_value * 0.1 {
-                    if range < point_value * 0.1 {
+                if body < pip_value * 0.1 {
+                    if range < pip_value * 0.1 {
                         1.0
                     } else {
                         5.0
@@ -88,7 +89,7 @@ pub fn calculer_offset_optimal(
 
     // 3. Utiliser le service unifié pour calculer l'offset
     let params =
-        StraddleParameterService::calculate_parameters(atr_mean, noise_ratio_mean, point_value, None, None);
+        StraddleParameterService::calculate_parameters(atr_mean, noise_ratio_mean, pip_value, None, None);
 
     let offset_pips = params.offset_pips;
 
@@ -110,10 +111,10 @@ pub fn calculer_offset_optimal(
     sorted_wicks.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     let p95_index = ((sorted_wicks.len() as f64) * 0.95).ceil() as usize;
     let p95_index = p95_index.min(sorted_wicks.len().saturating_sub(1));
-    let percentile_95 = sorted_wicks.get(p95_index).copied().unwrap_or(0.0);
+    let raw_percentile_95 = sorted_wicks.get(p95_index).copied().unwrap_or(0.0);
 
-    // Conversion correcte en pips via point_value
-    let p95_pips = percentile_95 / point_value;
+    // Conversion correcte en pips via AssetProperties
+    let p95_pips = asset_props.normalize(raw_percentile_95);
 
     Ok(OptimalOffsetResponse {
         offset_pips,
@@ -135,7 +136,9 @@ pub fn calculer_taux_reussite(
         offset_pips
     );
 
-    let result = simuler_taux_reussite_straddle(&candles, offset_pips);
+    let symbol = candles.first().map(|c| c.symbol.as_str()).unwrap_or("EURUSD");
+    let asset_props = AssetProperties::from_symbol(symbol);
+    let result = simuler_taux_reussite_straddle(&candles, offset_pips, asset_props.pip_value);
 
     Ok(WinRateResponse {
         total_trades: result.total_trades,
@@ -160,7 +163,8 @@ pub fn calculer_frequence_whipsaw(
         offset_pips
     );
 
-    let analysis = service_calculer_frequence_whipsaw(&candles, offset_pips);
+    let symbol = candles.first().map(|c| c.symbol.as_str()).unwrap_or("EURUSD");
+    let analysis = service_calculer_frequence_whipsaw(&candles, offset_pips, symbol);
 
     Ok(WhipsawResponse {
         total_trades: analysis.total_trades,

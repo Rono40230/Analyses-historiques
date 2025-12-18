@@ -1,6 +1,6 @@
 use super::models::*;
 use super::simulator::EventSimulator;
-use crate::models::CalendarEvent;
+use crate::models::{CalendarEvent, AssetProperties};
 use crate::services::database_loader::DatabaseLoader;
 use chrono::Duration;
 
@@ -43,6 +43,7 @@ impl BacktestEngine {
     }
 
     fn calculate_summary(pair: &str, event_name: &str, trades: Vec<TradeResult>, mode: StrategyMode) -> BacktestResult {
+        let asset_props = AssetProperties::from_symbol(pair);
         let total_trades = trades.len();
         let mut winning = 0;
         let mut losing = 0;
@@ -104,6 +105,7 @@ impl BacktestEngine {
         BacktestResult {
             symbol: pair.to_string(),
             event_name: event_name.to_string(),
+            unit: asset_props.unit,
             total_trades,
             winning_trades: winning,
             losing_trades: losing,

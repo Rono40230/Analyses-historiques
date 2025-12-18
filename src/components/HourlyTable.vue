@@ -20,7 +20,6 @@
             />
             <th>Heure</th>
             <th>ATR Moyen</th>
-            <th>True Range</th>
             <th>Max Spike</th>
             <th>Volatilite %</th>
             <th>Body Range %</th>
@@ -58,12 +57,9 @@
                   class="star"
                 >⭐</span>
               </td>
-              <td><UnitDisplay :value="stat.atr_mean" :unit="props.unit || 'pts'" /></td>
+              <td><UnitDisplay :value="stat.atr_mean" :unit="props.unit || 'pts'" :symbol="props.symbol" /></td>
               <td>
-                <UnitDisplay :value="stat.range_mean" :unit="props.unit || 'pts'" />
-              </td>
-              <td>
-                <UnitDisplay :value="stat.max_true_range" :unit="props.unit || 'pts'" />
+                <UnitDisplay :value="stat.max_true_range" :unit="props.unit || 'pts'" :symbol="props.symbol" />
               </td>
               <td>{{ (stat.volatility_mean * 100).toFixed(2) }}%</td>
               <td>
@@ -96,7 +92,7 @@
               class="accordion-row"
             >
               <td
-                :colspan="props.stats15min ? 16 : 12"
+                :colspan="props.stats15min ? 10 : 9"
                 class="accordion-cell"
               >
                 <div class="scalping-details">
@@ -105,7 +101,6 @@
                       <tr>
                         <th>Tranche</th>
                         <th>ATR Moyen</th>
-                        <th>True Range</th>
                         <th>Max Spike</th>
                         <th>Volatilité %</th>
                         <th>Body Range %</th>
@@ -139,9 +134,8 @@
                           >⭐</span>
                           {{ formatQuarterLabel(stat.hour, quarter.quarter) }}
                         </td>
-                        <td><UnitDisplay :value="quarter.atr_mean" :unit="props.unit || 'pts'" /></td>
-                        <td><UnitDisplay :value="quarter.range_mean" :unit="props.unit || 'pts'" /></td>
-                        <td><UnitDisplay :value="quarter.max_true_range ?? 0" :unit="props.unit || 'pts'" /></td>
+                        <td><UnitDisplay :value="quarter.atr_mean" :unit="props.unit || 'pts'" :symbol="props.symbol" /></td>
+                        <td><UnitDisplay :value="quarter.max_true_range ?? 0" :unit="props.unit || 'pts'" :symbol="props.symbol" /></td>
                         <td>{{ (quarter.volatility_mean * 100).toFixed(2) }}%</td>
                         <td>
                           {{ Math.abs(quarter.body_range_mean).toFixed(2) }}%
@@ -247,6 +241,7 @@ const props = defineProps<{
   globalMetrics?: GlobalMetrics // Pour normalisation (ATR, Tick Quality)
   pointValue?: number // Valeur d'un point pour normalisation (ex: 0.001 pour JPY)
   unit?: string // Unité d'affichage (pips, points, $)
+  symbol?: string // Symbole pour conversion pips/points
 }>()
 
 const emit = defineEmits<{
@@ -624,6 +619,10 @@ function isTradeExpTooLong(slice: Stats15Min): boolean {
   padding: 2rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   border: 1px solid #30363d;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .table-header {
@@ -632,6 +631,7 @@ function isTradeExpTooLong(slice: Stats15Min): boolean {
   align-items: center;
   margin-bottom: 2rem;
   gap: 2rem;
+  flex-shrink: 0;
 }
 
 .header-left h3 {
@@ -641,6 +641,8 @@ function isTradeExpTooLong(slice: Stats15Min): boolean {
 
 .table-container {
   overflow-x: auto;
+  overflow-y: auto;
+  flex: 1;
 }
 
 table {
@@ -652,6 +654,9 @@ table {
 thead {
   background: linear-gradient(135deg, #1f6feb 0%, #388bfd 100%);
   color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 th {

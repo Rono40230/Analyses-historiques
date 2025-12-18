@@ -83,19 +83,19 @@ export function usePdfExport() {
         
         switch (type) {
           case 'bidi':
-            if (archivedDataList.length > 0) await generateBidiReport(doc, archivedDataList)
+            if (archivedDataList.length > 0) await generateBidiReport(doc, archivedDataList, yPos)
             break
           case 'ranking':
-            if (archivedDataList.length > 0) await generateRankingReport(doc, archivedDataList)
+            if (archivedDataList.length > 0) await generateRankingReport(doc, archivedDataList, yPos)
             break
           case 'danger':
-            if (archivedDataList.length > 0) await generateDangerReport(doc, archivedDataList)
+            if (archivedDataList.length > 0) await generateDangerReport(doc, archivedDataList, yPos)
             break
           case 'identity':
-            if (archivedDataList.length > 0) await generateIdentityReport(doc, archivedDataList)
+            if (archivedDataList.length > 0) await generateIdentityReport(doc, archivedDataList, yPos)
             break
           case 'backtest':
-            if (backtestDataList.length > 0) await generateBacktestReport(doc, backtestDataList)
+            if (backtestDataList.length > 0) await generateBacktestReport(doc, backtestDataList, yPos)
             break
         }
         
@@ -107,7 +107,8 @@ export function usePdfExport() {
       }
 
       if (preview) {
-        return doc.output('bloburl')
+        // Utiliser datauristring au lieu de bloburl pour éviter les erreurs de sécurité WebKit/Tauri
+        return doc.output('datauristring')
       } else {
         doc.save(`analyse_export_${new Date().toISOString().split('T')[0]}.pdf`)
         return true

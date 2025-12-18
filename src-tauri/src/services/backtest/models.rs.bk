@@ -45,6 +45,7 @@ pub struct TradeResult {
 pub struct BacktestResult {
     pub symbol: String,
     pub event_name: String,
+    pub unit: String, // Unité d'affichage (pips, points, $)
     pub total_trades: usize,
     pub winning_trades: usize,
     pub losing_trades: usize,

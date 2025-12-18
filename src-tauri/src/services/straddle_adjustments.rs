@@ -54,9 +54,9 @@ impl AdjustedMetrics {
 
         // === TIMEOUT BASÉ SUR LA VOLATILITÉ (ATR) ===
         // Normaliser l'ATR sur une échelle 0.0 - 1.0 (basé sur percentiles typiques)
-        // ATR faible typique: 0.0001-0.0003 (Forex)
-        // ATR élevée typique: 0.0005-0.0010 (Forex)
-        let atr_normalized = (atr_mean / 0.0008).min(1.0); // Normaliser avec 0.0008 comme référence
+        // ATR faible typique: 1.0-3.0 pips (Forex)
+        // ATR élevée typique: 5.0-10.0 pips (Forex)
+        let atr_normalized = (atr_mean / 8.0).min(1.0); // Normaliser avec 8.0 pips comme référence
 
         // Timeout inversement proportionnel à la volatilité:
         // - Volatilité basse (ATR faible) → timeout long (32 min)
@@ -96,7 +96,7 @@ impl AdjustedMetrics {
         let trailing_stop_adjusted = 1.0;
 
         // Timeout basé sur ATR (indépendant du whipsaw)
-        let atr_normalized = (atr_mean / 0.0008).min(1.0);
+        let atr_normalized = (atr_mean / 8.0).min(1.0);
         let timeout_base = 32.0;
         let timeout_min = 18.0;
         let timeout_adjusted_minutes =

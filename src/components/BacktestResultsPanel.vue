@@ -102,7 +102,7 @@ function openArchiveModal() {
       </div>
 
       <BacktestSummary :result="result" />
-      <BacktestTradesTable :trades="result.trades" />
+      <BacktestTradesTable :trades="result.trades" :unit="result.unit" :symbol="result.symbol" />
     </div>
 
     <div v-else class="empty-state">

@@ -16,7 +16,8 @@ export function calculateEventStatistics(archives: NormalizedArchive[]): Record<
         avgPeakDelay: 0,
         avgDecayTimeout: 0,
         avgConfidence: 0,
-        count: 0
+        count: 0,
+        unit: archive.unit
       }
     }
 

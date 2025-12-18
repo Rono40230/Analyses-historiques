@@ -910,6 +910,365 @@ A: Add to `src/stores/volatility.ts`, invoke `analyze_symbol` command, render re
 
 ---
 
-**Last Updated**: Nov 29, 2025  
+## 📦 Project Structure Deep Dive
+
+### Frontend Stores (7 stores in `src/stores/`)
+- `volatility.ts` - Main analysis state (188 lines)
+- `analysisStore.ts` - Analysis results & caching
+- `archiveStore.ts` - Archive management
+- `backtest.ts` - Backtest simulation state
+- `eventTranslations.ts` - Event name translations (FR/EN)
+- `retroAnalysisStore.ts` - Retrospective analysis state
+- `volatilityTypes.ts` - Type definitions
+
+### Frontend Composables (35+ composables in `src/composables/`)
+**Domain Logic Composables:**
+- `useGlobalAnalysis.ts` - Cross-pair, cross-event analysis
+- `useStraddleAnalysis.ts` - Straddle parameter calculations
+- `useEventCorrelationHeatmap.ts` - Heatmap generation
+- `useRetrospectiveAnalysis.ts` - Historical event analysis
+- `useBacktestConfig.ts` - Backtest configuration logic
+
+**Archive Management:**
+- `useArchiveCalculations.ts`, `useArchiveMetrics.ts`, `useArchiveScoring.ts`, `useArchiveStatistics.ts`
+
+**Metrics & Display:**
+- `useMetricsAnalysisData.ts`, `useMetricsCalculations.ts`, `useMetricsFormatting.ts`
+- `useEventTranslation.ts` - FR/EN event name translation
+
+**Graph & Visualization:**
+- `useRetroGraphDataPoints.ts`, `useRetroGraphDisplay.ts`
+
+### Backend Services (40+ services in `src-tauri/src/services/`)
+**Core Analytics:**
+- `volatility/` - ATR, hourly stats, noise analysis
+- `event_correlation.rs` - Event-pair impact correlation
+- `global_analyzer*.rs` (5 files) - Cross-pair analysis suite
+- `movement_analyzer.rs` - Movement quality metrics
+- `straddle_*.rs` (6 files) - Straddle parameter optimization
+
+**Data Processing:**
+- `csv_loader/`, `csv_cleaner.rs` - CSV import & validation
+- `database_loader.rs`, `economic_event_loader.rs`
+- `import_processor.rs` - Multi-format CSV handling
+
+**Specialized Analyzers:**
+- `entry_timing_optimizer/`, `entry_window_analyzer.rs`
+- `event_duration_analyzer/`, `event_metrics_aggregator/`
+- `breakout_detector.rs` - Breakout pattern detection
+- `volatility_duration_calculator.rs` - ATR decay analysis
+
+**Backtest & Simulation:**
+- `backtest/` - Tick-by-tick simulation
+- `straddle_simulator*.rs` - Straddle strategy simulation
+- `win_rate_calculator/` - Performance metrics
+
+**Infrastructure:**
+- `cache_service.rs`, `candle_index.rs` - Performance optimization
+- `session/`, `session_analyzer/` - Session management
+- `archive_service.rs` - Archive persistence
+
+### Backend Commands (25+ commands in `src-tauri/src/commands/`)
+**Organization:** Commands are thin wrappers calling services
+- `volatility/` - Symbol analysis commands
+- `correlation/` - Event correlation commands
+- `event_metrics/` - Movement quality commands
+- `retrospective_analysis/` - Historical analysis commands
+- `calendar_*.rs` (4 files) - Calendar import/management
+- `export_pdf_commands.rs` - PDF generation
+- `global_analysis_commands.rs` - Cross-analysis commands
+- `backtest.rs` - Backtest execution
+
+### Database Schema (`src-tauri/src/db/migrations/`)
+**Two SQLite databases:**
+1. `volatility.db` - Calendar events, event metadata
+2. `pairs.db` - Candles (OHLCV), pair metadata, hourly stats
+
+**Tables:**
+- `calendar_events` - Economic events with datetime, impact, currency
+- `pairs` - Symbol metadata (EURUSD, GBPUSD, etc.)
+- `candles` - OHLCV data with timestamps
+- `hourly_stats` - Pre-calculated volatility metrics by hour
+- `archives` - Saved analysis snapshots
+
+---
+
+## 🔄 Data Flow Examples
+
+### Example 1: Import CSV → Analysis
+```
+User uploads CSV
+    ↓
+Frontend: PairImportSection.vue
+    ↓ invoke('import_pair_data')
+Backend: commands/pair_importer.rs
+    ↓
+services/csv_cleaner.rs (validate format)
+    ↓
+services/database_loader.rs (store in pairs.db)
+    ↓
+✅ Success message to frontend
+```
+
+### Example 2: Correlation Heatmap Generation
+```
+User opens Correlation tab
+    ↓
+Frontend: EventCorrelationView.vue
+    ↓ useEventCorrelationHeatmap composable
+    ↓ invoke('analyze_event_correlation')
+Backend: commands/correlation/analyze.rs
+    ↓
+services/event_correlation.rs
+    ├→ Load calendar events (volatility.db)
+    ├→ Load candles (pairs.db)
+    ├→ Calculate impact scores (ATR before/after)
+    └→ Return EventCorrelationMatrix
+    ↓
+Frontend: EventCorrelationHeatmap.vue (render matrix)
+```
+
+### Example 3: Straddle Parameter Optimization
+```
+User selects event + pair
+    ↓
+Frontend: GlobalAnalysisModal.vue
+    ↓ useGlobalAnalysis composable
+    ↓ invoke('calculate_straddle_parameters')
+Backend: commands/global_analysis_commands.rs
+    ↓
+services/global_analyzer_straddle_calc.rs
+    ├→ Calculate ATR (local to event)
+    ├→ Calculate Noise Ratio
+    ├→ Apply straddle_multipliers.rs
+    ├→ Calculate offset = ATR × 1.5-2.0
+    ├→ Calculate TP/SL based on ratio
+    └→ Return StraddleParameters { offset, sl, tp, duration }
+    ↓
+Frontend: Display in modal with confidence score
+```
+
+---
+
+## 🎨 Component Patterns & Examples
+
+### Pattern 1: Modal Component (300 lines limit)
+See [GlobalAnalysisModal.vue](src/components/GlobalAnalysisModal.vue) for reference:
+- Split logic into composables (`useGlobalAnalysis.ts`)
+- Template-only rendering logic in component
+- Emit events for parent communication
+
+### Pattern 2: Data Table Component
+See [HourlyTable.vue](src/components/HourlyTable.vue) for reference:
+- Props: data array + column config
+- Computed for sorting/filtering
+- No business logic (pure presentation)
+
+### Pattern 3: Composable with Caching
+See [useRetroAnalysisCache.ts](src/composables/useRetroAnalysisCache.ts):
+```typescript
+const cache = new Map<string, AnalysisResult>()
+
+export function useRetroAnalysisCache() {
+  function getCached(key: string): AnalysisResult | null {
+    return cache.get(key) ?? null
+  }
+  
+  function setCache(key: string, value: AnalysisResult) {
+    cache.set(key, value)
+  }
+  
+  return { getCached, setCache }
+}
+```
+
+### Pattern 4: Service with Parallel Processing
+See [services/global_analyzer.rs](src-tauri/src/services/global_analyzer.rs):
+```rust
+use tokio::task::JoinSet;
+
+pub async fn analyzeMultiplePairs(symbols: Vec<String>) -> Result<Vec<PairResult>> {
+    let mut set = JoinSet::new();
+    
+    for symbol in symbols {
+        set.spawn(async move {
+            // Analyze one pair
+        });
+    }
+    
+    let mut results = Vec::new();
+    while let Some(res) = set.join_next().await {
+        results.push(res??);
+    }
+    Ok(results)
+}
+```
+
+---
+
+## 🧩 Integration Points
+
+### Tauri API Usage
+All frontend-backend communication uses Tauri's `invoke()`:
+```typescript
+import { invoke } from '@tauri-apps/api/core'
+
+// Basic invocation
+const result = await invoke<AnalysisResult>('analyze_symbol', { 
+  symbol: 'EURUSD' 
+})
+
+// With error handling
+try {
+  const data = await invoke<CalendarEvent[]>('get_calendar_events', {
+    startDate: '2024-01-01',
+    endDate: '2024-12-31'
+  })
+} catch (e) {
+  errorMessage.value = String(e)
+}
+```
+
+### Database Access Pattern
+All DB access goes through Diesel ORM:
+```rust
+use crate::db::establish_connection;
+use crate::schema::candles;
+use diesel::prelude::*;
+
+pub fn loadCandles(symbol: &str) -> Result<Vec<Candle>> {
+    let mut conn = establish_connection()?;
+    
+    candles::table
+        .filter(candles::symbol.eq(symbol))
+        .order(candles::datetime.asc())
+        .load::<Candle>(&mut conn)
+        .map_err(|e| VolatilityError::DatabaseError(e.to_string()))
+}
+```
+
+### Cache Strategy
+- **Frontend**: Composables use Map-based caching (in-memory, per session)
+- **Backend**: `CandleIndexState` (Tauri state) caches parsed candles by symbol
+- **No persistent cache**: Fresh analysis on each app restart
+
+---
+
+## 🔬 Testing Patterns
+
+### Rust Unit Test Pattern
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_calculate_noise_ratio() {
+        let candle = Candle {
+            open: 1.0,
+            high: 1.1,
+            low: 0.9,
+            close: 1.05,
+            volume: 100,
+        };
+        
+        let noise = calculerNoiseRatio(&candle);
+        assert!(noise > 0.0);
+        assert!(noise < 10.0); // Sanity check
+    }
+    
+    #[test]
+    fn test_atr_empty_slice() {
+        let result = calculerAtr(&[], 14);
+        assert!(result.is_err()); // Should fail gracefully
+    }
+}
+```
+
+### Vue Component Test (Vitest pattern - not yet implemented)
+```typescript
+import { mount } from '@vue/test-utils'
+import { describe, it, expect, vi } from 'vitest'
+import SymbolSelector from './SymbolSelector.vue'
+
+describe('SymbolSelector', () => {
+  it('emits symbol on selection', async () => {
+    const wrapper = mount(SymbolSelector)
+    
+    await wrapper.find('select').setValue('EURUSD')
+    
+    expect(wrapper.emitted('update:modelValue')).toBeTruthy()
+    expect(wrapper.emitted('update:modelValue')![0]).toEqual(['EURUSD'])
+  })
+})
+```
+
+---
+
+## 🚀 Performance Optimization Techniques
+
+### 1. Lazy Loading 15-Min Stats
+Only calculate 15-minute stats when user explicitly requests them:
+```rust
+// commands/volatility/analysis.rs
+pub async fn analyze_symbol(symbol: String, include_15min: bool) -> Result<AnalysisResult> {
+    let hourly = calculate_hourly_stats(&candles)?;
+    
+    let stats_15min = if include_15min {
+        Some(calculate_15min_stats(&candles)?)
+    } else {
+        None
+    };
+    
+    Ok(AnalysisResult { hourly, stats_15min, ... })
+}
+```
+
+### 2. Candle Index Caching
+Prevent re-parsing CSVs on repeated analysis:
+```rust
+// In lib.rs (Tauri state)
+#[derive(Default)]
+pub struct CandleIndexState {
+    cache: Mutex<HashMap<String, Vec<Candle>>>,
+}
+
+impl CandleIndexState {
+    pub fn get_or_load(&self, symbol: &str) -> Result<Vec<Candle>> {
+        let mut cache = self.cache.lock().unwrap();
+        
+        if let Some(candles) = cache.get(symbol) {
+            return Ok(candles.clone());
+        }
+        
+        let candles = load_from_db(symbol)?;
+        cache.insert(symbol.to_string(), candles.clone());
+        Ok(candles)
+    }
+}
+```
+
+### 3. Parallel Event Processing (Polars)
+Use Polars for multi-threaded aggregations:
+```rust
+use polars::prelude::*;
+
+pub fn calculerStatistiquesRapides(candles: &[Candle]) -> Result<Stats> {
+    let df = DataFrame::new(vec![
+        Series::new("close", candles.iter().map(|c| c.close).collect::<Vec<_>>()),
+        Series::new("high", candles.iter().map(|c| c.high).collect::<Vec<_>>()),
+    ])?;
+    
+    // Polars uses Rayon for parallel processing
+    let mean = df.column("close")?.mean().unwrap();
+    let std = df.column("close")?.std(1).unwrap();
+    
+    Ok(Stats { mean, std })
+}
+```
+
+---
+
+**Last Updated**: 16 décembre 2025  
 **Maintainer**: Rono40230  
 **Project**: Analyses-historiques (Volatility Analyzer for Straddle Trading)

@@ -1,7 +1,7 @@
 // services/entry_window_analyzer.rs - Analyse de fenêtre d'entrée optimale
 // Trouvez le meilleur timing pour entrer avant un événement
 
-use crate::models::{Candle, EntryOffsetMetrics, EntryWindowAnalysisResult, Result};
+use crate::models::{Candle, EntryOffsetMetrics, EntryWindowAnalysisResult, Result, AssetProperties};
 use chrono::{DateTime, Duration, Utc};
 use tracing::info;
 
@@ -50,6 +50,7 @@ impl EntryWindowAnalyzer {
                         entry.close,
                         &window_candles,
                         offset_minutes,
+                        symbol,
                     );
                     offset_metrics.push(metrics);
                 }
@@ -102,7 +103,9 @@ impl EntryWindowAnalyzer {
         entry_price: f64,
         window_candles: &[&Candle],
         offset: i32,
+        symbol: &str,
     ) -> EntryOffsetMetrics {
+        let asset_props = AssetProperties::from_symbol(symbol);
         let mut winning = 0;
         let mut losing = 0;
         let mut total_pips_gained = 0.0;
@@ -111,8 +114,8 @@ impl EntryWindowAnalyzer {
         let mut max_lost: f64 = 0.0;
 
         for candle in window_candles {
-            // Calculer le mouvement en pips (Forex = 4 décimales)
-            let pips_change = (candle.close - entry_price) * 10000.0;
+            // Calculer le mouvement en pips/points normalisés
+            let pips_change = asset_props.normalize(candle.close - entry_price);
 
             if pips_change > 0.0 {
                 winning += 1;

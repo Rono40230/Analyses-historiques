@@ -163,8 +163,8 @@ mod tests {
     fn test_find_optimal_timing() {
         let mut candles = Vec::new();
 
-        for i in 0..60 {
-            candles.push(create_test_candle(-(60 - i), 1.1000, 0.0010));
+        for i in 0..80 {
+            candles.push(create_test_candle(-(80 - i), 1.1000, 0.0010));
         }
 
         for i in 0..120 {
@@ -190,11 +190,11 @@ mod tests {
     fn test_timing_analysis() {
         let mut candles = Vec::new();
 
-        for i in 0..60 {
-            candles.push(create_test_candle(-(60 - i), 1.1000, 0.0010));
+        for i in 0..80 {
+            candles.push(create_test_candle(-(80 - i), 1.1000, 0.0010));
         }
 
-        for i in 0..60 {
+        for i in 0..120 {
             let price = 1.1000 + (i as f64 * 0.0001);
             candles.push(create_test_candle(i, price, 0.0010));
         }
@@ -214,9 +214,13 @@ mod tests {
 
     #[test]
     fn test_analyze_timing_different_minutes() {
-        let candles = (0..120)
-            .map(|i| create_test_candle(i, 1.1000 + (i as f64 * 0.00001), 0.0010))
-            .collect::<Vec<_>>();
+        let mut candles = Vec::new();
+        for i in 0..80 {
+            candles.push(create_test_candle(-(80 - i), 1.1000, 0.0010));
+        }
+        for i in 0..120 {
+            candles.push(create_test_candle(i, 1.1000 + (i as f64 * 0.00001), 0.0010));
+        }
 
         let event_time = DateTime::from_timestamp(1609459200, 0)
             .expect("Invalid timestamp")
@@ -231,9 +235,13 @@ mod tests {
 
     #[test]
     fn test_find_optimal_timing_consistency() {
-        let candles = (0..180)
-            .map(|i| create_test_candle((i as i32 - 60) as i64, 1.1000, 0.0010))
-            .collect::<Vec<_>>();
+        let mut candles = Vec::new();
+        for i in 0..80 {
+            candles.push(create_test_candle(-(80 - i), 1.1000, 0.0010));
+        }
+        for i in 0..180 {
+            candles.push(create_test_candle(i, 1.1000, 0.0010));
+        }
 
         let event_time = DateTime::from_timestamp(1609459200, 0)
             .expect("Invalid timestamp")

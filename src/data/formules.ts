@@ -91,6 +91,13 @@ export const categories: Categorie[] = [
     emoji: '🧪',
     description: 'Métriques de performance issues des simulations',
     formules: ['win_rate', 'profit_factor', 'max_drawdown', 'average_pips']
+  },
+  {
+    id: 'conversion',
+    titre: 'Tableau de conversion',
+    emoji: '🔄',
+    description: 'Conversion Points MT5 vers Pips',
+    formules: []
   }
 ]
 

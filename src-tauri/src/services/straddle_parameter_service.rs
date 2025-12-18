@@ -10,10 +10,12 @@ impl StraddleParameterService {
     /// - SL : Adaptatif selon le bruit (1.5x à 3.0x ATR)
     /// - TP : Non défini explicitement (Trailing Stop utilisé)
     /// - Timeout : Basé sur la volatilité (fixe à 3 min pour l'instant ou calculé)
+    ///
+    /// NOTE: `atr` doit être déjà normalisé (en Pips/Points).
     pub fn calculate_parameters(
         atr: f64,
         noise_ratio: f64,
-        point_value: f64,
+        _pip_value: f64, // Gardé pour compatibilité signature mais non utilisé si ATR normalisé
         spread_margin: Option<f64>,
         half_life_minutes: Option<u16>,
     ) -> StraddleParameters {
@@ -24,9 +26,7 @@ impl StraddleParameterService {
         // Si bruit > 2.0, on s'écarte plus (1.5x) pour éviter les mèches
         // Sinon on reste proche (1.2x)
         let offset_multiplier = if noise_ratio > 2.0 { 1.5 } else { 1.2 };
-        let raw_offset = atr * offset_multiplier;
-        // Ajout de la marge de sécurité au calcul final en pips
-        let offset_pips = (raw_offset / point_value).ceil() + spread_safety;
+        let offset_pips = (atr * offset_multiplier).ceil() + spread_safety;
 
         // 2. Stop Loss Adaptatif (Sécurité)
         // Plus il y a de bruit, plus le SL doit être large
@@ -41,8 +41,7 @@ impl StraddleParameterService {
         } else {
             1.5
         };
-        let raw_sl = atr * sl_ratio;
-        let stop_loss_pips = (raw_sl / point_value).ceil();
+        let stop_loss_pips = (atr * sl_ratio).ceil();
 
         // 3. Trailing Stop (Suivi)
         // Environ 30-40% du SL, ou adaptatif
@@ -55,8 +54,7 @@ impl StraddleParameterService {
         } else {
             0.6
         };
-        let raw_ts = atr * ts_ratio;
-        let trailing_stop_pips = (raw_ts / point_value).ceil();
+        let trailing_stop_pips = (atr * ts_ratio).ceil();
 
         // 4. SL Recovery (Simultané)
         // Doit couvrir l'offset inverse + marge.
@@ -74,7 +72,7 @@ impl StraddleParameterService {
         // Ici on met juste un indicateur
         let risk_reward_ratio = if stop_loss_pips > 0.0 {
             // On vise au moins 1x la volatilité (ATR)
-            let target = atr / point_value;
+            let target = atr;
             target / stop_loss_pips
         } else {
             0.0

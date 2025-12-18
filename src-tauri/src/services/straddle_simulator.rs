@@ -86,7 +86,8 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
     let offset_optimal_pips = normalize_to_pips(offset_optimal, symbol).ceil();
 
     // === CALCUL DE L'ATR (VOLATILITÉ) POUR DÉTERMINER LE TIMEOUT ===
-    let atr_mean = calculer_atr_moyen(candles);
+    let raw_atr_mean = calculer_atr_moyen(candles);
+    let atr_mean = normalize_to_pips(raw_atr_mean, symbol);
 
     // === SIMULATION DES TRADES STRADDLE (AVEC DÉTECTION WHIPSAW) ===
     let mut total_trades = 0;

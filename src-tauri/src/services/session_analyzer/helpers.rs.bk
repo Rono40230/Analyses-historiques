@@ -87,13 +87,14 @@ mod tests {
 
     #[test]
     fn test_is_paris_dst_march_boundary() {
-        let before = NaiveDateTime::parse_from_str("2024-03-30 12:00:00", "%Y-%m-%d %H:%M:%S")
+        // En 2024, le dernier dimanche de mars est le 31.
+        let after_dst = NaiveDateTime::parse_from_str("2024-03-31 12:00:00", "%Y-%m-%d %H:%M:%S")
             .expect("Failed to parse datetime");
-        assert!(is_paris_dst(&before));
+        assert!(is_paris_dst(&after_dst));
 
-        let after = NaiveDateTime::parse_from_str("2024-03-25 12:00:00", "%Y-%m-%d %H:%M:%S")
+        let before_dst = NaiveDateTime::parse_from_str("2024-03-25 12:00:00", "%Y-%m-%d %H:%M:%S")
             .expect("Failed to parse datetime");
-        assert!(!is_paris_dst(&after));
+        assert!(!is_paris_dst(&before_dst));
     }
 
     #[test]

@@ -47,7 +47,7 @@ impl AssetProperties {
                 unit: "pips".to_string(),
                 display_digits: 2,
             }
-        } else if s.contains("BTC") || s.contains("ETH") || s.contains("CRYPTO") {
+        } else if s.contains("BTC") || s.contains("ETH") || s.contains("CRYPTO") || s.contains("SOL") || s.contains("BNB") || s.contains("XRP") || s.contains("ADA") || s.contains("DOT") {
             AssetProperties {
                 asset_type: AssetType::Crypto,
                 pip_value: 1.0, // Crypto: 1$ = 1 point
@@ -55,6 +55,13 @@ impl AssetProperties {
                 display_digits: 0,
             }
         } else if s.contains("IDX") || s.contains("US30") || s.contains("DAX") || s.contains("NAS")
+            || s.contains("GER") || s.contains("SPX") || s.contains("US100") || s.contains("US500")
+            || s.contains("FRA40") || s.contains("UK100") || s.contains("EUSTX") || s.contains("JPN225")
+            || s.contains("USATEC") || s.contains("USAIDX") || s.contains("DEUIDX") || s.contains("USTEC")
+            || s.contains("US500") || s.contains("US30") || s.contains("HK50") || s.contains("FR40")
+            || s.contains("GR30") || s.contains("DE40") || s.contains("WS30") || s.contains("NDX")
+            || s.contains("VIX") || s.contains("DXY") || s.contains("STOXX") || s.contains("CAC")
+            || s.contains("FTSE") || s.contains("NI225") || s.contains("ASX") || s.contains("HSI")
         {
             AssetProperties {
                 asset_type: AssetType::Index,
@@ -122,5 +129,15 @@ mod tests {
         assert_eq!(props.asset_type, AssetType::Crypto);
         assert_eq!(props.pip_value, 1.0);
         assert_eq!(props.normalize(500.0), 500.0); // 500$
+    }
+
+    #[test]
+    fn test_detection_indices() {
+        let symbols = vec!["USATEC", "USAIDX", "DEUIDX", "NAS100", "US30", "GER40", "SPX500"];
+        for symbol in symbols {
+            let props = AssetProperties::from_symbol(symbol);
+            assert_eq!(props.asset_type, AssetType::Index, "Failed for {}", symbol);
+            assert_eq!(props.pip_value, 1.0, "Failed for {}", symbol);
+        }
     }
 }

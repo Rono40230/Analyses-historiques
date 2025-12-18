@@ -7,7 +7,7 @@ use crate::models::{Candle, EventMovementQuality, VolatilityError};
 // MODULE PRIVÉ: Calculs auxiliaires
 // ============================================================================
 mod calculations {
-    use crate::models::{Candle, VolatilityError};
+    use crate::models::{Candle, VolatilityError, AssetProperties};
 
     /// Calcule l'ATR (Average True Range) sur une série de candles
     pub fn calculer_atr(candles: &[Candle]) -> Result<f64, VolatilityError> {
@@ -41,7 +41,9 @@ mod calculations {
         pre_event_atr: f64,
         directional_threshold_atr_ratio: f64,
         reversal_window_minutes: i32,
+        symbol: &str,
     ) -> Result<(f64, f64, f64), VolatilityError> {
+        let asset_props = AssetProperties::from_symbol(symbol);
         let directional_threshold = pre_event_atr * directional_threshold_atr_ratio;
 
         let mut directional_count = 0;
@@ -67,12 +69,12 @@ mod calculations {
                 .map(|c| c.high)
                 .fold(f64::NEG_INFINITY, f64::max);
             let min_low = window.iter().map(|c| c.low).fold(f64::INFINITY, f64::min);
-            let range = (max_high - min_low) * 10000.0;
+            let range = asset_props.normalize(max_high - min_low);
 
             total_pips_moved += range;
             analyzed_count += 1;
 
-            if range > directional_threshold {
+            if range > asset_props.normalize(directional_threshold) {
                 directional_count += 1;
 
                 if i + reversal_window_size < post_event_candles.len() {
@@ -90,9 +92,9 @@ mod calculations {
                             .iter()
                             .map(|c| c.low)
                             .fold(f64::INFINITY, f64::min);
-                        let next_range = (next_max_high - next_min_low) * 10000.0;
+                        let next_range = asset_props.normalize(next_max_high - next_min_low);
 
-                        if next_range > directional_threshold {
+                        if next_range > asset_props.normalize(directional_threshold) {
                             whipsaw_count += 1;
                         }
                     }
@@ -191,6 +193,7 @@ impl MovementAnalyzer {
             pre_event_atr,
             config.directional_threshold_atr_ratio,
             config.reversal_window_minutes,
+            symbol,
         )?;
 
         let success_rate = 1.0 - whipsaw_rate;

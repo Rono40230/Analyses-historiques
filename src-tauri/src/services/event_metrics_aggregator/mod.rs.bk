@@ -152,8 +152,8 @@ mod tests {
     fn test_calculate_all_metrics() {
         let mut candles = Vec::new();
 
-        for i in 0..60 {
-            candles.push(create_test_candle(-(60 - i), 1.1000, 0.0010));
+        for i in 0..80 {
+            candles.push(create_test_candle(-(80 - i), 1.1000, 0.0010));
         }
 
         for i in 0..120 {

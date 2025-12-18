@@ -52,11 +52,11 @@ mod tests {
         let excellent = HourlyStats {
             hour: 13,
             candle_count: 500,
-            atr_mean: 0.002,
-            atr_max: 0.004,
-            max_true_range: 0.005,
+            atr_mean: 15.0, // 15 pips
+            atr_max: 20.0,
+            max_true_range: 25.0,
             volatility_mean: 0.12,
-            range_mean: 0.003,
+            range_mean: 18.0,
             body_range_mean: 60.0,
             shadow_ratio_mean: 1.5,
             volume_imbalance_mean: 0.2,

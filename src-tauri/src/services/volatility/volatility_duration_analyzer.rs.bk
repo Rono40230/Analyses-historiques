@@ -235,7 +235,7 @@ mod tests {
     #[test]
     fn test_decay_profile_fast() {
         let atr_values = vec![
-            0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.0, 0.9, 0.5, 0.3, 0.2,
+            5.0, 6.0, 7.0, 8.0, 9.0, 30.0, 25.0, 20.0, 15.0, 10.0, 5.0, 3.0, 2.0,
         ];
         let result = VolatilityDurationAnalyzer::calculer_profil_decroissance(&atr_values);
         assert!(result.is_ok());
@@ -246,7 +246,7 @@ mod tests {
     #[test]
     fn test_decay_profile_slow() {
         let atr_values = vec![
-            0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.1, 1.05, 1.0, 0.99, 0.98,
+            5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 11.5, 11.0, 10.5, 10.0, 9.5,
         ];
         let result = VolatilityDurationAnalyzer::calculer_profil_decroissance(&atr_values);
         assert!(result.is_ok());

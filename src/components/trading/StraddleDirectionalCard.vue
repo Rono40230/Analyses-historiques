@@ -13,24 +13,36 @@
       
       <div class="bidi-param buy-param">
         <div class="bidi-label">BUY STOP</div>
-        <div class="bidi-value">+{{ offset > 0 ? formatValue(offset, 0) : '—' }}</div>
+        <div class="bidi-value">
+          +<UnitDisplay v-if="offset > 0" :value="offset" :unit="getUnit(pair)" :decimals="0" :symbol="pair" />
+          <span v-else>—</span>
+        </div>
         <div class="bidi-description">Entrée Achat (au-dessus du prix)</div>
       </div>
 
       <div class="bidi-param sell-param">
         <div class="bidi-label">SELL STOP</div>
-        <div class="bidi-value">-{{ offset > 0 ? formatValue(offset, 0) : '—' }}</div>
+        <div class="bidi-value">
+          -<UnitDisplay v-if="offset > 0" :value="offset" :unit="getUnit(pair)" :decimals="0" :symbol="pair" />
+          <span v-else>—</span>
+        </div>
         <div class="bidi-description">Entrée Vente (en-dessous du prix)</div>
       </div>
 
       <div class="bidi-param">
         <div class="bidi-label">Stop Loss</div>
-        <div class="bidi-value">{{ stopLoss > 0 ? formatValue(stopLoss, 0) : '—' }}</div>
+        <div class="bidi-value">
+          <UnitDisplay v-if="stopLoss > 0" :value="stopLoss" unit="pts" :decimals="1" :symbol="pair" />
+          <span v-else>—</span>
+        </div>
         <div class="bidi-description">Distance d'arrêt (Risque)</div>
       </div>
       <div class="bidi-param">
         <div class="bidi-label">Trailing Stop</div>
-        <div class="bidi-value">{{ trailingStop > 0 ? formatValue(trailingStop, 1) : '—' }}</div>
+        <div class="bidi-value">
+          <UnitDisplay v-if="trailingStop > 0" :value="trailingStop" unit="pts" :decimals="1" :symbol="pair" />
+          <span v-else>—</span>
+        </div>
         <div class="bidi-description">Stop dynamique adapté au noise</div>
       </div>
       <div class="bidi-param">
@@ -74,7 +86,8 @@
 </template>
 
 <script setup lang="ts">
-import { formatPointsWithPips } from '../../utils/pipConverter'
+import UnitDisplay from '../UnitDisplay.vue'
+import { getPointsPerPip } from '../../utils/pipConverter'
 
 interface Props {
   meilleurMoment?: number
@@ -96,9 +109,8 @@ const props = withDefaults(defineProps<Props>(), {
   pair: 'EURUSD'
 })
 
-function formatValue(val: number, decimals: number = 0): string {
-  // val is already in points (thanks to backend fix)
-  return formatPointsWithPips(props.pair, val, decimals)
+function getUnit(pair: string): string {
+  return getPointsPerPip(pair) === 1 ? 'pts' : 'pips'
 }
 
 // Simple scaling function for visualization

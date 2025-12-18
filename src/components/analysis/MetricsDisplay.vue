@@ -15,6 +15,7 @@
             :value="metric.value" 
             :unit="metric.unit" 
             :decimals="1"
+            :symbol="props.symbol"
           />
           <span v-else>{{ metric.formattedValue }}</span>
         </div>
@@ -79,6 +80,7 @@ const props = defineProps<{
   globalMetrics: GlobalMetrics
   pointValue?: number
   unit?: string
+  symbol?: string
 }>()
 
 function getMetricQuality(metric: string, value: number): string {
@@ -152,20 +154,9 @@ const displayedMetrics = computed(() => [
     formattedValue: formatATR(props.globalMetrics.mean_atr),
     unit: props.unit || 'pts',
     definition: 'Average True Range (14 périodes) : mesure la volatilité vraie en points. Détermine directement la largeur du stop-loss et take-profit pour le straddle (2-3× ATR).',
-    usage: '>100 pts = volatilité excellente, spreads serrés\n50-100 pts = bon (straddle profitable)\n20-50 pts = acceptable\n<20 pts = faible (gaps risqués).',
-    scoring: '🟢 Excellent (>100 pts) = ATR très élevé, gains potentiels importants\n🔵 Bon (50-100 pts) = conditions optimales straddle\n🟡 Acceptable (20-50 pts) = possible mais serré\n🔴 Pauvre (<20 pts) = straddle peu rentable',
-    realUseCases: 'EUR/USD à 15h (NY open), ATR = 130 pts\n→ SL = 130 × 1.5 = 195 pts, TP = 130 × 2.5 = 325 pts\n→ Conditions optimales pour entrer\n\nMême instrument à 12h, ATR = 40 pts\n→ SL = 60 pts, TP = 100 pts\n→ Spreads très serrés, risque/récompense faible\n→ Recommandation: passer, attendre conditions plus volatiles'
-  },
-  {
-    key: 'range',
-    label: 'True Range',
-    value: props.globalMetrics.mean_range,
-    formattedValue: formatATR(props.globalMetrics.mean_range),
-    unit: props.unit || 'pts',
-    definition: 'True Range (H-L avec gaps) : capture le mouvement RÉEL exploitable en points (contrairement au simple range). Évalue l\'amplitude vraie que le straddle peut capturer.',
-    usage: '>80 pts = mouvement énorme exploitable\n40-80 pts = bon range, straddle bien positionné\n20-40 pts = acceptable mais serré\n<20 pts = peu de mouvement.',
-    scoring: '🟢 Excellent (>80 pts) = Énorme amplitude, profit assuré\n🔵 Bon (40-80 pts) = Range parfait straddle\n🟡 Acceptable (20-40 pts) = Limité mais jouable\n🔴 Pauvre (<20 pts) = Mouvement insuffisant',
-    realUseCases: 'DAX à 8h (London open), range = 110 pts\n→ Si vous entrez au milieu du range\n→ TP à +55 pts = réaliste et atteignable\n→ Position: entrer avec confiance\n\nS&P 500 en consolidation, range = 15 pts\n→ Très peu d\'espace pour profit\n→ SL et TP trop proches = FX coûts élevés\n→ Recommandation: SKIP, trop de friction'
+    usage: '>100 points = volatilité excellente, spreads serrés\n50-100 points = bon (straddle profitable)\n20-50 points = acceptable\n<20 points = faible (gaps risqués).',
+    scoring: '🟢 Excellent (>100 points) = ATR très élevé, gains potentiels importants\n🔵 Bon (50-100 points) = conditions optimales straddle\n🟡 Acceptable (20-50 points) = possible mais serré\n🔴 Pauvre (<20 points) = straddle peu rentable',
+    realUseCases: 'EUR/USD à 15h (NY open), ATR = 130 points\n→ SL = 130 × 1.5 = 195 points, TP = 130 × 2.5 = 325 points\n→ Conditions optimales pour entrer\n\nMême instrument à 12h, ATR = 40 points\n→ SL = 60 points, TP = 100 points\n→ Spreads très serrés, risque/récompense faible\n→ Recommandation: passer, attendre conditions plus volatiles'
   },
   {
     key: 'volatility',

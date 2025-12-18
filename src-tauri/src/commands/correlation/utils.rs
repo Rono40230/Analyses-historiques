@@ -1,4 +1,5 @@
 use chrono::{DateTime, NaiveDateTime};
+use crate::models::AssetProperties;
 
 /// Parse une datetime depuis SQLite qui peut être soit un string formaté, soit un timestamp Unix
 pub fn parse_sqlite_datetime(s: &str) -> Result<NaiveDateTime, String> {
@@ -31,26 +32,6 @@ pub fn parse_sqlite_datetime(s: &str) -> Result<NaiveDateTime, String> {
 
 /// Retourne la valeur d'1 pip pour une paire donnée
 pub fn get_pip_value(symbol: &str) -> f64 {
-    match symbol {
-        "ADAUSD" => 0.0001,
-        "BTCUSD" => 1.00,
-        "CADJPY" => 0.01,
-        "CHFJPY" => 0.01,
-        "ETHUSD" => 0.01,
-        "GBPJPY" => 0.01,
-        "LINKUSD" => 0.001,
-        "LTCUSD" => 0.01,
-        "UNIUSD" => 0.001,
-        "USDCAD" => 0.0001,
-        "USDJPY" => 0.01,
-        "AUDJPY" => 0.01,
-        "NZDJPY" => 0.01,
-        "EURJPY" => 0.01,
-        "XAGUSD" => 0.001,
-        "XAUUSD" => 0.01,
-        "XLMUSD" => 0.00001,
-        "EURUSD" => 0.0001,
-        "GBPUSD" => 0.0001,
-        _ => 0.0001, // valeur par défaut
-    }
+    let props = AssetProperties::from_symbol(symbol);
+    props.pip_value
 }

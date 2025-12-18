@@ -1,6 +1,7 @@
 // commands/volatility/straddle_metrics.rs - Command pour analyse Straddle
 use super::straddle_metrics_types::*;
 use tauri::command;
+use crate::models::AssetProperties;
 
 /// Obtenir le nombre de points par pip selon le symbole
 /// Basé sur la norme MT5:
@@ -10,22 +11,18 @@ use tauri::command;
 /// - Indices (USA500IDXUSD, etc): 1 pip = 1 point
 /// - Crypto (BTCUSD, ETHUSD): 1 pip = 1 point
 fn get_points_per_pip(symbol: &str) -> f64 {
-    if symbol.contains("XAU") {
-        10.0 // Or: 1 pip = 10 points
-    } else if symbol.contains("XAG") {
-        1000.0 // Argent: 1 pip = 1000 points
-    } else if symbol.contains("US30")
-        || symbol.contains("DE30")
-        || symbol.contains("NAS100")
-        || symbol.contains("SPX500")
-        || symbol.contains("USA500")
-    {
-        1.0 // Indices: 1 pip = 1 point
-    } else if symbol.contains("BTC") || symbol.contains("ETH") {
-        1.0 // Crypto: 1 pip = 1 point
-    } else {
-        10.0 // Forex par défaut (EURUSD, CADJPY, USDJPY, etc): 1 pip = 10 points
+    let props = AssetProperties::from_symbol(symbol);
+    
+    // Pour le Forex et l'Or, 1 pip = 10 points (ex: 1.0001 -> 1.0002 = 1 pip = 10 points de 0.00001)
+    if props.unit == "pips" {
+        if symbol.contains("XAG") {
+            return 1000.0; // Argent est spécial
+        }
+        return 10.0;
     }
+    
+    // Pour les indices et crypto, 1 pip = 1 point
+    1.0
 }
 
 /// Convertir des pips en points

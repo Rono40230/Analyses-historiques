@@ -7,20 +7,16 @@ pub fn normalize_date(date: &str) -> Result<String> {
     if date.contains('/') {
         let parts: Vec<&str> = date.split('/').collect();
         if parts.len() == 3 {
-            return Ok(format!(
-                "{}-{:02}-{:02}",
-                parts[0],
-                parts[1].parse::<u32>().unwrap_or(1),
-                parts[2].parse::<u32>().unwrap_or(1)
-            ));
+            let y = parts[0].parse::<u32>().map_err(|_| anyhow!("Année invalide"))?;
+            let m = parts[1].parse::<u32>().map_err(|_| anyhow!("Mois invalide"))?;
+            let d = parts[2].parse::<u32>().map_err(|_| anyhow!("Jour invalide"))?;
+            
+            if NaiveDate::from_ymd_opt(y as i32, m, d).is_some() {
+                return Ok(format!("{}-{:02}-{:02}", y, m, d));
+            }
         }
-    } else if date.contains('-') {
-        return Ok(date.to_string());
     }
 
-    if let Ok(parsed) = NaiveDate::parse_from_str(date, "%Y/%m/%d") {
-        return Ok(parsed.format("%Y-%m-%d").to_string());
-    }
     if let Ok(parsed) = NaiveDate::parse_from_str(date, "%Y-%m-%d") {
         return Ok(parsed.format("%Y-%m-%d").to_string());
     }

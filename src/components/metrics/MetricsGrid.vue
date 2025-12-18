@@ -19,6 +19,7 @@
                 :value="metric.value15" 
                 :unit="metric.suffix || ''" 
                 :decimals="metric.decimals ?? 2" 
+                :symbol="analysisData.symbol"
               />
             </span>
           </td>
@@ -30,16 +31,18 @@
               :value="metric.valueGlobal" 
               :unit="metric.suffix || ''" 
               :decimals="metric.decimals ?? 2" 
+              :symbol="analysisData.symbol"
             />
           </td>
         </tr>
         <tr class="threshold-row">
           <td class="row-label">Seuil</td>
           <td v-for="metric in displayedMetrics" :key="`thr-${metric.label}`" class="metric-threshold">
-            ><UnitDisplay 
+            <UnitDisplay 
               :value="metric.excellentThreshold" 
               :unit="metric.suffix || ''" 
               :decimals="metric.decimals ?? 2" 
+              :symbol="analysisData.symbol"
             />
           </td>
         </tr>
@@ -69,6 +72,7 @@ import {
 } from './MetricsGrid.helpers'
 
 interface AnalysisData {
+  symbol?: string
   [key: string]: unknown
 }
 

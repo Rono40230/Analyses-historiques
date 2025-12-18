@@ -31,7 +31,7 @@ fn is_date_pattern_with_dots(bytes: &[u8]) -> bool {
 }
 
 fn is_date_pattern_with_hyphens(bytes: &[u8]) -> bool {
-    if bytes.len() < 23 {
+    if bytes.len() < 21 {
         return false;
     }
 
@@ -60,8 +60,6 @@ fn is_date_pattern_with_hyphens(bytes: &[u8]) -> bool {
         && bytes[18] == b'-'
         && is_digit(bytes[19])
         && is_digit(bytes[20])
-        && is_digit(bytes[21])
-        && is_digit(bytes[22])
 }
 
 pub fn extract_dates_from_filename(filename: &str) -> (Option<String>, Option<String>) {
@@ -88,11 +86,11 @@ pub fn extract_dates_from_filename(filename: &str) -> (Option<String>, Option<St
         }
     }
 
-    for i in 0..bytes.len().saturating_sub(22) {
-        if is_date_pattern_with_hyphens(&bytes[i..i + 23]) {
-            if let Ok(s) = std::str::from_utf8(&bytes[i..i + 23]) {
+    for i in 0..bytes.len().saturating_sub(20) {
+        if is_date_pattern_with_hyphens(&bytes[i..i + 21]) {
+            if let Ok(s) = std::str::from_utf8(&bytes[i..i + 21]) {
                 let start_date = s[0..10].to_string();
-                let end_date = s[13..23].to_string();
+                let end_date = s[11..21].to_string();
                 return (Some(start_date), Some(end_date));
             }
         }

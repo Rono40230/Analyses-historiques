@@ -85,7 +85,7 @@ impl<'a> HourlyStatsCalculator<'a> {
         let raw_atr_mean = mean(&atr_values); // FIX-01: Moyenne au lieu de last()
         let raw_atr_max = max(&atr_values);
         let raw_range_mean = mean(&tr_dist.true_ranges);
-        let raw_max_true_range = max(&tr_dist.true_ranges); // FIX-01: Max Spike
+        let raw_max_true_range = tr_dist.percentile_95; // FIX-01: Max Spike stabilisé (95e percentile)
 
         let atr_mean = asset_props.normalize(raw_atr_mean);
         let atr_max = asset_props.normalize(raw_atr_max);

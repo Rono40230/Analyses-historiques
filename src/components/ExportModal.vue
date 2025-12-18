@@ -68,7 +68,7 @@ const emit = defineEmits<{
 const volatilityStore = useVolatilityStore()
 const { generatePdf, isGenerating, progress, error } = usePdfExport()
 
-const selectedReports = ref<string[]>(['bidi', 'ranking'])
+const selectedReports = ref<string[]>([])
 const selectedPairMode = ref('all')
 const calendars = ref<CalendarMetadata[]>([])
 const selectedCalendarId = ref<number | null>(null)
@@ -85,10 +85,10 @@ onMounted(async () => {
 watch(() => props.isOpen, async (newVal) => {
   if (newVal) {
     showPreview.value = false
-    if (previewUrl.value) {
+    if (previewUrl.value && previewUrl.value.startsWith('blob:')) {
       URL.revokeObjectURL(previewUrl.value)
-      previewUrl.value = null
     }
+    previewUrl.value = null
     
     await loadCalendars()
     // Sélectionner le calendrier actif par défaut
@@ -99,10 +99,10 @@ watch(() => props.isOpen, async (newVal) => {
       selectedCalendarId.value = calendars.value[0].id
     }
   } else {
-    if (previewUrl.value) {
+    if (previewUrl.value && previewUrl.value.startsWith('blob:')) {
       URL.revokeObjectURL(previewUrl.value)
-      previewUrl.value = null
     }
+    previewUrl.value = null
     showPreview.value = false
   }
 })
@@ -160,10 +160,10 @@ function handleDownload() {
 }
 
 function closePreview() {
-  if (previewUrl.value) {
+  if (previewUrl.value && previewUrl.value.startsWith('blob:')) {
     URL.revokeObjectURL(previewUrl.value)
-    previewUrl.value = null
   }
+  previewUrl.value = null
   showPreview.value = false
 }
 </script>

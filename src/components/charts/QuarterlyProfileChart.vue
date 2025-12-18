@@ -12,8 +12,8 @@
       <line v-if="isExtended" :x1="getX(0)" y1="20" :x2="getX(0)" y2="180" stroke="#30363d" stroke-width="1" stroke-dasharray="2,2" />
       <line v-if="isExtended" :x1="getX(15)" y1="20" :x2="getX(15)" y2="180" stroke="#30363d" stroke-width="1" stroke-dasharray="2,2" />
 
-      <!-- X Axis Labels (Minutes) -->
-      <text v-for="m in xAxisLabels" :key="m" :x="getX(m)" y="195" font-size="7" fill="#8b949e" text-anchor="middle">{{ m }}m</text>
+      <!-- X Axis Labels (Exact Time) -->
+      <text v-for="m in xAxisLabels" :key="m" :x="getX(m)" y="195" font-size="7" fill="#8b949e" text-anchor="middle">{{ formatTime(m) }}</text>
 
       <!-- Y Axis Labels -->
       <text x="35" :y="getY(maxValue)" font-size="7" fill="#8b949e" text-anchor="end">{{ maxValue.toFixed(1) }}</text>
@@ -51,7 +51,7 @@
 
       <!-- Optimal Entry Marker -->
       <line v-if="optimalEntry !== undefined" :x1="getX(optimalEntry)" y1="20" :x2="getX(optimalEntry)" y2="180" stroke="#10b981" stroke-width="1" stroke-dasharray="4,4" />
-      <text v-if="optimalEntry !== undefined" :x="getX(optimalEntry)" y="15" font-size="7" fill="#10b981" text-anchor="middle" font-weight="bold">{{ entryLabel || `Entrée (${optimalEntry}m)` }}</text>
+      <text v-if="optimalEntry !== undefined" :x="getX(optimalEntry)" y="15" font-size="7" fill="#10b981" text-anchor="middle" font-weight="bold">{{ entryLabel || `Entrée (${formatTime(optimalEntry)})` }}</text>
 
       <!-- Gradients -->
       <defs>
@@ -72,12 +72,36 @@ const props = defineProps<{
   optimalEntry?: number
   duration?: number
   entryLabel?: string
+  hour?: number
+  quarter?: number
 }>()
 
 const isExtended = computed(() => props.profile.length > 15)
 const minMinute = computed(() => isExtended.value ? -5 : 0)
 const maxMinute = computed(() => isExtended.value ? 30 : 14) // 30 to include up to +15min after end (15+15)
 const totalRange = computed(() => maxMinute.value - minMinute.value)
+
+const formatTime = (minute: number) => {
+  if (props.hour === undefined || props.quarter === undefined) return `${minute}m`
+  
+  const startMin = props.quarter * 15
+  let totalMin = startMin + minute
+  let finalH = props.hour
+  
+  while (totalMin >= 60) {
+    totalMin -= 60
+    finalH = (finalH + 1) % 24
+  }
+  
+  while (totalMin < 0) {
+    totalMin += 60
+    finalH = (finalH - 1 + 24) % 24
+  }
+  
+  const mm = totalMin.toString().padStart(2, '0')
+  const hh = finalH.toString().padStart(2, '0')
+  return `${hh}:${mm}`
+}
 
 const xAxisLabels = computed(() => {
   if (isExtended.value) {
