@@ -15,7 +15,7 @@
     <div class="cockpit-grid">
       <!-- Colonne Gauche: Directionnel -->
       <div class="col-left">
-        <RetroAnalysisDirectionalPanel
+        <StraddleDirectionalCard
           :meilleur-moment="props.meilleurMoment"
           :offset="props.offset"
           :stop-loss="props.stopLoss"
@@ -51,11 +51,11 @@
 
       <!-- Colonne Droite: Simultané -->
       <div class="col-right">
-        <RetroAnalysisSimultaneousPanel
+        <StraddleSimultaneousCard
           :meilleur-moment="props.meilleurMoment"
           :offset="props.offset"
           :stop-loss-recovery="props.stopLossRecovery"
-          :trailing-stop="trailingStopRecovery"
+          :trailing-stop="props.trailingStop"
           :timeout="props.timeout"
           :pair="props.pair"
           :point-value="props.pointValue"
@@ -69,8 +69,8 @@
 import { computed } from 'vue'
 import RetroAnalysisGraph from './analysis/RetroAnalysisGraph.vue'
 import RetroAnalysisHeader from './analysis/RetroAnalysisHeader.vue'
-import RetroAnalysisDirectionalPanel from './analysis/RetroAnalysisDirectionalPanel.vue'
-import RetroAnalysisSimultaneousPanel from './analysis/RetroAnalysisSimultaneousPanelFinal.vue'
+import StraddleDirectionalCard from './trading/StraddleDirectionalCard.vue'
+import StraddleSimultaneousCard from './trading/StraddleSimultaneousCard.vue'
 
 const props = defineProps<{
   atrTimelineBefore?: number[]

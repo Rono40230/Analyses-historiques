@@ -158,12 +158,6 @@
                 >
                   👁️ Voir
                 </button>
-                <button
-                  class="btn-action-compact btn-pdf"
-                  @click="exportPDF(archive)"
-                >
-                  📄 PDF
-                </button>
               </div>
             </div>
           </div>
@@ -402,17 +396,6 @@ function closeViewer() {
   showViewer.value = false
   selectedArchive.value = null
   viewerData.value = null
-}
-
-async function exportPDF(archive: Archive) {
-  // 1. Ouvrir l'archive en mode visualisation
-  viewArchive(archive)
-  
-  // 2. Attendre que le DOM soit mis à jour et que les composants soient rendus
-  // On utilise un setTimeout pour laisser le temps aux graphiques/composants de s'initialiser
-  setTimeout(() => {
-    window.print()
-  }, 500)
 }
 
 async function confirmDelete(archive: Archive) {
@@ -722,15 +705,6 @@ function cancelDelete() {
 .btn-action-compact.btn-view:hover {
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
-}
-
-.btn-action-compact.btn-pdf {
-  background: #2d3748;
-  color: #cbd5e0;
-}
-
-.btn-action-compact.btn-pdf:hover {
-  background: #4a5568;
 }
 
 .collapse-enter-active, .collapse-leave-active {
