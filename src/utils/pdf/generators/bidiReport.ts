@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import type { ArchivedAnalysisData } from '../../../composables/useMetricsModalLoad'
-import { formatPointsWithPips } from '../../pipConverter'
+import { formaterPointsAvecPips } from '../../pipConverter'
 
 export async function generateBidiReport(doc: jsPDF, dataList: ArchivedAnalysisData[], startY: number = 20) {
   doc.setFontSize(16)
@@ -20,9 +20,9 @@ export async function generateBidiReport(doc: jsPDF, dataList: ArchivedAnalysisD
       rows.push([
         symbol,
         slice.startTime,
-        plan.offset ? formatPointsWithPips(symbol, plan.offset) : 'N/A',
-        plan.tp ? formatPointsWithPips(symbol, plan.tp) : 'N/A',
-        plan.sl ? formatPointsWithPips(symbol, plan.sl) : 'N/A',
+        plan.offset ? formaterPointsAvecPips(symbol, plan.offset) : 'N/A',
+        plan.tp ? formaterPointsAvecPips(symbol, plan.tp) : 'N/A',
+        plan.sl ? formaterPointsAvecPips(symbol, plan.sl) : 'N/A',
         plan.duration ? `${plan.duration}m` : 'N/A'
       ])
     } else {

@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api/core'
 import type { Stats15Min } from '../stores/volatilityTypes'
 import { calculateStraddleScore, calculateTradingPlan } from '../utils/straddleAnalysis'
 import type { SliceAnalysis } from '../utils/straddleAnalysis'
-export { getStitchedVolatilityProfile } from '../utils/volatilityProfile'
+export { obtenirProfilVolatiliteAssemble } from '../utils/volatilityProfile'
 export type { VolatilityDuration, MovementQuality, RecurringEvent } from './metricsAnalysisTypes'
 
 export function formatSliceTime(hour: number, quarter: number): string {

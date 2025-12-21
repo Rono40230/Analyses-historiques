@@ -2177,7 +2177,7 @@ export const eventTranslations: Record<string, EventTranslation> = {
  * @param eventName Nom de l'événement en anglais
  * @returns Objet EventTranslation avec traduction, pays et drapeau
  */
-export function getEventTranslation(eventName: string): EventTranslation {
+export function obtenirTraductionEvenement(eventName: string): EventTranslation {
   if (eventTranslations[eventName]) {
     return eventTranslations[eventName];
   }

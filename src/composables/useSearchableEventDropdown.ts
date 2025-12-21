@@ -27,11 +27,11 @@ export function useSearchableEventDropdown() {
     isOpen.value = false
   }
 
-  const openDropdown = () => {
+  const ouvrirMenuDeroulant = () => {
     isOpen.value = true
   }
 
-  const toggleDropdown = () => {
+  const basculerMenuDeroulant = () => {
     isOpen.value = !isOpen.value
   }
 
@@ -41,7 +41,10 @@ export function useSearchableEventDropdown() {
     filterEvents,
     clearSearch,
     closeDropdown,
-    openDropdown,
-    toggleDropdown
+    ouvrirMenuDeroulant,
+    basculerMenuDeroulant,
+    // Aliases
+    openDropdown: ouvrirMenuDeroulant,
+    toggleDropdown: basculerMenuDeroulant
   }
 }

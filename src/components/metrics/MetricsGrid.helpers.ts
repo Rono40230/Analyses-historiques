@@ -26,7 +26,7 @@ export interface MetricConfig {
   decimals?: number
 }
 
-export function getEstimatedPrice(analysisData: AnalysisData): number {
+export function obtenirPrixEstime(analysisData: AnalysisData): number {
   const globalMetrics = analysisData?.globalMetrics
   if (!globalMetrics) return 100000
   const atr = globalMetrics.mean_atr ?? 0
@@ -38,7 +38,7 @@ export function getEstimatedPrice(analysisData: AnalysisData): number {
 export function buildMetricsConfig(analysis: SliceAnalysis, analysisData: AnalysisData): MetricConfig[] {
   const stats = analysis.slice.stats
   const globals: GlobalMetrics = analysisData?.globalMetrics || {}
-  const price = getEstimatedPrice(analysisData)
+  const price = obtenirPrixEstime(analysisData)
   const unit = (analysisData?.unit as string) || 'pts'
   const isCrypto = unit === '$'
   const suffix = isCrypto ? '' : unit

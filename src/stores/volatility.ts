@@ -23,7 +23,7 @@ export const useVolatilityStore = defineStore('volatility', () => {
     return analysisResult.value.stats_15min.find(q => q.hour === hour && q.quarter === quarter)
   })
 
-  async function loadSymbols() {
+  async function chargerSymboles() {
     loading.value = true
     error.value = ''
     try {
@@ -35,7 +35,7 @@ export const useVolatilityStore = defineStore('volatility', () => {
     }
   }
 
-  async function analyzeSymbol(symbol: string, calendarId?: number | null) {
+  async function analyserSymbole(symbol: string, calendarId?: number | null) {
     loading.value = true
     error.value = ''
     selectedSymbol.value = symbol
@@ -57,7 +57,7 @@ export const useVolatilityStore = defineStore('volatility', () => {
     }
   }
 
-  async function getHourlyStats(symbol: string, hour: number, calendarId?: number | null) {
+  async function obtenirStatistiquesHoraires(symbol: string, hour: number, calendarId?: number | null) {
     try {
       const cid = calendarId ?? parseInt(localStorage.getItem('activeCalendarId') || '0', 10)
       
@@ -93,9 +93,12 @@ export const useVolatilityStore = defineStore('volatility', () => {
     hasAnalysis,
     bestQuarterStats,
     retroAnalysisCache,
-    loadSymbols,
-    analyzeSymbol,
-    getHourlyStats,
+    loadSymbols: chargerSymboles,
+    analyzeSymbol: analyserSymbole,
+    getHourlyStats: obtenirStatistiquesHoraires,
+    chargerSymboles,
+    analyserSymbole,
+    obtenirStatistiquesHoraires,
     clearAnalysis,
     triggerDataRefresh,
     cacheRetroAnalysis,

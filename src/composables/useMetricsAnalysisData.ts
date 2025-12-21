@@ -8,7 +8,7 @@ import {
   loadQuarterEvents,
   extractVolatilityDuration,
   createBestSlice,
-  getStitchedVolatilityProfile,
+  obtenirProfilVolatiliteAssemble,
   type MovementQuality,
   type VolatilityDuration,
   type RecurringEvent
@@ -49,7 +49,7 @@ export function useMetricsAnalysisData() {
     if (!bestSliceStats) return
 
     // Stitch profile for graph (T-5 to T+45)
-    const stitchedProfile = getStitchedVolatilityProfile(result.stats_15min, bestHour, bestQuarter)
+    const stitchedProfile = obtenirProfilVolatiliteAssemble(result.stats_15min, bestHour, bestQuarter)
     const statsWithProfile = {
       ...bestSliceStats,
       volatility_profile: stitchedProfile
@@ -102,7 +102,7 @@ export function useMetricsAnalysisData() {
     if (!selectedSliceStats) return
 
     // Stitch profile for graph (T-5 to T+45)
-    const stitchedProfile = getStitchedVolatilityProfile(result.stats_15min, selectedHour, selectedQuarter)
+    const stitchedProfile = obtenirProfilVolatiliteAssemble(result.stats_15min, selectedHour, selectedQuarter)
     const statsWithProfile = {
       ...selectedSliceStats,
       volatility_profile: stitchedProfile

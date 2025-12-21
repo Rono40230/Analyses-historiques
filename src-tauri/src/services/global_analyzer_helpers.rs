@@ -1,6 +1,6 @@
 // services/global_analyzer_helpers.rs - Fonctions helper pour l'analyseur global
 
-pub fn calculate_temporal_weight(archive_date: chrono::NaiveDateTime) -> f64 {
+pub fn calculer_poids_temporel(archive_date: chrono::NaiveDateTime) -> f64 {
     let now = chrono::Local::now().naive_local();
     let age_days = (now - archive_date).num_days() as f64;
     let age_months = age_days / 30.0;

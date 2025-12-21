@@ -29,7 +29,7 @@ export function useBacktestConfig(props: { backtestType: BacktestType }) {
   // Watcher pour mettre à jour la valeur du point quand le symbole change
   watch(selectedSymbol, async (newSymbol) => {
     if (newSymbol) {
-      await backtestStore.updateSymbolProperties(newSymbol)
+      await backtestStore.mettreAJourProprietesSymbole(newSymbol)
     }
   })
 

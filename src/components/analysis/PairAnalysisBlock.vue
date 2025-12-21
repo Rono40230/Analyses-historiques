@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useArchiveStatistics } from '../../composables/useArchiveStatistics'
 import UnitDisplay from '../UnitDisplay.vue'
-import { getPointsPerPip } from '../../utils/pipConverter'
+import { obtenirPointsParPip } from '../../utils/pipConverter'
 
 const { pairStatistics } = useArchiveStatistics()
 interface PairDisplay {
@@ -53,7 +53,7 @@ function getTopSensitiveEvent(eventSensitivity: Record<string, number>): { event
 }
 
 function getUnit(pair: string): string {
-  return getPointsPerPip(pair) === 1 ? 'pts' : 'pips'
+  return obtenirPointsParPip(pair) === 1 ? 'pts' : 'pips'
 }
 </script>
 <template>

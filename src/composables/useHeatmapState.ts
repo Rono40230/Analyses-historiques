@@ -23,13 +23,13 @@ export function useHeatmapState(props: HeatmapStateProps) {
   onMounted(async () => {
     const hasRestoredHeatmap = analysisStore.restoreHeatmapFromStorage()
     if (hasRestoredHeatmap) {
-      selectedCalendarId.value = analysisStore.getStoredHeatmapCalendarId()
+      selectedCalendarId.value = analysisStore.obtenirIdCalendrierHeatmapStocke()
     }
-    await loadAvailablePairs()
+    await chargerPairesDisponibles()
   })
 
   const { onPairDataRefresh } = useDataRefresh()
-  const unsubscribe = onPairDataRefresh(loadAvailablePairs)
+  const unsubscribe = onPairDataRefresh(chargerPairesDisponibles)
   onBeforeUnmount(() => unsubscribe())
 
   // Calendar change watcher
@@ -54,12 +54,12 @@ export function useHeatmapState(props: HeatmapStateProps) {
     }
   }, { deep: true })
 
-  async function handleCalendarSelected(filename: string) {
+  async function gererSelectionCalendrier(filename: string) {
     const calendarId = await invoke<number | null>('get_calendar_id_by_filename', { filename })
     selectedCalendarId.value = calendarId
   }
 
-  async function loadAvailablePairs() {
+  async function chargerPairesDisponibles() {
     try {
       const data = await invoke<Array<{ symbol: string; file_path: string }>>('load_symbols')
       availablePairs.value = data.map(item => item.symbol)
@@ -72,6 +72,10 @@ export function useHeatmapState(props: HeatmapStateProps) {
     viewMode,
     availablePairs,
     selectedCalendarId,
-    handleCalendarSelected,
+    gererSelectionCalendrier,
+    chargerPairesDisponibles,
+    // Alias pour compatibilité
+    handleCalendarSelected: gererSelectionCalendrier,
+    loadAvailablePairs: chargerPairesDisponibles
   }
 }

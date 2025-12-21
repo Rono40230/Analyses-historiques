@@ -1,7 +1,7 @@
 import { computed, type Ref } from 'vue'
 import type { EventInHour } from '../stores/volatility'
 import { getEventTranslation } from '../stores/eventTranslations'
-import { getEventSchedule } from '../utils/eventSchedules'
+import { obtenirHoraireEvenement } from '../utils/eventSchedules'
 
 export interface EventSummaryItem {
   eventName: string
@@ -40,7 +40,7 @@ export function useEventSummary(allEvents: Ref<EventInHour[]>) {
       .map(([key, data]) => {
         const [eventName] = key.split('|')
         const translation = getEventTranslation(eventName)
-        const schedule = getEventSchedule(eventName)
+        const schedule = obtenirHoraireEvenement(eventName)
         return { eventName, eventNameFr: translation.fr, flag: translation.flag, country: translation.country, impact: data.impact, count: data.count, firstTime: data.firstTime, schedule }
       })
       .filter(e => e.impact === 'HIGH')

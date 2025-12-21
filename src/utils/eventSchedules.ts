@@ -21,6 +21,6 @@ export const eventSchedules: Record<string, string> = {
  * @param eventName Nom de l'événement en anglais
  * @returns Horaire ou "Variable" si non défini
  */
-export function getEventSchedule(eventName: string): string {
+export function obtenirHoraireEvenement(eventName: string): string {
   return eventSchedules[eventName] || 'Variable'
 }

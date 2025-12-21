@@ -9,7 +9,7 @@ interface CalendarMetadata {
   end_date?: string
 }
 
-export async function fetchArchivedData(pairs: string[], onProgress: (progress: number) => void): Promise<ArchivedAnalysisData[]> {
+export async function recupererDonneesArchivees(pairs: string[], onProgress: (progress: number) => void): Promise<ArchivedAnalysisData[]> {
   const results: ArchivedAnalysisData[] = []
   const calendarId = parseInt(localStorage.getItem('activeCalendarId') || '0', 10)
   
@@ -95,7 +95,7 @@ export interface ArchivedBacktestData {
   mode: any // StrategyMode
 }
 
-export async function fetchBacktestArchivedData(pairs: string[], onProgress: (progress: number) => void): Promise<ArchivedBacktestData[]> {
+export async function recupererDonneesBacktestArchivees(pairs: string[], onProgress: (progress: number) => void): Promise<ArchivedBacktestData[]> {
   const results: ArchivedBacktestData[] = []
   const calendarId = parseInt(localStorage.getItem('activeCalendarId') || '0', 10)
   

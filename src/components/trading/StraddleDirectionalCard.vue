@@ -87,7 +87,7 @@
 
 <script setup lang="ts">
 import UnitDisplay from '../UnitDisplay.vue'
-import { getPointsPerPip } from '../../utils/pipConverter'
+import { obtenirPointsParPip } from '../../utils/pipConverter'
 
 interface Props {
   meilleurMoment?: number
@@ -110,7 +110,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 function getUnit(pair: string): string {
-  return getPointsPerPip(pair) === 1 ? 'pts' : 'pips'
+  return obtenirPointsParPip(pair) === 1 ? 'pts' : 'pips'
 }
 
 // Simple scaling function for visualization

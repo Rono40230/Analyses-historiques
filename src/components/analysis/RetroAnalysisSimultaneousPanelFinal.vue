@@ -64,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { formatPointsWithPips } from '../../utils/pipConverter'
+import { formaterPointsAvecPips } from '../../utils/pipConverter'
 
 interface Props {
   meilleurMoment?: number
@@ -87,7 +87,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 function formatValue(val: number, decimals: number = 0): string {
   // val is already in points (thanks to backend fix)
-  return formatPointsWithPips(props.pair, val, decimals)
+  return formaterPointsAvecPips(props.pair, val, decimals)
 }
 
 // Simple scaling function for visualization

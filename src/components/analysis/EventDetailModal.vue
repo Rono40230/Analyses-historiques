@@ -4,7 +4,7 @@ import { useEventPairCorrelation } from '../../composables/useEventPairCorrelati
 import { useEventTranslation } from '../../composables/useEventTranslation'
 import EventDetailPairs from './EventDetailPairs.vue'
 import EventDetailStraddle from './EventDetailStraddle.vue'
-import { formatPointsWithPips } from '../../utils/pipConverter'
+import { formaterPointsAvecPips } from '../../utils/pipConverter'
 import type { EventDetailState } from '../../composables/useEventDetail'
 
 interface Props {
@@ -51,7 +51,7 @@ const allPairs = computed(() => {
         </div>
         <div class="stat-box">
           <div class="stat-label">Volatilité ATR</div>
-          <div class="stat-value">{{ formatPointsWithPips(event.pair || 'EURUSD', event.avgATR || 0) }}</div>
+          <div class="stat-value">{{ formaterPointsAvecPips(event.pair || 'EURUSD', event.avgATR || 0) }}</div>
         </div>
         <div class="stat-box">
           <div class="stat-label">Pic (+/-)</div>

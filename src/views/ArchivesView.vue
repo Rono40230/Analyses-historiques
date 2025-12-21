@@ -100,14 +100,14 @@
       >
         <div 
           class="section-header"
-          @click="toggleTypeExpansion(type)"
+          @click="basculerExpansionType(type)"
         >
           <span class="section-toggle">
             {{ expandedTypes.has(type) ? '▼' : '▶' }}
           </span>
           <div
             class="archive-type-badge"
-            :class="getTypeClass(type)"
+            :class="obtenirClasseType(type)"
           >
             {{ type }}
           </div>
@@ -289,7 +289,7 @@ const archivesByType = computed(() => {
 })
 
 // Basculer l'expansion/réduction d'une section de type
-function toggleTypeExpansion(type: string) {
+function basculerExpansionType(type: string) {
   if (expandedTypes.value.has(type)) {
     expandedTypes.value.delete(type)
   } else {
@@ -322,7 +322,7 @@ const availablePairs = computed(() => {
   return Array.from(pairs).sort()
 })
 
-function getTypeClass(type: string): string {
+function obtenirClasseType(type: string): string {
   const mapping: Record<string, string> = {
     'Volatilité brute': 'type-metrics',
     'Volatilité brute Paire/Période': 'type-metrics',

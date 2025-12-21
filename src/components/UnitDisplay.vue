@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { getPointsPerPip } from '../utils/pipConverter'
+import { obtenirPointsParPip } from '../utils/pipConverter'
 
 const props = defineProps<{
   value: number
@@ -10,7 +10,7 @@ const props = defineProps<{
 }>()
 
 const pointsPerPip = computed(() => {
-  if (props.symbol) return getPointsPerPip(props.symbol)
+  if (props.symbol) return obtenirPointsParPip(props.symbol)
   // Fallback: si on parle de pips/pts sans symbole, on suppose Forex (10)
   if (props.unit === 'pips' || props.unit === 'pts' || props.unit === 'points') return 10
   return 1

@@ -1,7 +1,7 @@
 mod aggregation;
 mod config;
 
-pub use aggregation::calculate_aggregated_metrics;
+pub use aggregation::calculer_metriques_agregees;
 pub use config::{volatility_level_to_string, MetricsConfig};
 
 use crate::models::{Candle, EventMetrics, Result};
@@ -30,7 +30,7 @@ impl<'a> EventMetricsAggregator<'a> {
     }
 
     /// Calcule toutes les métriques de l'événement
-    pub fn calculate_all_metrics(&self, config: MetricsConfig) -> Result<EventMetrics> {
+    pub fn calculer_toutes_metriques(&self, config: MetricsConfig) -> Result<EventMetrics> {
         info!(
             "Calculating all metrics for event '{}' at {}",
             self.event_name, self.event_time
@@ -120,12 +120,12 @@ impl<'a> EventMetricsAggregator<'a> {
     }
 
     #[allow(dead_code)]
-    pub fn calculate_aggregated_metrics(
+    pub fn calculer_metriques_agregees(
         events: Vec<(Vec<Candle>, DateTime<Utc>)>,
         event_name: String,
         config: MetricsConfig,
     ) -> Result<EventMetrics> {
-        calculate_aggregated_metrics(events, event_name, config)
+        calculer_metriques_agregees(events, event_name, config)
     }
 }
 
@@ -149,7 +149,7 @@ mod tests {
     }
 
     #[test]
-    fn test_calculate_all_metrics() {
+    fn test_calculer_toutes_metriques() {
         let mut candles = Vec::new();
 
         for i in 0..80 {

@@ -1,6 +1,6 @@
 import type { Stats15Min } from '../stores/volatilityTypes'
 
-export function getStitchedVolatilityProfile(
+export function obtenirProfilVolatiliteAssemble(
   allStats: Stats15Min[],
   targetHour: number,
   targetQuarter: number

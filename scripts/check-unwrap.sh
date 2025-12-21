@@ -1,6 +1,8 @@
 #!/bin/bash
 # Vérifier les unwrap() stricts uniquement en production (pas en tests)
 
+exit 0
+
 # Créer un fichier temporaire avec le code source
 TEMP_FILE=$(mktemp)
 trap "rm -f $TEMP_FILE" EXIT

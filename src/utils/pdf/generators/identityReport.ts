@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import type { ArchivedAnalysisData } from '../../../composables/useMetricsModalLoad'
-import { formatPointsWithPips } from '../../pipConverter'
+import { formaterPointsAvecPips } from '../../pipConverter'
 
 export async function generateIdentityReport(doc: jsPDF, dataList: ArchivedAnalysisData[], startY: number = 20) {
   doc.setFontSize(16)
@@ -40,8 +40,8 @@ export async function generateIdentityReport(doc: jsPDF, dataList: ArchivedAnaly
     doc.setFontSize(10)
     
     const info = [
-      [`Volatilité Moyenne: ${formatPointsWithPips(res.symbol, metrics.mean_volatility)}`, `Meilleur Moment: ${bestTime}`],
-      [`ATR Moyen: ${formatPointsWithPips(res.symbol, metrics.mean_atr)}`, `Ratio Bruit Moyen: ${metrics.mean_noise_ratio.toFixed(2)}`],
+      [`Volatilité Moyenne: ${formaterPointsAvecPips(res.symbol, metrics.mean_volatility)}`, `Meilleur Moment: ${bestTime}`],
+      [`ATR Moyen: ${formaterPointsAvecPips(res.symbol, metrics.mean_atr)}`, `Ratio Bruit Moyen: ${metrics.mean_noise_ratio.toFixed(2)}`],
       [`Bougies Analysées: ${metrics.total_candles}`, `Confiance: ${confidence.toFixed(1)}/100`]
     ]
 

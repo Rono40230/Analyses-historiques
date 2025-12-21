@@ -58,7 +58,7 @@ import StraddleDirectionalCard from '../trading/StraddleDirectionalCard.vue'
 import StraddleSimultaneousCard from '../trading/StraddleSimultaneousCard.vue'
 import BidiVolatilityGraph from './BidiVolatilityGraph.vue'
 import type { SliceAnalysis } from '../../utils/straddleAnalysis'
-import { getPointsPerPip } from '../../utils/pipConverter'
+import { obtenirPointsParPip } from '../../utils/pipConverter'
 
 interface EntryWindowAnalysis { optimal_offset: number; optimal_entry_minutes: number }
 interface WhipsawAnalysis { whipsaw_frequency_percentage: number; trailing_stop_adjusted: number; optimal_entry_minutes: number }
@@ -86,7 +86,7 @@ const props = defineProps<{
   }>
 }>()
 
-const pointsPerPip = computed(() => getPointsPerPip(props.symbol || 'EURUSD'))
+const pointsPerPip = computed(() => obtenirPointsParPip(props.symbol || 'EURUSD'))
 
 // Computed values for the cards
 // Priorité à l'analyse fine (entryWindowAnalysis) pour le temps, sinon fallback sur stats

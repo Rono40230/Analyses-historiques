@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use tracing::warn;
 
 /// Calcule les métriques agrégées pour plusieurs occurrences du même événement
-pub fn calculate_aggregated_metrics(
+pub fn calculer_metriques_agregees(
     events: Vec<(Vec<Candle>, DateTime<Utc>)>,
     event_name: String,
     config: MetricsConfig,
@@ -27,7 +27,7 @@ pub fn calculate_aggregated_metrics(
         let aggregator =
             super::EventMetricsAggregator::new(candles, *event_time, event_name.clone());
 
-        match aggregator.calculate_all_metrics(config.clone()) {
+        match aggregator.calculer_toutes_metriques(config.clone()) {
             Ok(metrics) => all_metrics.push(metrics),
             Err(e) => {
                 warn!(

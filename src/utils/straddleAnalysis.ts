@@ -27,7 +27,7 @@ export function isInTop3(slice: Slice15minWithScore, top3Slices: Slice15minWithS
   return top3Slices.some(s => s.hour === slice.hour && s.quarter === slice.quarter)
 }
 
-export function getTop3Rank(slice: Slice15minWithScore, top3Slices: Slice15minWithScore[]): number {
+export function obtenirRangTop3(slice: Slice15minWithScore, top3Slices: Slice15minWithScore[]): number {
   const idx = top3Slices.findIndex(s => s.hour === slice.hour && s.quarter === slice.quarter)
   return idx === -1 ? 0 : idx + 1
 }

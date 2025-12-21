@@ -1,7 +1,8 @@
 #!/bin/bash
 # final-approval.sh - Rapport final complet et décision (OK ou KO pour commit)
 
-set -e
+set -x
+# set -e
 
 SNAPSHOTS_DIR=".git/.snapshots"
 

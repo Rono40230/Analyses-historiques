@@ -37,7 +37,7 @@ export function useRetrospectiveAnalysis() {
     finally { decayLoading.value = false }
   }
 
-  const loadEventTypes = async (calendarId?: number) => {
+  const chargerTypesEvenements = async (calendarId?: number) => {
     eventTypesLoading.value = true; eventTypesError.value = null
     try { 
       const data = await invoke<EventTypeData>('get_event_types', { calendar_id: calendarId })
@@ -50,10 +50,18 @@ export function useRetrospectiveAnalysis() {
     finally { eventTypesLoading.value = false }
   }
 
-  function getEventLabel(eventName: string): string {
+  function obtenirLibelleEvenement(eventName: string): string {
     const translation = eventTranslations[eventName]
     return translation ? `${eventName} (${translation.fr}) ${translation.flag}` : eventName
   }
 
-  return { peakDelayLoading, peakDelayError, peakDelayResults, analyzePeakDelay, decayLoading, decayError, decayResults, analyzeDecayProfile, eventTypesLoading, eventTypesError, eventTypes, loadEventTypes, getEventLabel }
+  return { 
+    peakDelayLoading, peakDelayError, peakDelayResults, analyzePeakDelay, 
+    decayLoading, decayError, decayResults, analyzeDecayProfile, 
+    eventTypesLoading, eventTypesError, eventTypes, 
+    chargerTypesEvenements, obtenirLibelleEvenement,
+    // Aliases
+    loadEventTypes: chargerTypesEvenements,
+    getEventLabel: obtenirLibelleEvenement
+  }
 }

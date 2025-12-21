@@ -19,7 +19,7 @@ export const useArchiveStore = defineStore('archive', () => {
     const loading = ref(false)
     const error = ref<string | null>(null)
 
-    async function saveArchive(
+    async function sauvegarderArchive(
         title: string,
         archiveType: string,
         periodStart: string,
@@ -48,7 +48,7 @@ export const useArchiveStore = defineStore('archive', () => {
         }
     }
 
-    async function loadArchives() {
+    async function chargerArchives() {
         loading.value = true
         error.value = null
         try {
@@ -61,7 +61,7 @@ export const useArchiveStore = defineStore('archive', () => {
         }
     }
 
-    async function loadArchive(archiveId: number) {
+    async function chargerArchive(archiveId: number) {
         loading.value = true
         error.value = null
         try {
@@ -75,7 +75,7 @@ export const useArchiveStore = defineStore('archive', () => {
         }
     }
 
-    async function deleteArchive(archiveId: number) {
+    async function supprimerArchive(archiveId: number) {
         loading.value = true
         error.value = null
         try {
@@ -97,9 +97,14 @@ export const useArchiveStore = defineStore('archive', () => {
         currentArchive,
         loading,
         error,
-        saveArchive,
-        loadArchives,
-        loadArchive,
-        deleteArchive
+        sauvegarderArchive,
+        chargerArchives,
+        chargerArchive,
+        supprimerArchive,
+        // Aliases for compatibility
+        saveArchive: sauvegarderArchive,
+        loadArchives: chargerArchives,
+        loadArchive: chargerArchive,
+        deleteArchive: supprimerArchive
     }
 })

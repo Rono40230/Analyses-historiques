@@ -17,7 +17,7 @@ type SymbolType = 'forex' | 'gold' | 'silver' | 'indices' | 'crypto'
 /**
  * Déterminer le type de symbole pour obtenir le bon ratio points→pips
  */
-function getSymbolType(symbol: string): SymbolType {
+function obtenirTypeSymbole(symbol: string): SymbolType {
   if (symbol.includes('XAU')) return 'gold'
   if (symbol.includes('XAG')) return 'silver'
   if (symbol.includes('US30') || symbol.includes('DE30') || symbol.includes('NAS100') || symbol.includes('SPX500') || symbol.includes('USA500') || symbol.includes('DEUIDX') || symbol.includes('USAIDX') || symbol.includes('USATEC')) return 'indices'
@@ -29,8 +29,8 @@ function getSymbolType(symbol: string): SymbolType {
  * Obtenir le nombre de points par pip
  * points_per_pip = nombre de points qu'il faut pour faire 1 pip
  */
-export function getPointsPerPip(symbol: string): number {
-  const type = getSymbolType(symbol)
+export function obtenirPointsParPip(symbol: string): number {
+  const type = obtenirTypeSymbole(symbol)
   
   switch (type) {
     case 'gold':     return 10        // 1 pip = 10 points
@@ -45,10 +45,10 @@ export function getPointsPerPip(symbol: string): number {
  * Obtenir la pip_value pour un symbole (valeur minimale de variation)
  * Conservé pour compatibilité, mais utilise pointsPerPip en interne
  */
-export function getPipValue(symbol: string): number {
+export function obtenirValeurPip(symbol: string): number {
   // Retourne une valeur arbitraire pour compatibilité
-  // La vraie conversion se fait via getPointsPerPip
-  return getPointsPerPip(symbol)
+  // La vraie conversion se fait via obtenirPointsParPip
+  return obtenirPointsParPip(symbol)
 }
 
 /**
@@ -65,8 +65,8 @@ export function getPipValue(symbol: string): number {
  * - XAGUSD: 1000 points ÷ 1000 = 1 pip
  * - BTCUSD: 100 points ÷ 1 = 100 pips
  */
-export function pointsToPips(symbol: string, points: number): number {
-  const pointsPerPip = getPointsPerPip(symbol)
+export function convertirPointsEnPips(symbol: string, points: number): number {
+  const pointsPerPip = obtenirPointsParPip(symbol)
   return points / pointsPerPip
 }
 
@@ -78,8 +78,8 @@ export function pointsToPips(symbol: string, points: number): number {
  * @param pips Valeur en pips
  * @returns Valeur en points MT5
  */
-export function pipsToPoints(symbol: string, pips: number): number {
-  const pointsPerPip = getPointsPerPip(symbol)
+export function convertirPipsEnPoints(symbol: string, pips: number): number {
+  const pointsPerPip = obtenirPointsParPip(symbol)
   return pips * pointsPerPip
 }
 
@@ -91,13 +91,13 @@ export function pipsToPoints(symbol: string, pips: number): number {
  * @param _decimals Non utilisé (gardé pour compatibilité)
  * @returns Chaîne formatée
  */
-export function formatPointsWithPips(symbol: string, normalizedValue: number | undefined, _decimals = 2): string {
+export function formaterPointsAvecPips(symbol: string, normalizedValue: number | undefined, _decimals = 2): string {
   // Gérer les valeurs undefined ou NaN
   if (normalizedValue === undefined || normalizedValue === null || isNaN(normalizedValue)) {
     return 'N/A'
   }
   
-  const pointsPerPip = getPointsPerPip(symbol)
+  const pointsPerPip = obtenirPointsParPip(symbol)
   
   if (pointsPerPip === 1) {
     return `${normalizedValue.toFixed(1)} points (soit ${normalizedValue.toFixed(1)} pips)`
@@ -117,8 +117,8 @@ export function formatPointsWithPips(symbol: string, normalizedValue: number | u
  * @param decimals Nombre de décimales (défaut: 0)
  * @returns Chaîne formatée
  */
-export function formatAsPips(symbol: string, points: number, decimals = 0): string {
-  const pips = pointsToPips(symbol, points)
+export function formaterEnPips(symbol: string, points: number, decimals = 0): string {
+  const pips = convertirPointsEnPips(symbol, points)
   return `${pips.toFixed(decimals)} pips`
 }
 
@@ -126,6 +126,6 @@ export function formatAsPips(symbol: string, points: number, decimals = 0): stri
  * Déterminer si le symbole utilise une conversion (non-1:1)
  * Retourne true si pip_value !== 1.0
  */
-export function hasConversion(symbol: string): boolean {
-  return getPipValue(symbol) !== 1.0
+export function aUneConversion(symbol: string): boolean {
+  return obtenirValeurPip(symbol) !== 1.0
 }

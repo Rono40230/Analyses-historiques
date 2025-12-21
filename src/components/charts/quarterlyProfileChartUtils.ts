@@ -1,4 +1,4 @@
-export const formatTime = (minute: number, hour?: number, quarter?: number) => {
+export const formaterHeure = (minute: number, hour?: number, quarter?: number) => {
   if (hour === undefined || quarter === undefined) return `${minute}m`
   
   const startMin = quarter * 15
@@ -20,7 +20,7 @@ export const formatTime = (minute: number, hour?: number, quarter?: number) => {
   return `${hh}:${mm}`
 }
 
-export const getEventMinute = (timeStr: string, hour?: number, quarter?: number) => {
+export const obtenirMinuteEvenement = (timeStr: string, hour?: number, quarter?: number) => {
   if (hour === undefined || quarter === undefined) return 0
   
   const [h, m] = timeStr.split(':').map(Number)
@@ -37,7 +37,7 @@ export const getEventMinute = (timeStr: string, hour?: number, quarter?: number)
   return diff
 }
 
-export const getEventColor = (impact: string) => {
+export const obtenirCouleurEvenement = (impact: string) => {
   switch (impact.toLowerCase()) {
     case 'high': return '#ef4444' // red-500
     case 'medium': return '#f97316' // orange-500
@@ -46,7 +46,7 @@ export const getEventColor = (impact: string) => {
   }
 }
 
-export const getX = (minute: number, minMinute: number, totalRange: number) => {
+export const obtenirX = (minute: number, minMinute: number, totalRange: number) => {
   const width = 340 // 380 - 40
   const offset = minute - minMinute
   // Ensure we don't divide by zero, though totalRange should be > 0
@@ -54,7 +54,7 @@ export const getX = (minute: number, minMinute: number, totalRange: number) => {
   return 40 + (offset / range) * width
 }
 
-export const getY = (val: number, maxValue: number) => {
+export const obtenirY = (val: number, maxValue: number) => {
   const height = 160 // 180 - 20
   if (maxValue === 0) return 180
   return 180 - (val / maxValue) * height

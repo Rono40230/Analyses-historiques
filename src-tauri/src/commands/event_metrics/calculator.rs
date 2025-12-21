@@ -88,7 +88,7 @@ pub async fn calculer_metriques_evenement(
     let aggregator =
         EventMetricsAggregator::new(&symbol_candles, event_time, params.event_name.clone());
 
-    match aggregator.calculate_all_metrics(config) {
+    match aggregator.calculer_toutes_metriques(config) {
         Ok(metrics) => {
             info!("Metrics calculated successfully for {}", params.event_name);
             Ok(MetricsCommandResult {

@@ -1,7 +1,7 @@
 // Utilitaires pour HourlyTable
 import type { GlobalMetrics, Stats15Min } from '../stores/volatility'
 
-export function getEstimatedPrice(globalMetrics?: GlobalMetrics): number {
+export function obtenirPrixEstime(globalMetrics?: GlobalMetrics): number {
   if (!globalMetrics) return 100000
   const atr = globalMetrics.mean_atr
   if (atr > 1000) return 100000

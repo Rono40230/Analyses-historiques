@@ -1,5 +1,5 @@
 // services/global_analyzer.rs - Moteur d'analyse statistique globale
-use super::global_analyzer_helpers::calculate_temporal_weight;
+use super::global_analyzer_helpers::calculer_poids_temporel;
 use super::global_analyzer_metrics::*;
 use super::global_analyzer_types::*;
 use crate::models::{AnalysisFilters, GlobalAnalysisResult};
@@ -116,7 +116,7 @@ impl GlobalAnalyzer {
                                     .expect("epoch time is valid"),
                             )
                         });
-                let weight = calculate_temporal_weight(created_at_dt);
+                let weight = calculer_poids_temporel(created_at_dt);
                 info!(
                     "Archive {} lue avec succès: {} (poids: {:.2})",
                     archive.id, data.symbol, weight

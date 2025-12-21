@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import type { ArchivedBacktestData } from './dataFetcher'
-import { formatPointsWithPips } from '../pipConverter'
+import { formaterPointsAvecPips } from '../pipConverter'
 
 export async function generateBacktestReport(doc: jsPDF, dataList: ArchivedBacktestData[], startY: number = 20) {
   doc.setFontSize(16)
@@ -32,9 +32,9 @@ export async function generateBacktestReport(doc: jsPDF, dataList: ArchivedBackt
     // Paramètres utilisés
     doc.setFontSize(9)
     doc.setTextColor(100)
-    const offsetStr = formatPointsWithPips(res.symbol, cfg.offset_pips)
-    const slStr = formatPointsWithPips(res.symbol, cfg.stop_loss_pips)
-    const tsStr = formatPointsWithPips(res.symbol, cfg.trailing_stop_pips)
+    const offsetStr = formaterPointsAvecPips(res.symbol, cfg.offset_pips)
+    const slStr = formaterPointsAvecPips(res.symbol, cfg.stop_loss_pips)
+    const tsStr = formaterPointsAvecPips(res.symbol, cfg.trailing_stop_pips)
     doc.text(`Mode: ${data.mode} | Offset: ${offsetStr} | SL: ${slStr} | TS: ${tsStr} | Spread: ${cfg.spread_pips}`, 14, yPos)
     doc.setTextColor(0)
     doc.setFontSize(10)
@@ -45,9 +45,9 @@ export async function generateBacktestReport(doc: jsPDF, dataList: ArchivedBackt
       ['Win Rate', `${res.win_rate_percent.toFixed(1)}%`],
       ['Profit Factor', res.profit_factor.toFixed(2)],
       ['Total Trades', res.total_trades.toString()],
-      ['Total Pips', formatPointsWithPips(res.symbol, res.total_pips)],
-      ['Max Drawdown', formatPointsWithPips(res.symbol, res.max_drawdown_pips)],
-      ['Avg Pips/Trade', formatPointsWithPips(res.symbol, res.average_pips_per_trade)]
+      ['Total Pips', formaterPointsAvecPips(res.symbol, res.total_pips)],
+      ['Max Drawdown', formaterPointsAvecPips(res.symbol, res.max_drawdown_pips)],
+      ['Avg Pips/Trade', formaterPointsAvecPips(res.symbol, res.average_pips_per_trade)]
     ]
 
     autoTable(doc, {
@@ -71,7 +71,7 @@ export async function generateBacktestReport(doc: jsPDF, dataList: ArchivedBackt
     const lastTrades = res.trades.slice(-5).reverse().map((t: any) => [
       new Date(t.event_date).toLocaleDateString(),
       t.outcome,
-      formatPointsWithPips(res.symbol, t.pips_net),
+      formaterPointsAvecPips(res.symbol, t.pips_net),
       `${t.duration_minutes}m`
     ])
 

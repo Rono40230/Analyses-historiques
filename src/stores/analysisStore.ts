@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 // Fonctions utilitaires pour persistance localStorage
-function saveHeatmapToStorage(data: HeatmapData, pairs: string[], calendarId: number | null) {
+function sauvegarderHeatmapStockage(data: HeatmapData, pairs: string[], calendarId: number | null) {
   const heatmapCache = {
     data,
     pairs,
@@ -13,7 +13,7 @@ function saveHeatmapToStorage(data: HeatmapData, pairs: string[], calendarId: nu
   localStorage.setItem('heatmapCalendarId', String(calendarId || 0))
 }
 
-function loadHeatmapFromStorage(): { data: HeatmapData; pairs: string[]; calendarId: number | null } | null {
+function chargerHeatmapStockage(): { data: HeatmapData; pairs: string[]; calendarId: number | null } | null {
   try {
     const cached = localStorage.getItem('heatmapCache')
     if (!cached) return null
@@ -28,7 +28,7 @@ function loadHeatmapFromStorage(): { data: HeatmapData; pairs: string[]; calenda
   }
 }
 
-function clearHeatmapFromStorage() {
+function effacerHeatmapStockage() {
   localStorage.removeItem('heatmapCache')
   localStorage.removeItem('heatmapCalendarId')
 }
@@ -128,18 +128,18 @@ export const useAnalysisStore = defineStore('analysis', () => {
     persistentHeatmapData.value = data
     heatmapLoadedFor.value = { pairs, calendarId }
     if (data) {
-      saveHeatmapToStorage(data, pairs, calendarId)
+      sauvegarderHeatmapStockage(data, pairs, calendarId)
     }
   }
 
   function resetHeatmapData() {
     persistentHeatmapData.value = null
     heatmapLoadedFor.value = null
-    clearHeatmapFromStorage()
+    effacerHeatmapStockage()
   }
 
   function restoreHeatmapFromStorage() {
-    const cached = loadHeatmapFromStorage()
+    const cached = chargerHeatmapStockage()
     if (cached) {
       persistentHeatmapData.value = cached.data
       heatmapLoadedFor.value = { pairs: cached.pairs, calendarId: cached.calendarId }
@@ -149,7 +149,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
     return false
   }
 
-  function getStoredHeatmapCalendarId(): number | null {
+  function obtenirIdCalendrierHeatmapStocke(): number | null {
     try {
       const calId = localStorage.getItem('heatmapCalendarId')
       return calId ? parseInt(calId, 10) || null : null
@@ -191,7 +191,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
     setPersistentHeatmapData,
     resetHeatmapData,
     restoreHeatmapFromStorage,
-    getStoredHeatmapCalendarId,
+    obtenirIdCalendrierHeatmapStocke,
     shouldReloadHeatmap,
     clearAnalysis,
   }

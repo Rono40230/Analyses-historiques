@@ -71,7 +71,7 @@ export const useBacktestStore = defineStore('backtest', () => {
   const currentSymbol = ref<string>('')
   const currentEvent = ref<string>('')
 
-  async function updateSymbolProperties(symbol: string) {
+  async function mettreAJourProprietesSymbole(symbol: string) {
     if (!symbol) return
     try {
       const props = await invoke<{ point_value: number, pip_value: number }>('get_symbol_properties', { symbol })
@@ -135,6 +135,8 @@ export const useBacktestStore = defineStore('backtest', () => {
     currentEvent,
     runBacktest,
     runBacktestTime,
-    updateSymbolProperties
+    mettreAJourProprietesSymbole,
+    // Alias pour compatibilité
+    updateSymbolProperties: mettreAJourProprietesSymbole
   }
 })

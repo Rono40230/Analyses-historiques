@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { jsPDF } from 'jspdf'
-import { fetchArchivedData, fetchBacktestArchivedData } from '../utils/pdf/dataFetcher'
+import { recupererDonneesArchivees, recupererDonneesBacktestArchivees } from '../utils/pdf/dataFetcher'
 import { 
   generateBidiReport, 
   generateRankingReport, 
@@ -50,7 +50,7 @@ export function usePdfExport() {
       
       let archivedDataList: any[] = []
       if (needsAnalysisData) {
-        archivedDataList = await fetchArchivedData(filters.pairs, (p) => {
+        archivedDataList = await recupererDonneesArchivees(filters.pairs, (p) => {
           progress.value = p * 0.5 // 50% du progrès pour le fetch
         })
         
@@ -62,7 +62,7 @@ export function usePdfExport() {
       // 2. Récupération des données Backtest (si nécessaire)
       let backtestDataList: any[] = []
       if (reportTypes.includes('backtest')) {
-        backtestDataList = await fetchBacktestArchivedData(filters.pairs, (p) => {
+        backtestDataList = await recupererDonneesBacktestArchivees(filters.pairs, (p) => {
            // Ajuster le progrès si on fetch aussi l'analyse
            const base = needsAnalysisData ? 50 : 0
            const scale = needsAnalysisData ? 0.25 : 0.5

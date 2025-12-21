@@ -16,7 +16,7 @@ export function useStraddleAnalysis() {
   const whipsawDetails = ref<WhipsawDetailResponse[]>([])
   const error = ref<string | null>(null)
 
-  const loadCandlesForQuarter = async (symbol: string, hour: number, quarter: number): Promise<any[]> => {
+  const chargerBougiesPourQuart = async (symbol: string, hour: number, quarter: number): Promise<any[]> => {
     try {
       const response = await invoke<any>('get_candles_for_quarter', { symbol, hour, quarter })
       return response.candles || []
@@ -57,6 +57,8 @@ export function useStraddleAnalysis() {
 
   return {
     isLoading, offsetOptimal, winRate, whipsawAnalysis, whipsawDetails, error,
-    analyzeStraddleMetrics, loadCandlesForQuarter, winRateColor,
+    analyzeStraddleMetrics, chargerBougiesPourQuart, winRateColor,
+    // Alias
+    loadCandlesForQuarter: chargerBougiesPourQuart
   }
 }
