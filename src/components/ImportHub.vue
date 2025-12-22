@@ -99,13 +99,13 @@ async function loadMetadata() {
   }
 }
 
-async function importCalendars() {
+async function importCalendars(isWeeklyPlanning: boolean = false) {
   loadingCalendars.value = true
   try {
     const selected = await open({ multiple: true, filters: [{ name: 'CSV', extensions: ['csv'] }] })
     if (!selected) return
     const paths = Array.isArray(selected) ? selected : [selected]
-    await invoke('import_calendar_files', { paths })
+    await invoke('import_calendar_files', { paths, isWeeklyPlanning })
     await loadMetadata()
     store.triggerDataRefresh()
   } catch (err) {

@@ -62,3 +62,28 @@ pub fn save_calendar_import(
 
     Ok(calendar_id)
 }
+
+pub fn delete_calendar_import_by_name(conn: &Connection, name: &str) -> Result<(), String> {
+    let id_result: Result<i32, _> = conn.query_row(
+        "SELECT id FROM calendar_imports WHERE name = ?1",
+        rusqlite::params![name],
+        |row| row.get(0),
+    );
+
+    if let Ok(calendar_id) = id_result {
+        // Supprimer les événements liés
+        conn.execute(
+            "DELETE FROM calendar_events WHERE calendar_import_id = ?1",
+            rusqlite::params![calendar_id],
+        )
+        .map_err(|e| format!("Failed to delete events for calendar {}: {}", name, e))?;
+
+        // Supprimer l'import lui-même
+        conn.execute(
+            "DELETE FROM calendar_imports WHERE id = ?1",
+            rusqlite::params![calendar_id],
+        )
+        .map_err(|e| format!("Failed to delete calendar import {}: {}", name, e))?;
+    }
+    Ok(())
+}

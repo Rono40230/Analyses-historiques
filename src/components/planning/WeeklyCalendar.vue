@@ -12,13 +12,18 @@ interface ProjectedEvent {
   time: string
   name: string
   currency: string
-  impact: string
+  impact: 'High' | 'Medium' | 'Low'
   pair: string
   offset: number
   tp: number
   sl: number
+  offset_simultaneous: number
+  tp_simultaneous: number
+  sl_simultaneous: number
   confidence_score: number
   source: string
+  has_history: boolean
+  occurrence_count: number
 }
 
 // Structure de données pour un jour
@@ -28,9 +33,27 @@ interface DayColumn {
   events: ProjectedEvent[]
 }
 
+const emit = defineEmits<{
+  (e: 'analyze', event: ProjectedEvent, pair: string): void
+}>()
+
 const events = ref<ProjectedEvent[]>([])
+const availablePairs = ref<string[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
+
+async function loadPairs() {
+  try {
+    availablePairs.value = await invoke('get_available_pairs')
+  } catch (e) {
+    // Fallback silently
+    availablePairs.value = ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCAD', 'AUDUSD', 'NZDUSD', 'USDCHF', 'XAUUSD']
+  }
+}
+
+onMounted(() => {
+  loadPairs()
+})
 
 async function loadEvents() {
   loading.value = true
@@ -129,7 +152,9 @@ function isToday(date: Date): boolean {
           v-for="event in day.events" 
           :key="event.id"
           :event="event"
+          :available-pairs="availablePairs"
           @update="handleEventUpdate"
+          @analyze="(evt, pair) => emit('analyze', evt, pair)"
         />
       </div>
     </div>

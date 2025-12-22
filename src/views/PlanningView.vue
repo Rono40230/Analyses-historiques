@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import WeeklyCalendar from '../components/planning/WeeklyCalendar.vue'
+import AnalysisModal from '../components/planning/AnalysisModal.vue'
 
 // État pour la semaine sélectionnée
 // Par défaut : semaine courante
@@ -10,6 +11,11 @@ const selectedDate = ref(currentDate)
 const calendarKey = ref(0)
 const syncing = ref(false)
 const error = ref<string | null>(null)
+
+// État pour la modale d'analyse
+const showAnalysisModal = ref(false)
+const analysisEventName = ref('')
+const analysisInitialPair = ref('')
 
 // Calcul du début et fin de semaine pour l'affichage
 const weekStart = computed(() => {
@@ -54,6 +60,32 @@ async function syncCalendar() {
     syncing.value = false
   }
 }
+
+function getDefaultPairForCurrency(currency: string): string {
+  const map: Record<string, string> = {
+    'USD': 'EURUSD',
+    'EUR': 'EURUSD',
+    'GBP': 'GBPUSD',
+    'JPY': 'USDJPY',
+    'CAD': 'USDCAD',
+    'AUD': 'AUDUSD',
+    'NZD': 'NZDUSD',
+    'CHF': 'USDCHF'
+  }
+  return map[currency] || 'EURUSD'
+}
+
+function openAnalysis(event: any, pair: string) {
+  analysisEventName.value = event.name
+  analysisInitialPair.value = pair || getDefaultPairForCurrency(event.currency)
+  showAnalysisModal.value = true
+}
+
+function closeAnalysis() {
+  showAnalysisModal.value = false
+  // Recharger le calendrier pour voir les nouvelles archives
+  calendarKey.value++
+}
 </script>
 
 <template>
@@ -80,15 +112,23 @@ async function syncCalendar() {
           <span v-else>🔄</span>
           Synchronisation des événements de la semaine
         </button>
-        <button class="btn-primary">
-          🖨️ Exporter la Feuille
-        </button>
       </div>
     </header>
 
     <main class="planning-content">
-      <WeeklyCalendar :week-start="weekStart" :key="calendarKey" />
+      <WeeklyCalendar 
+        :week-start="weekStart" 
+        :key="calendarKey" 
+        @analyze="openAnalysis"
+      />
     </main>
+
+    <AnalysisModal
+      :is-open="showAnalysisModal"
+      :event-name="analysisEventName"
+      :initial-pair="analysisInitialPair"
+      @close="closeAnalysis"
+    />
   </div>
 </template>
 

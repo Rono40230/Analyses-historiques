@@ -80,6 +80,8 @@ interface SymbolItem { symbol: string; file_path?: string }
 const props = defineProps<{ 
   calendarId: number | null
   showCalendarSelector?: boolean
+  initialPair?: string
+  initialEventType?: string
 }>()
 
 const emit = defineEmits<{
@@ -87,6 +89,20 @@ const emit = defineEmits<{
 }>()
 
 const store = useRetroAnalysisStore()
+
+// Initialisation depuis les props (mode Modal/Planning)
+onMounted(() => {
+  if (props.initialPair) {
+    store.selectedPair = props.initialPair
+  }
+  if (props.initialEventType) {
+    store.selectedEventType = props.initialEventType
+    // Si on a les deux, on lance le chargement automatiquement
+    if (props.initialPair) {
+      load()
+    }
+  }
+})
 
 const { peakDelayLoading, peakDelayError, peakDelayResults, analyzePeakDelay,
          decayLoading, decayError, decayResults, analyzeDecayProfile,

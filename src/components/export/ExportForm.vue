@@ -3,12 +3,6 @@
     <h3>1. Sélectionner les rapports</h3>
     <div class="checkbox-group">
       <label class="checkbox-label">
-        <input type="checkbox" :checked="selectedReports.includes('backtest')" @change="toggleReport('backtest')">
-        <span class="label-text">Rapport de Backtest</span>
-        <span class="label-desc">Performance (Win Rate, Drawdown, Equity Curve)</span>
-      </label>
-
-      <label class="checkbox-label">
         <input type="checkbox" :checked="selectedReports.includes('bidi_period')" @change="toggleReport('bidi_period')">
         <span class="label-text">Fiche Bidi : Paire/Période</span>
         <span class="label-desc">Volatilité Brute (Session Trading)</span>

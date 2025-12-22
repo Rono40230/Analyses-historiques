@@ -27,16 +27,22 @@
         </tbody>
       </table>
     </div>
-    <button class="btn-import" :disabled="loading" @click="$emit('import')">
-      <span v-if="loading" class="spinner">⏳</span>
-      <span v-else>📥</span>
-      Importer calendrier
-    </button>
+    <div class="import-controls">
+      <label class="checkbox-label">
+        <input type="checkbox" v-model="isWeeklyPlanning">
+        <span>Planning Hebdo (remplace l'ancien)</span>
+      </label>
+      <button class="btn-import" :disabled="loading" @click="$emit('import', isWeeklyPlanning)">
+        <span v-if="loading" class="spinner">⏳</span>
+        <span v-else>📥</span>
+        Importer calendrier
+      </button>
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue'
+import { ref, defineProps, defineEmits } from 'vue'
 
 interface CalendarMetadata {
   id: number
@@ -45,6 +51,8 @@ interface CalendarMetadata {
   start_date?: string
   end_date?: string
 }
+
+const isWeeklyPlanning = ref(false)
 
 defineProps<{
   calendarsMetadata: CalendarMetadata[]
@@ -91,6 +99,9 @@ function formatCalendarPeriod(calendar: CalendarMetadata): string {
 .btn-import { display: block; width: 100%; padding: 12px 20px; background: linear-gradient(135deg, #1f6feb 0%, #388bfd 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; margin-top: 15px; transition: all 0.3s; }
 .btn-import:hover { background: linear-gradient(135deg, #1664d9 0%, #2d7ee5 100%); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(31, 111, 235, 0.4); }
 .btn-import:disabled { opacity: 0.7; cursor: not-allowed; }
+.import-controls { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+.checkbox-label { display: flex; align-items: center; gap: 8px; color: #e2e8f0; font-size: 0.9em; cursor: pointer; }
+.checkbox-label input { cursor: pointer; }
 .spinner { display: inline-block; animation: spin 1s linear infinite; margin-right: 6px; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 .btn-delete { padding: 6px 12px; background: #dc2626; color: white; border: none; border-radius: 6px; cursor: pointer; }

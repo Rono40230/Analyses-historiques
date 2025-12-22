@@ -32,11 +32,19 @@ impl ProjectionEngine {
         // 2. Fetch all archives
         let archives = self.archive_service.list_archives()?;
 
+        // 3. Fetch known event counts from history
+        let known_events = self.fetch_known_event_counts()?;
+
         let mut projected = Vec::new();
 
         for event in events {
+            let occurrence_count = known_events.get(&event.description).cloned().unwrap_or(0);
+            let has_history = occurrence_count > 0;
+
             // Find best matching archive
-            if let Some(match_data) = self.find_best_match(&event, &archives) {
+            if let Some(mut match_data) = self.find_best_match(&event, &archives) {
+                match_data.has_history = has_history;
+                match_data.occurrence_count = occurrence_count;
                 projected.push(match_data);
             } else {
                 // Add event without projection
@@ -50,13 +58,35 @@ impl ProjectionEngine {
                     offset: 0.0,
                     tp: 0.0,
                     sl: 0.0,
+                    offset_simultaneous: 0.0,
+                    tp_simultaneous: 0.0,
+                    sl_simultaneous: 0.0,
                     confidence_score: 0.0,
                     source: "None".to_string(),
+                    has_history,
+                    occurrence_count,
                 });
             }
         }
 
         Ok(projected)
+    }
+
+    fn fetch_known_event_counts(&self) -> Result<std::collections::HashMap<String, i64>, String> {
+        use diesel::dsl::count;
+        
+        let mut conn = self.calendar_pool.get().map_err(|e| e.to_string())?;
+        
+        let now = Utc::now().naive_utc();
+        
+        let results = calendar_events::table
+            .filter(calendar_events::event_time.lt(now))
+            .group_by(calendar_events::description)
+            .select((calendar_events::description, count(calendar_events::id)))
+            .load::<(String, i64)>(&mut conn)
+            .map_err(|e| e.to_string())?;
+            
+        Ok(results.into_iter().collect())
     }
 
     fn fetch_calendar_events(
@@ -72,6 +102,7 @@ impl ProjectionEngine {
         calendar_events::table
             .filter(calendar_events::event_time.ge(start_naive))
             .filter(calendar_events::event_time.le(end_naive))
+            .filter(calendar_events::impact.eq_any(vec!["High", "Medium"]))
             .order(calendar_events::event_time.asc())
             .select(CalendarEvent::as_select())
             .load::<CalendarEvent>(&mut conn)
@@ -98,11 +129,25 @@ impl ProjectionEngine {
                             if score > best_score {
                                 best_score = score;
                                 
-                                // Extract params from straddle_params or similar
-                                let params = data.get("straddle_params");
-                                let offset = params.and_then(|p| p.get("offset").and_then(|v| v.as_f64())).unwrap_or(0.0);
-                                let tp = params.and_then(|p| p.get("tp").and_then(|v| v.as_f64())).unwrap_or(0.0);
-                                let sl = params.and_then(|p| p.get("sl").and_then(|v| v.as_f64())).unwrap_or(0.0);
+                                // Extract params (support both legacy straddle_params and new root-level format)
+                                let (offset, tp, sl) = if let Some(params) = data.get("straddle_params") {
+                                    (
+                                        params.get("offset").and_then(|v| v.as_f64()).unwrap_or(0.0),
+                                        params.get("tp").and_then(|v| v.as_f64()).unwrap_or(0.0),
+                                        params.get("sl").and_then(|v| v.as_f64()).unwrap_or(0.0)
+                                    )
+                                } else {
+                                    (
+                                        data.get("offset").and_then(|v| v.as_f64()).unwrap_or(0.0),
+                                        data.get("trailingStop").and_then(|v| v.as_f64()).unwrap_or(0.0),
+                                        data.get("stopLoss").and_then(|v| v.as_f64()).unwrap_or(0.0)
+                                    )
+                                };
+
+                                // Extract simultaneous params
+                                let offset_simultaneous = data.get("offsetSimultaneous").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                                let tp_simultaneous = data.get("trailingStopSimultaneous").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                                let sl_simultaneous = data.get("stopLossSimultaneous").and_then(|v| v.as_f64()).unwrap_or(0.0);
                                 
                                 best_match = Some(ProjectedEvent {
                                     id: event.id.to_string(),
@@ -114,8 +159,13 @@ impl ProjectionEngine {
                                     offset,
                                     tp,
                                     sl,
+                                    offset_simultaneous,
+                                    tp_simultaneous,
+                                    sl_simultaneous,
                                     confidence_score: score,
                                     source: "Archive".to_string(),
+                                    has_history: false, // Will be updated in caller
+                                    occurrence_count: 0, // Will be updated in caller
                                 });
                             }
                         }

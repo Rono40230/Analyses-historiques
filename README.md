@@ -34,61 +34,69 @@ L'application permet de répondre précisément aux questions suivantes avant ch
 
 ## 🛠️ Workflow par Onglet
 
-L'application est organisée en 5 onglets principaux suivant le flux de travail logique d'un trader.
+L'application est organisée en 6 onglets principaux suivant le flux de travail logique d'un trader.
 
-### 1. 🔥 Heatmap de Corrélation (Vue d'ensemble)
-*C'est le point de départ pour identifier les opportunités de la semaine.*
+### 1. 📅 Planning (Feuille de Route Hebdomadaire)
+*C'est votre tableau de bord opérationnel pour la semaine à venir.*
+*   **Fonctionnement :** Affiche le calendrier économique de la semaine en cours (synchronisé depuis Forex Factory ou importé manuellement).
+*   **Cartes Événements :** Chaque événement futur est affiché avec :
+    *   Un badge d'impact (High/Medium).
+    *   Un badge indiquant le nombre d'occurrences historiques disponibles (📚).
+*   **Workflow d'Analyse :**
+    1.  Sélectionnez la paire à trader directement sur la carte de l'événement.
+    2.  Cliquez sur le bouton **"📊 Analyser"**.
+    3.  Une fenêtre s'ouvre avec l'analyse historique complète et les paramètres optimaux (Offset, SL, TP).
+    4.  Si une stratégie "Simultanée" (Double Straddle) est possible, les paramètres additionnels s'affichent.
+
+### 2. 📥 Calendrier (Import Hub)
+*Le centre de gestion de vos données.*
+*   **Import Calendrier :** Deux modes d'importation :
+    *   **Historique Général :** Importez un gros fichier CSV (ex: 2018-2024) pour nourrir les statistiques.
+    *   **Planning Hebdo :** Cochez la case "Planning Hebdo" pour importer le fichier de la semaine en cours. Cela remplace automatiquement l'ancien planning sans toucher à votre historique général.
+*   **Import Paires :** Importez vos données OHLC (M1) pour permettre les calculs de volatilité.
+
+### 3. 🔥 Heatmap de Corrélation
+*Pour identifier les opportunités en un coup d'œil.*
 *   **Fonctionnement :** Affiche une matrice visuelle (Événements x Paires).
 *   **Lecture :**
     *   🟥 **Rouge** : Impact violent, forte volatilité.
     *   🟩 **Vert** : Impact faible ou nul.
-*   **Action :** Cliquez sur une case "chaude" pour voir les détails de l'impact historique de cet événement sur cette paire.
+*   **Action :** Cliquez sur une case pour lancer une analyse détaillée.
 
-### 2. 📊 Volatilité Brute (Analyse Technique)
-*Pour analyser le comportement d'une paire indépendamment des news.*
-*   **Fonctionnement :** Sélectionnez une paire (ex: EURUSD). L'appli analyse chaque heure de la journée sur l'historique complet.
+### 4. 📊 Volatilité (Analyse Technique)
+*Pour analyser le comportement structurel d'une paire.*
+*   **Fonctionnement :** Sélectionnez une paire (ex: EURUSD). L'appli analyse chaque heure de la journée.
 *   **Résultat :**
-    *   **Tableau Horaire :** Montre la volatilité moyenne, le bruit et les mouvements pour chaque heure (00h-23h).
-    *   **Recommandation :** Identifie les "Golden Hours" (meilleures heures pour trader) et les zones de danger.
+    *   **Tableau Horaire :** Volatilité moyenne, bruit, mouvements pour chaque heure.
+    *   **Analyse Bidi :** Cliquez sur une heure pour voir l'analyse bidirectionnelle détaillée (probabilités de mouvement haussier vs baissier).
 
-### 3. 📊 Corrélation Événementielle (Analyse Fondamentale)
-*Le cœur du système pour le News Trading.*
-*   **Workflow :**
-    1.  Choisissez un événement (ex: "Non-Farm Employment Change").
-    2.  L'appli charge toutes les occurrences passées de cet événement.
-    3.  Elle superpose les graphiques M1 (1 minute) pour montrer la "signature" moyenne de l'événement.
-*   **Métriques Clés :**
-    *   **Pic de volatilité :** Combien de minutes après l'annonce le mouvement max se produit-il ?
-    *   **Directionnalité :** Est-ce que ça part tout droit ou est-ce que ça hésite ?
+### 5. 🧪 Backtest & Archives
+*Pour valider et sauvegarder.*
+*   **Archives :** Retrouvez toutes vos analyses sauvegardées depuis l'onglet Planning ou Volatilité.
+*   **Backtest :** Rejouez les événements passés tick par tick avec vos paramètres (Offset, SL, TP) pour vérifier la robustesse de la stratégie (Win Rate, Drawdown, Equity Curve).
 
-### 4. 🧪 Backtest (Simulation)
-*Pour valider votre stratégie avant de risquer un centime.*
-*   **Workflow :**
-    1.  Configurez vos paramètres (Offset, SL, TP, Trailing Stop).
-    2.  Lancez la simulation sur l'historique.
-    3.  L'appli "rejoue" chaque événement passé tick par tick.
-*   **Résultat :**
-    *   **Win Rate :** Taux de réussite théorique.
-    *   **Drawdown :** Pire perte historique.
-    *   **Equity Curve :** Courbe de progression du capital.
-
-### 5. 🗄️ Archives & Exports
-*Pour sauvegarder et partager votre travail.*
-*   **Archives :** Sauvegardez vos analyses prometteuses pour les retrouver plus tard.
-*   **Exports PDF :** Générez des rapports professionnels :
-    *   *Fiche Paramètres :* Les réglages exacts à copier dans votre plateforme de trading.
-    *   *Blacklist :* Les événements à bannir absolument.
-    *   *Rapport de Backtest :* Preuve de performance de la stratégie.
+### 6. 🖨️ Exports
+*Pour générer vos fiches de trading.*
+*   Générez des rapports PDF professionnels incluant :
+    *   Les paramètres de trading (Entrée, SL, TP).
+    *   Les statistiques de volatilité.
+    *   Le classement des meilleures opportunités.
 
 ---
 
 ## 📥 Importation de Données
 
-Pour fonctionner, l'application a besoin de carburant (données) :
-1.  **Données de Prix (Bougies) :** Fichiers CSV exportés depuis MT4/MT5 ou Dukascopy (Format OHLCV).
-2.  **Calendrier Économique :** Fichier CSV contenant l'historique des annonces économiques (Date, Heure, Impact, Devise).
+Pour fonctionner, l'application a besoin de deux types de données :
 
-*L'onglet "Importer" permet de charger, nettoyer et stocker ces données dans la base locale sécurisée.*
+1.  **Données de Prix (Bougies M1) :**
+    *   Fichiers CSV exportés depuis MT4/MT5 ou Dukascopy.
+    *   Format attendu : Date, Open, High, Low, Close, Volume.
+    *   *Astuce :* L'application nettoie et convertit automatiquement les formats courants.
+
+2.  **Calendriers Économiques (CSV) :**
+    *   **Source recommandée :** Forex Factory.
+    *   **Format :** Date, Time, Currency, Impact, Event Name.
+    *   *Workflow :* Importez un gros historique une fois pour toutes, puis mettez à jour le "Planning Hebdo" chaque semaine.
 
 ---
 

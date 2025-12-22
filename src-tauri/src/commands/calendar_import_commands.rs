@@ -5,8 +5,8 @@ use rusqlite::Connection;
 use std::fs;
 
 #[tauri::command]
-pub async fn import_calendar_files(paths: Vec<String>) -> Result<String, String> {
-    tracing::info!("📥 Starting calendar import for {} file(s)", paths.len());
+pub async fn import_calendar_files(paths: Vec<String>, is_weekly_planning: bool) -> Result<String, String> {
+    tracing::info!("📥 Starting calendar import for {} file(s) (Weekly: {})", paths.len(), is_weekly_planning);
 
     if paths.is_empty() {
         return Err("Aucun fichier fourni".to_string());
@@ -62,7 +62,17 @@ pub async fn import_calendar_files(paths: Vec<String>) -> Result<String, String>
         .ok_or("Invalid file path")?
         .to_string();
 
-    let calendar_name = filename.trim_end_matches(".csv").to_string();
+    let calendar_name = if is_weekly_planning {
+        "Planning Hebdo".to_string()
+    } else {
+        filename.trim_end_matches(".csv").to_string()
+    };
+
+    // Si c'est un planning hebdo, on supprime l'ancien s'il existe
+    if is_weekly_planning {
+        use crate::commands::calendar_db_helper::delete_calendar_import_by_name;
+        let _ = delete_calendar_import_by_name(&conn, &calendar_name);
+    }
 
     let calendar_id = save_calendar_import(&conn, &calendar_name, &filename, &events)?;
 
