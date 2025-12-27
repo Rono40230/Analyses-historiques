@@ -49,6 +49,18 @@ impl EventLoader {
 
         let mut associated_count = 0;
         for (i, event) in events.iter().enumerate() {
+            // FILTRE DEVIATION (Priority 2): Ignorer les événements sans surprise (Actual == Forecast)
+            if let (Some(actual), Some(forecast)) = (event.actual, event.forecast) {
+                let deviation = (actual - forecast).abs();
+                // Seuil minimal pour considérer une déviation (évite les erreurs d'arrondi flottant)
+                if deviation < 0.0000001 {
+                    if i < 10 { // Log limité pour ne pas spammer
+                        tracing::info!("Skipping neutral event: {} (Actual={:?}, Forecast={:?})", event.description, actual, forecast);
+                    }
+                    continue;
+                }
+            }
+
             // On utilise l'heure UTC pour matcher les stats UTC
             let event_hour = event.event_time.hour() as u8;
 
@@ -152,6 +164,17 @@ impl EventLoader {
         let mut skipped_impact_count = 0;
 
         for (i, event) in events.iter().enumerate() {
+            // FILTRE DEVIATION (Priority 2): Ignorer les événements sans surprise (Actual == Forecast)
+            if let (Some(actual), Some(forecast)) = (event.actual, event.forecast) {
+                let deviation = (actual - forecast).abs();
+                if deviation < 0.0000001 {
+                    if i < 10 {
+                        tracing::info!("Skipping neutral event (15min): {} (Actual={:?}, Forecast={:?})", event.description, actual, forecast);
+                    }
+                    continue;
+                }
+            }
+
             if i < 3 {
                  tracing::debug!("Event sample: {} - Impact: {}", event.description, event.impact);
             }

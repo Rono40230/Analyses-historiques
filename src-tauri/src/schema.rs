@@ -33,9 +33,9 @@ diesel::table! {
         event_time -> Timestamp,
         impact -> Text,
         description -> Text,
-        actual -> Nullable<Float>,
-        forecast -> Nullable<Float>,
-        previous -> Nullable<Float>,
+        actual -> Nullable<Double>,
+        forecast -> Nullable<Double>,
+        previous -> Nullable<Double>,
         created_at -> Timestamp,
         calendar_import_id -> Integer,
     }

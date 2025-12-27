@@ -35,6 +35,7 @@ pub async fn load_events_by_type(
     mut conn: diesel::r2d2::PooledConnection<diesel::r2d2::ConnectionManager<SqliteConnection>>,
     event_type_param: &str,
 ) -> Result<Vec<crate::models::CalendarEvent>, String> {
+    use diesel::SelectableHelper;
     calendar_events
         .filter(description.eq(event_type_param))
         .select(crate::models::CalendarEvent::as_select())

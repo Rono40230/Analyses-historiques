@@ -168,7 +168,7 @@ mod tests {
             EventMetricsAggregator::new(&candles, event_time, "Test Event".to_string());
 
         let config = MetricsConfig::default();
-        let result = aggregator.calculate_all_metrics(config);
+        let result = aggregator.calculer_toutes_metriques(config);
 
         assert!(result.is_ok());
         let metrics = result.expect("Failed to calculate metrics");

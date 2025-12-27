@@ -76,12 +76,12 @@ async function loadMetadata() {
   } catch (err) { /* Silent */ }
 }
 
-async function importCalendars(isWeeklyPlanning: boolean = false) {
+async function importCalendars() {
   loadingCalendars.value = true
   try {
     const selected = await open({ multiple: true, filters: [{ name: 'CSV', extensions: ['csv'] }] })
     if (!selected) return
-    await invoke('import_calendar_files', { paths: Array.isArray(selected) ? selected : [selected], isWeeklyPlanning })
+    await invoke('import_calendar_files', { paths: Array.isArray(selected) ? selected : [selected] })
     await loadMetadata()
     store.triggerDataRefresh()
   } catch (err) { /* Silent */ } finally { loadingCalendars.value = false }
@@ -103,11 +103,9 @@ function deleteCalendar(id: number) {
   showDeleteConfirm.value = true
 }
 
-function deletePair(symbol: string) {
-  const pair = pairsMetadata.value.find(p => p.symbol === symbol)
-  if (!pair) return
+function deletePair(pair: PairMetadataInfo) {
   deleteType.value = 'pair'; deleteId.value = pair.id || 0; deleteSymbol.value = pair.symbol; deleteTimeframe.value = pair.timeframe
-  deleteMessage.value = 'Supprimer cette paire et toutes ses bougies?'
+  deleteMessage.value = `Supprimer la paire ${pair.symbol} (${pair.timeframe}) et toutes ses bougies?`
   showDeleteConfirm.value = true
 }
 

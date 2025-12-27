@@ -16,6 +16,9 @@ pub struct ParsedEvent {
     pub currency: String,
     pub event: String,
     pub impact: String,
+    pub actual: Option<String>,
+    pub forecast: Option<String>,
+    pub previous: Option<String>,
 }
 
 /// Résultat de conversion
@@ -83,12 +86,19 @@ impl CalendarConverter {
 
             let date_normalized = normalize_date(date)?;
 
+            let actual = record.get(5).map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
+            let forecast = record.get(6).map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
+            let previous = record.get(7).map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
+
             events.push(ParsedEvent {
                 date: date_normalized,
                 time: time.to_string(),
                 currency: currency.to_string(),
                 event: event_name.to_string(),
                 impact: impact_normalized.to_string(),
+                actual,
+                forecast,
+                previous,
             });
         }
 
@@ -142,12 +152,19 @@ impl CalendarConverter {
 
             let date_normalized = normalize_date(&date)?;
 
+            let actual = if row.len() > 5 { Some(cell_to_string(&row[5]).trim().to_string()).filter(|s| !s.is_empty()) } else { None };
+            let forecast = if row.len() > 6 { Some(cell_to_string(&row[6]).trim().to_string()).filter(|s| !s.is_empty()) } else { None };
+            let previous = if row.len() > 7 { Some(cell_to_string(&row[7]).trim().to_string()).filter(|s| !s.is_empty()) } else { None };
+
             events.push(ParsedEvent {
                 date: date_normalized,
                 time: time.trim().to_string(),
                 currency: currency.trim().to_string(),
                 event: event_name.trim().to_string(),
                 impact: impact_normalized.to_string(),
+                actual,
+                forecast,
+                previous,
             });
         }
 
@@ -167,16 +184,20 @@ impl CalendarConverter {
         let mut file =
             File::create(output_path).context("Impossible de créer le fichier de sortie")?;
 
-        writeln!(
-            file,
-            "Date,Time,Currency,Event,Impact,Actual,Forecast,Previous"
-        )?;
+        writeln!(file, "Date,Time,Currency,Event,Impact,Actual,Forecast,Previous")?;
 
         for event in events {
             writeln!(
                 file,
-                "{},{},{},{},{},,,",
-                event.date, event.time, event.currency, event.event, event.impact
+                "{},{},{},{},{},{},{},{}",
+                event.date,
+                event.time,
+                event.currency,
+                event.event,
+                event.impact,
+                event.actual.as_deref().unwrap_or(""),
+                event.forecast.as_deref().unwrap_or(""),
+                event.previous.as_deref().unwrap_or("")
             )?;
         }
 
@@ -223,6 +244,9 @@ mod tests {
             currency: "EUR".to_string(),
             event: "ECB Interest Rate".to_string(),
             impact: "HIGH".to_string(),
+            actual: None,
+            forecast: None,
+            previous: None,
         };
         assert_eq!(event.date, "2025-01-15");
         assert_eq!(event.impact, "HIGH");
@@ -246,6 +270,9 @@ mod tests {
             currency: "EUR".to_string(),
             event: "ECB Rate".to_string(),
             impact: "HIGH".to_string(),
+            actual: Some("4.5".to_string()),
+            forecast: Some("4.2".to_string()),
+            previous: Some("4.0".to_string()),
         }];
         let temp_path = "/tmp/test_calendar.csv";
         assert!(CalendarConverter::save_to_csv(&events, temp_path).is_ok());

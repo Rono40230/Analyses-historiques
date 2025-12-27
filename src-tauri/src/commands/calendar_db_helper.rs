@@ -4,7 +4,7 @@ pub fn save_calendar_import(
     conn: &Connection,
     name: &str,
     filename: &str,
-    events: &[(String, String, String, String)],
+    events: &[(String, String, String, String, Option<f64>, Option<f64>, Option<f64>)],
 ) -> Result<i32, String> {
     if events.is_empty() {
         return Err("Aucun événement à sauvegarder".to_string());
@@ -13,7 +13,7 @@ pub fn save_calendar_import(
     let mut oldest_date: Option<String> = None;
     let mut newest_date: Option<String> = None;
 
-    for (event_time, _, _, _) in events {
+    for (event_time, _, _, _, _, _, _) in events {
         if oldest_date
             .as_ref()
             .map(|o| event_time < o)
@@ -43,19 +43,22 @@ pub fn save_calendar_import(
     // Insérer les événements
     let mut stmt = conn
         .prepare(
-            "INSERT INTO calendar_events (symbol, event_time, impact, description, calendar_import_id, created_at) 
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            "INSERT INTO calendar_events (symbol, event_time, impact, description, calendar_import_id, created_at, actual, forecast, previous) 
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
         )
         .map_err(|e| format!("Failed to prepare insert statement: {}", e))?;
 
-    for (event_time, symbol, impact, description) in events {
+    for (event_time, symbol, impact, description, actual, forecast, previous) in events {
         stmt.execute(rusqlite::params![
             symbol,
             event_time,
             impact,
             description,
             calendar_id,
-            chrono::Utc::now().to_rfc3339()
+            chrono::Utc::now().to_rfc3339(),
+            actual,
+            forecast,
+            previous
         ])
         .map_err(|e| format!("Failed to insert event: {}", e))?;
     }

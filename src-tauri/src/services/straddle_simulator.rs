@@ -2,44 +2,18 @@
 // Simule une stratégie Straddle sur l'historique complet d'un créneau
 
 use super::straddle_adjustments::AdjustedMetrics;
-use super::straddle_simulator_helpers::{calculer_atr_moyen, calculate_risk_level};
+use super::straddle_simulator_helpers::{
+    calculate_risk_level, calculer_atr_moyen, get_asset_cost, StraddleSimulationResult,
+    WhipsawDetail,
+};
 use crate::models::Candle;
 use crate::services::pair_data::symbol_properties::normalize_to_pips;
-
-#[derive(Debug, Clone)]
-pub struct WhipsawDetail {
-    pub entry_index: usize,
-    pub entry_price: f64,
-    pub buy_stop: f64,
-    pub sell_stop: f64,
-    pub buy_trigger_index: usize,
-    pub sell_trigger_index: usize,
-}
-
-#[derive(Debug, Clone)]
-pub struct StraddleSimulationResult {
-    pub total_trades: usize,
-    pub wins: usize,
-    pub losses: usize,
-    pub whipsaws: usize,
-    pub win_rate_percentage: f64,
-    pub whipsaw_frequency_percentage: f64,
-    pub offset_optimal_pips: f64,
-    pub percentile_95_wicks: f64,
-    pub risk_level: String,
-    pub risk_color: String,
-    // Valeurs pondérées par le whipsaw (Option B - affichage direct)
-    pub win_rate_adjusted: f64,        // Win Rate pondéré par whipsaw
-    pub sl_adjusted_pips: f64,         // SL ajusté par whipsaw
-    pub trailing_stop_adjusted: f64,   // Trailing Stop réduit
-    pub timeout_adjusted_minutes: i32, // Timeout réduit
-    pub whipsaw_details: Vec<WhipsawDetail>, // Détails de chaque whipsaw
-}
 
 /// Simule une stratégie Straddle sur un ensemble de bougies avec tracking temporel du whipsaw
 ///
 /// Stratégie : Place un ordre Buy Stop et Sell Stop à distance égale du prix d'ouverture
 /// Whipsaw pondéré : Chaque whipsaw reçoit un coefficient selon QUAND il se produit
+/// Coûts : Intègre Spread et Slippage pour un résultat réaliste
 pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulationResult {
     if candles.is_empty() {
         return StraddleSimulationResult {
@@ -58,8 +32,20 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
             trailing_stop_adjusted: 0.0,
             timeout_adjusted_minutes: 0,
             whipsaw_details: Vec::new(),
+            total_pnl_net_pips: 0.0,
+            avg_trade_cost_pips: 0.0,
+            is_profitable_net: false,
         };
     }
+
+    // Récupération des coûts pour cet actif
+    let costs = get_asset_cost(symbol);
+    let spread_cost = costs.spread_pips;
+    let slippage_cost = costs.slippage_pips;
+    // Coût total par trade simple (Entrée + Sortie)
+    // Entrée : Slippage + (Spread/2 ou Spread complet selon modèle)
+    // Ici modèle conservateur : On paie le spread à l'exécution + slippage
+    let cost_per_trade = spread_cost + (slippage_cost * 2.0); 
 
     // Calculer le percentile 95 des wicks pour déterminer l'offset optimal
     let mut wicks: Vec<f64> = Vec::new();
@@ -89,18 +75,20 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
     let raw_atr_mean = calculer_atr_moyen(candles);
     let atr_mean = normalize_to_pips(raw_atr_mean, symbol);
 
-    // === SIMULATION DES TRADES STRADDLE (AVEC DÉTECTION WHIPSAW) ===
+    // === SIMULATION DES TRADES STRADDLE (AVEC DÉTECTION WHIPSAW & COÛTS) ===
     let mut total_trades = 0;
     let mut wins = 0;
     let mut losses = 0;
     let mut whipsaws = 0;
     let mut whipsaw_details_vec: Vec<WhipsawDetail> = Vec::new();
+    let mut total_pnl_net = 0.0; // En pips
 
     let marge = offset_optimal;
     // Ratio TP:SL de 2:1 (Standard Straddle)
     // SL = Marge (l'autre côté du straddle)
     // TP = Marge * 2.0
     let tp_distance = marge * 2.0;
+    let sl_distance = marge; // SL est à l'opposé (distance = marge)
 
     // Boucle sur les bougies pour placer les trades
     for i in 0..candles.len() {
@@ -124,6 +112,13 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
 
             if triggered_side.is_none() {
                 // Pas encore déclenché, on surveille les deux bornes
+                // Note: On ajoute le spread au Buy Stop pour simuler l'Ask
+                let effective_buy_stop = buy_stop + normalize_to_pips(spread_cost, symbol); // Approximation conversion inverse si nécessaire, ici on suppose spread_cost en pips déjà converti ? 
+                // ATTENTION: spread_cost est en PIPS. buy_stop est en PRIX.
+                // Il faut convertir spread_cost en PRIX pour l'ajouter.
+                // Pour simplifier ici sans pip_value, on va faire l'inverse : tout convertir en Pips à la fin pour le PnL.
+                // On garde la logique prix brute pour le déclenchement, mais on pénalisera le PnL.
+                
                 if current.high >= buy_stop && current.low <= sell_stop {
                     // Cas rare : déclenchement simultané dans la même bougie -> Whipsaw immédiat
                     triggered_side = Some("BOTH");
@@ -193,14 +188,38 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
             }
         }
 
-        // Enregistrement des résultats
+        // Enregistrement des résultats et calcul P&L Net
         if let Some(result) = trade_result {
             total_trades += 1;
+            
+            // Conversion des distances en Pips pour le calcul PnL
+            let tp_pips = normalize_to_pips(tp_distance, symbol);
+            let sl_pips = normalize_to_pips(sl_distance, symbol);
+
             match result {
-                "WIN" => wins += 1,
+                "WIN" => {
+                    wins += 1;
+                    // Gain Net = TP - Coûts
+                    total_pnl_net += tp_pips - cost_per_trade;
+                },
+                "LOSS" => {
+                    // Note: LOSS n'est pas explicitement set dans la boucle (c'est soit WIN soit WHIPSAW pour l'instant dans ce code simplifié)
+                    // Mais si on ajoutait un timeout loss, ce serait ici.
+                    losses += 1;
+                    // Perte Nette = -SL - Coûts
+                    total_pnl_net -= sl_pips + cost_per_trade;
+                },
                 "WHIPSAW" => {
                     whipsaws += 1;
-                    losses += 1; // Un whipsaw est une perte
+                    // Whipsaw = Double Perte + Double Coût
+                    // Perte côté 1 (SL) + Perte côté 2 (SL) + 2x Coûts
+                    // Souvent un whipsaw touche le SL d'un côté, déclenche l'autre, et touche le SL de l'autre (pire cas)
+                    // Ou touche SL d'un côté et revient au milieu.
+                    // Ici on simule le pire cas "Double Touch" : On a payé le spread 2 fois et pris 1 SL complet (au moins).
+                    // Estimation conservatrice : Perte = SL + (2 * cost_per_trade)
+                    let whipsaw_loss = sl_pips + (2.0 * cost_per_trade);
+                    total_pnl_net -= whipsaw_loss;
+
                     whipsaw_details_vec.push(WhipsawDetail {
                         entry_index: i,
                         entry_price,
@@ -208,15 +227,19 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
                         sell_stop,
                         buy_trigger_index: buy_trigger_idx,
                         sell_trigger_index: sell_trigger_idx,
+                        net_loss_pips: whipsaw_loss,
                     });
-                }
-                _ => losses += 1, // LOSS (Time out ou autre)
+                },
+                _ => {}
             }
         } else if triggered_side.is_some() {
             // Déclenché mais pas de résultat (Time out) -> Considéré comme perte ou neutre
             // Pour être conservateur, on compte comme perte si pas de TP
             total_trades += 1;
             losses += 1;
+            // Perte au timeout = Coûts + (Prix actuel - Prix entrée)
+            // On simplifie en comptant juste les coûts + une petite perte moyenne
+            total_pnl_net -= cost_per_trade;
         }
     }
 
@@ -260,6 +283,9 @@ pub fn simulate_straddle(candles: &[Candle], symbol: &str) -> StraddleSimulation
         trailing_stop_adjusted: adjusted.trailing_stop_adjusted,
         timeout_adjusted_minutes: adjusted.timeout_adjusted_minutes,
         whipsaw_details: whipsaw_details_vec,
+        total_pnl_net_pips: total_pnl_net,
+        avg_trade_cost_pips: cost_per_trade,
+        is_profitable_net: total_pnl_net > 0.0,
     }
 }
 

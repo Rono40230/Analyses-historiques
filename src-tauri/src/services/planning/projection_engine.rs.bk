@@ -105,7 +105,7 @@ impl ProjectionEngine {
             .filter(calendar_events::impact.eq_any(vec!["High", "Medium"]))
             .order(calendar_events::event_time.asc())
             .select(CalendarEvent::as_select())
-            .load::<CalendarEvent>(&mut conn)
+            .load(&mut conn)
             .map_err(|e| e.to_string())
     }
 

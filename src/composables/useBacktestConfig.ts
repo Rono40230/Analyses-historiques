@@ -19,6 +19,26 @@ export function useBacktestConfig(props: { backtestType: BacktestType }) {
 
   const availableEvents = ref<{name: string, label: string, count: number}[]>([])
 
+  // Helper pour les coûts par défaut (Miroir de la logique Rust)
+  function getDefaultCosts(symbol: string) {
+    const s = symbol.toUpperCase()
+    if (s.includes('JPY') && (s.includes('GBP') || s.includes('EUR'))) {
+      return { spread: 6.0, slippage: 3.0 } // Crosses volatils
+    } else if (s.includes('GBP')) {
+      return { spread: 4.0, slippage: 2.0 } // Majors volatiles
+    } else if (s.includes('XAU') || s.includes('GOLD')) {
+      return { spread: 5.0, slippage: 2.0 } // Or
+    } else if (s.includes('BTC')) {
+      return { spread: 50.0, slippage: 20.0 } // Crypto
+    } else if (s.includes('DAX') || s.includes('GER40')) {
+      return { spread: 6.0, slippage: 3.0 } // DAX
+    } else if (s.includes('US30') || s.includes('DJI')) {
+      return { spread: 8.0, slippage: 5.0 } // Dow Jones
+    } else {
+      return { spread: 2.5, slippage: 1.0 } // Majors liquides (EURUSD)
+    }
+  }
+
   // Watcher pour gérer le mode Simultané (Offset forcé à 0)
   watch(mode, (newMode) => {
     if (newMode === StrategyMode.Simultane) {
@@ -26,10 +46,15 @@ export function useBacktestConfig(props: { backtestType: BacktestType }) {
     }
   })
 
-  // Watcher pour mettre à jour la valeur du point quand le symbole change
+  // Watcher pour mettre à jour la valeur du point et les coûts quand le symbole change
   watch(selectedSymbol, async (newSymbol) => {
     if (newSymbol) {
       await backtestStore.mettreAJourProprietesSymbole(newSymbol)
+      
+      // Mise à jour automatique des coûts recommandés
+      const costs = getDefaultCosts(newSymbol)
+      config.value.spread_pips = costs.spread
+      config.value.slippage_pips = costs.slippage
     }
   })
 

@@ -98,6 +98,13 @@ export const categories: Categorie[] = [
     emoji: '🔄',
     description: 'Conversion Points MT5 vers Pips',
     formules: []
+  },
+  {
+    id: 'spread_cost',
+    titre: 'Coûts Spread & Slippage',
+    emoji: '💸',
+    description: 'Impact des coûts cachés en News Trading',
+    formules: []
   }
 ]
 

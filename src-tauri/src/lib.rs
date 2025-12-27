@@ -49,6 +49,12 @@ pub fn run() {
     }
 
     let db_url = format!("sqlite://{}", db_path.display());
+    
+    // Initialize WAL mode before creating pool
+    if let Err(e) = db::init_wal_mode(&db_url) {
+        tracing::warn!("⚠️ Failed to enable WAL mode for calendar DB: {}", e);
+    }
+
     let calendar_pool = match db::create_pool(&db_url) {
         Ok(pool) => pool,
         Err(e) => {
@@ -96,6 +102,12 @@ pub fn run() {
     let pairs_db_path = data_dir.join("volatility-analyzer").join("pairs.db");
 
     let pairs_db_url = format!("sqlite://{}", pairs_db_path.display());
+    
+    // Initialize WAL mode before creating pool
+    if let Err(e) = db::init_wal_mode(&pairs_db_url) {
+        tracing::warn!("⚠️ Failed to enable WAL mode for pairs DB: {}", e);
+    }
+
     let pairs_pool = match db::create_pool(&pairs_db_url) {
         Ok(pool) => pool,
         Err(e) => {

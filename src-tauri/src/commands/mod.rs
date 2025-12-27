@@ -5,6 +5,7 @@ pub mod calendar_commands;
 pub mod calendar_db_helper;
 pub mod calendar_import_commands;
 pub mod calendar_parser;
+pub mod parser_test;
 pub mod candle_helpers;
 pub mod candle_index_commands;
 pub mod cleanup_commands;

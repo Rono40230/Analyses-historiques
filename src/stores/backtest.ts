@@ -9,6 +9,7 @@ export interface BacktestConfig {
   timeout_minutes: number
   sl_recovery_pips: number | null
   spread_pips: number
+  slippage_pips: number // Nouveau champ
   point_value: number
 }
 
@@ -59,6 +60,7 @@ export const useBacktestStore = defineStore('backtest', () => {
     timeout_minutes: 60,
     sl_recovery_pips: null,
     spread_pips: 1.0,
+    slippage_pips: 0.5, // Valeur par défaut conservatrice
     point_value: 0.0001 // Default for major pairs
   })
 

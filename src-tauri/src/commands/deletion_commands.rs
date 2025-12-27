@@ -1,114 +1,140 @@
+use crate::commands::pair_data::PairDataState;
+use diesel::prelude::*;
+use tauri::State;
+
 /// Supprime une paire (pair_metadata + tous les candles) de la BD
 #[tauri::command]
-pub fn delete_pair_from_db(symbol: String, timeframe: String) -> Result<String, String> {
-    let db_path = dirs::data_local_dir()
-        .ok_or("Failed to get data directory")?
-        .join("volatility-analyzer")
-        .join("pairs.db");
+pub async fn delete_pair_from_db(
+    state: State<'_, PairDataState>,
+    symbol: String,
+    timeframe: String,
+) -> Result<String, String> {
+    tracing::info!("🗑️ [Delete Pair] Request received for {}/{}", symbol, timeframe);
 
-    let mut conn = rusqlite::Connection::open(&db_path)
-        .map_err(|e| format!("Failed to open pairs.db: {}", e))?;
+    // Utiliser le pool Diesel existant au lieu d'ouvrir une nouvelle connexion Rusqlite
+    tracing::debug!("🗑️ [Delete Pair] Acquiring pool lock...");
+    let pool = state
+        .pool
+        .lock()
+        .map_err(|_| "Failed to lock pool mutex".to_string())?
+        .clone()
+        .ok_or("Database pool not initialized".to_string())?;
+    tracing::debug!("🗑️ [Delete Pair] Pool lock acquired.");
 
-    // Démarrer une transaction pour s'assurer que tout est supprimé ou rien
-    let tx = conn
-        .transaction()
-        .map_err(|e| format!("Failed to start transaction: {}", e))?;
+    // Exécuter dans un thread bloquant pour ne pas bloquer l'executor async
+    tokio::task::spawn_blocking(move || {
+        tracing::debug!("🗑️ [Delete Pair] Inside spawn_blocking, requesting connection...");
+        let mut conn = pool
+            .get()
+            .map_err(|e| format!("Failed to get connection from pool: {}", e))?;
+        tracing::debug!("🗑️ [Delete Pair] Connection acquired from pool.");
 
-    // Supprimer tous les candles de cette paire
-    let candles_deleted = tx
-        .execute(
-            "DELETE FROM candle_data WHERE symbol = ? AND timeframe = ?",
-            rusqlite::params![&symbol, &timeframe],
-        )
-        .map_err(|e| format!("Failed to delete candles: {}", e))?;
+        // Exécuter la suppression via SQL brut avec Diesel
+        conn.transaction::<_, diesel::result::Error, _>(|conn| {
+            tracing::debug!("🗑️ [Delete Pair] Transaction started.");
+            
+            // 1. Supprimer les candles
+            tracing::debug!("🗑️ [Delete Pair] Deleting candles...");
+            let candles_deleted = diesel::sql_query("DELETE FROM candle_data WHERE symbol = ? AND timeframe = ?")
+                .bind::<diesel::sql_types::Text, _>(&symbol)
+                .bind::<diesel::sql_types::Text, _>(&timeframe)
+                .execute(conn)?;
 
-    tracing::info!(
-        "🗑️  Deleted {} candles for {}/{}",
-        candles_deleted,
-        symbol,
-        timeframe
-    );
+            tracing::info!(
+                "🗑️  Deleted {} candles for {}/{}",
+                candles_deleted,
+                symbol,
+                timeframe
+            );
 
-    // Supprimer la métadonnée de la paire
-    let metadata_deleted = tx
-        .execute(
-            "DELETE FROM pair_metadata WHERE symbol = ? AND timeframe = ?",
-            rusqlite::params![&symbol, &timeframe],
-        )
-        .map_err(|e| format!("Failed to delete pair metadata: {}", e))?;
+            // 2. Supprimer les métadonnées
+            tracing::debug!("🗑️ [Delete Pair] Deleting metadata...");
+            let metadata_deleted = diesel::sql_query("DELETE FROM pair_metadata WHERE symbol = ? AND timeframe = ?")
+                .bind::<diesel::sql_types::Text, _>(&symbol)
+                .bind::<diesel::sql_types::Text, _>(&timeframe)
+                .execute(conn)?;
 
-    tracing::info!(
-        "🗑️  Deleted {} metadata records for {}/{}",
-        metadata_deleted,
-        symbol,
-        timeframe
-    );
+            tracing::info!(
+                "🗑️  Deleted {} metadata records for {}/{}",
+                metadata_deleted,
+                symbol,
+                timeframe
+            );
 
-    // Commit la transaction
-    tx.commit()
-        .map_err(|e| format!("Failed to commit transaction: {}", e))?;
+            Ok(())
+        })
+        .map_err(|e| format!("Transaction failed: {}", e))?;
 
-    Ok(format!(
-        "Paire {}/{} supprimée avec succès ({} candles supprimés)",
-        symbol, timeframe, candles_deleted
-    ))
+        tracing::debug!("🗑️ [Delete Pair] Transaction committed successfully.");
+        Ok(format!(
+            "Paire {}/{} supprimée avec succès",
+            symbol, timeframe
+        ))
+    })
+    .await
+    .map_err(|e| format!("Task join error: {}", e))?
 }
+
+use crate::commands::calendar_commands::CalendarState;
 
 /// Supprime un calendrier (calendar_imports + tous les événements) de la BD
 #[tauri::command]
-pub fn delete_calendar_from_db(calendar_id: i32) -> Result<String, String> {
-    let db_path = dirs::data_local_dir()
-        .ok_or("Failed to get data directory")?
-        .join("volatility-analyzer")
-        .join("volatility.db");
+pub async fn delete_calendar_from_db(
+    state: State<'_, CalendarState>,
+    calendar_id: i32,
+) -> Result<String, String> {
+    tracing::info!("🗑️ [Delete Calendar] Request received for ID {}", calendar_id);
 
-    let mut conn = rusqlite::Connection::open(&db_path)
-        .map_err(|e| format!("Failed to open volatility.db: {}", e))?;
+    // Utiliser le pool Diesel existant
+    tracing::debug!("🗑️ [Delete Calendar] Acquiring pool lock...");
+    let pool = state
+        .pool
+        .lock()
+        .map_err(|_| "Failed to lock pool mutex".to_string())?
+        .clone()
+        .ok_or("Database pool not initialized".to_string())?;
+    tracing::debug!("🗑️ [Delete Calendar] Pool lock acquired.");
 
-    // Démarrer une transaction
-    let tx = conn
-        .transaction()
-        .map_err(|e| format!("Failed to start transaction: {}", e))?;
+    tokio::task::spawn_blocking(move || {
+        tracing::debug!("🗑️ [Delete Calendar] Inside spawn_blocking, requesting connection...");
+        let mut conn = pool
+            .get()
+            .map_err(|e| format!("Failed to get connection from pool: {}", e))?;
+        tracing::debug!("🗑️ [Delete Calendar] Connection acquired from pool.");
 
-    // Récupérer le nom du calendrier avant suppression (pour le message)
-    let calendar_name: String = tx
-        .query_row(
-            "SELECT name FROM calendar_imports WHERE id = ?",
-            rusqlite::params![calendar_id],
-            |row| row.get(0),
-        )
-        .map_err(|e| format!("Calendar not found: {}", e))?;
+        conn.transaction::<_, diesel::result::Error, _>(|conn| {
+            tracing::debug!("🗑️ [Delete Calendar] Transaction started.");
 
-    // Supprimer tous les événements de ce calendrier
-    let events_deleted = tx
-        .execute(
-            "DELETE FROM calendar_events WHERE calendar_import_id = ?",
-            rusqlite::params![calendar_id],
-        )
-        .map_err(|e| format!("Failed to delete calendar events: {}", e))?;
+            // 1. Supprimer les événements
+            tracing::debug!("🗑️ [Delete Calendar] Deleting events...");
+            let events_deleted = diesel::sql_query("DELETE FROM calendar_events WHERE calendar_import_id = ?")
+                .bind::<diesel::sql_types::Integer, _>(calendar_id)
+                .execute(conn)?;
 
-    tracing::info!(
-        "🗑️  Deleted {} events for calendar '{}'",
-        events_deleted,
-        calendar_name
-    );
+            tracing::info!(
+                "🗑️  Deleted {} events for calendar ID {}",
+                events_deleted,
+                calendar_id
+            );
 
-    // Supprimer l'enregistrement du calendrier
-    let _metadata_deleted = tx
-        .execute(
-            "DELETE FROM calendar_imports WHERE id = ?",
-            rusqlite::params![calendar_id],
-        )
-        .map_err(|e| format!("Failed to delete calendar import: {}", e))?;
+            // 2. Supprimer l'import
+            tracing::debug!("🗑️ [Delete Calendar] Deleting import record...");
+            let _import_deleted = diesel::sql_query("DELETE FROM calendar_imports WHERE id = ?")
+                .bind::<diesel::sql_types::Integer, _>(calendar_id)
+                .execute(conn)?;
 
-    tracing::info!("🗑️  Deleted calendar import record for '{}'", calendar_name);
+            tracing::info!("🗑️  Deleted calendar import record ID {}", calendar_id);
 
-    // Commit la transaction
-    tx.commit()
-        .map_err(|e| format!("Failed to commit transaction: {}", e))?;
+            Ok(())
+        })
+        .map_err(|e| format!("Transaction failed: {}", e))?;
 
-    Ok(format!(
-        "Calendrier '{}' supprimé avec succès ({} événements supprimés)",
-        calendar_name, events_deleted
-    ))
+        tracing::debug!("🗑️ [Delete Calendar] Transaction committed successfully.");
+        Ok(format!(
+            "Calendrier ID {} supprimé avec succès",
+            calendar_id
+        ))
+    })
+    .await
+    .map_err(|e| format!("Task join error: {}", e))?
 }

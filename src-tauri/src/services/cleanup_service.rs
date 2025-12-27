@@ -249,6 +249,8 @@ impl CleanupService {
     
         let allowed_ids = Self::get_allowed_import_ids(conn, calendar_id)?;
         let limit = 100;
+        
+        use diesel::SelectableHelper;
     
         let query = calendar_events
             .filter(calendar_import_id.eq_any(&allowed_ids))
@@ -257,19 +259,24 @@ impl CleanupService {
         let events = match filter_type.as_str() {
             "description" => query
                 .filter(description.eq(filter_value))
-                .load::<CalendarEvent>(conn),
+                .select(CalendarEvent::as_select())
+                .load(conn),
             "symbol" => query
                 .filter(symbol.eq(filter_value))
-                .load::<CalendarEvent>(conn),
+                .select(CalendarEvent::as_select())
+                .load(conn),
             "orphan_symbol" => query
                 .filter(symbol.eq(""))
-                .load::<CalendarEvent>(conn),
+                .select(CalendarEvent::as_select())
+                .load(conn),
             "orphan_desc" => query
                 .filter(description.eq(""))
-                .load::<CalendarEvent>(conn),
+                .select(CalendarEvent::as_select())
+                .load(conn),
             "orphan_impact" => query
                 .filter(impact.eq(""))
-                .load::<CalendarEvent>(conn),
+                .select(CalendarEvent::as_select())
+                .load(conn),
             _ => return Err("Invalid filter type".to_string()),
         }
         .map_err(|e| format!("Database error: {}", e))?;

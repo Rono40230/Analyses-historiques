@@ -21,6 +21,23 @@ const {
   lancerBacktest,
   StrategyMode
 } = useBacktestConfig(props)
+
+import { computed } from 'vue'
+import '../styles/backtest-config.css'
+
+const isRunDisabled = computed(() => {
+  if (loading.value) return true
+  if (!selectedSymbol.value) return true
+  if (props.backtestType === BacktestType.Event && !selectedEvent.value) return true
+  return false
+})
+
+const disabledReason = computed(() => {
+  if (loading.value) return 'Simulation en cours...'
+  if (!selectedSymbol.value) return 'Veuillez sélectionner une paire'
+  if (props.backtestType === BacktestType.Event && !selectedEvent.value) return 'Veuillez sélectionner un événement'
+  return 'Prêt à lancer'
+})
 </script>
 
 <template>
@@ -91,6 +108,10 @@ const {
         <label>Spread (pips)</label>
         <input type="number" v-model.number="config.spread_pips" step="0.1" />
       </div>
+      <div class="param">
+        <label>Slippage (pips)</label>
+        <input type="number" v-model.number="config.slippage_pips" step="0.1" title="Glissement estimé à l'exécution" />
+      </div>
       
       <!-- Paramètres spécifiques Simultané -->
       <template v-if="mode === StrategyMode.Simultane">
@@ -105,7 +126,8 @@ const {
       <button 
         class="run-btn" 
         @click="lancerBacktest" 
-        :disabled="loading || !selectedSymbol || (backtestType === BacktestType.Event && !selectedEvent)"
+        :disabled="isRunDisabled"
+        :title="disabledReason"
       >
         <span v-if="loading">⏳ Simulation...</span>
         <span v-else>🚀 Lancer Backtest</span>
@@ -114,128 +136,3 @@ const {
   </div>
 </template>
 
-<style scoped>
-.config-panel {
-  background: #1a202c;
-  padding: 1.5rem;
-  border-radius: 8px;
-  border: 1px solid #2d3748;
-}
-
-.header-controls {
-  display: flex;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-  align-items: flex-end;
-}
-
-.control-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.symbol-group { flex: 1; max-width: 200px; }
-.event-group { flex: 2; }
-.time-group { flex: 1; max-width: 150px; }
-.date-group { flex: 1; max-width: 180px; }
-.strategy-group { flex: 1; max-width: 200px; }
-
-input, select {
-  height: 42px;
-  padding: 0 12px;
-  background: #ffffff;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  color: #000000;
-  font-size: 0.9rem;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-/* Specific fix for native select padding */
-.strategy-select, :deep(.symbol-select) {
-  padding: 0 12px !important; /* Native selects need this */
-}
-
-/* Fix for SearchableEventDropdown internals */
-:deep(.dropdown-header) {
-  height: 42px !important;
-  padding: 0 12px !important;
-  border: 1px solid #ccc !important;
-  box-sizing: border-box;
-}
-
-:deep(.dropdown-input) {
-  color: #000000 !important;
-  font-size: 0.9rem !important;
-  height: 100%;
-}
-
-:deep(.symbol-select option) {
-  background: #ffffff;
-  color: #000000;
-}
-
-.time-input, .date-input {
-  height: 42px;
-  padding: 0 12px;
-  background: #ffffff;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  color: #000000;
-  font-size: 0.9rem;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-.params-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.param {
-  display: flex;
-  flex-direction: column;
-}
-
-label {
-  font-size: 0.9rem;
-  color: #a0aec0;
-  margin-bottom: 0.4rem;
-  font-weight: 500;
-}
-
-.actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.run-btn {
-  background: #48bb78;
-  color: white;
-  border: none;
-  padding: 0.8rem 2rem;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-  font-size: 1rem;
-}
-
-.run-btn:hover:not(:disabled) {
-  background: #38a169;
-}
-
-.run-btn:disabled {
-  background: #2d3748;
-  color: #718096;
-  cursor: not-allowed;
-}
-</style>

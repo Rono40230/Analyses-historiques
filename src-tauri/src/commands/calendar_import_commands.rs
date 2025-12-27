@@ -5,8 +5,8 @@ use rusqlite::Connection;
 use std::fs;
 
 #[tauri::command]
-pub async fn import_calendar_files(paths: Vec<String>, is_weekly_planning: bool) -> Result<String, String> {
-    tracing::info!("📥 Starting calendar import for {} file(s) (Weekly: {})", paths.len(), is_weekly_planning);
+pub async fn import_calendar_files(paths: Vec<String>) -> Result<String, String> {
+    tracing::info!("📥 Starting calendar import for {} file(s)", paths.len());
 
     if paths.is_empty() {
         return Err("Aucun fichier fourni".to_string());
@@ -29,13 +29,18 @@ pub async fn import_calendar_files(paths: Vec<String>, is_weekly_planning: bool)
         let record = result.map_err(|e| format!("CSV parsing error: {}", e))?;
         line_count += 1;
 
-        if let Some((event_time, symbol_val, impact_val, description_val)) = parse_record(&record) {
+        if let Some((event_time, symbol_val, impact_val, description_val, actual, forecast, previous)) = parse_record(&record) {
             events.push((
                 event_time,
                 symbol_val.to_string(),
                 impact_val.to_string(),
                 description_val.to_string(),
+                actual,
+                forecast,
+                previous
             ));
+        } else if line_count <= 5 {
+            tracing::warn!("⚠️ Rejected line {}: {:?}", line_count, record);
         }
     }
 
@@ -62,17 +67,11 @@ pub async fn import_calendar_files(paths: Vec<String>, is_weekly_planning: bool)
         .ok_or("Invalid file path")?
         .to_string();
 
-    let calendar_name = if is_weekly_planning {
-        "Planning Hebdo".to_string()
-    } else {
-        filename.trim_end_matches(".csv").to_string()
-    };
+    let calendar_name = filename.trim_end_matches(".csv").to_string();
 
-    // Si c'est un planning hebdo, on supprime l'ancien s'il existe
-    if is_weekly_planning {
-        use crate::commands::calendar_db_helper::delete_calendar_import_by_name;
-        let _ = delete_calendar_import_by_name(&conn, &calendar_name);
-    }
+    // On supprime toujours l'ancien calendrier du même nom s'il existe (remplacement automatique)
+    use crate::commands::calendar_db_helper::delete_calendar_import_by_name;
+    let _ = delete_calendar_import_by_name(&conn, &calendar_name);
 
     let calendar_id = save_calendar_import(&conn, &calendar_name, &filename, &events)?;
 
@@ -119,12 +118,15 @@ pub async fn sync_forex_factory_week() -> Result<String, String> {
     let mut events = Vec::new();
     for result in reader.records() {
         let record = result.map_err(|e| format!("CSV parsing error: {}", e))?;
-        if let Some((event_time, symbol_val, impact_val, description_val)) = parse_record(&record) {
+        if let Some((event_time, symbol_val, impact_val, description_val, actual, forecast, previous)) = parse_record(&record) {
             events.push((
                 event_time,
                 symbol_val.to_string(),
                 impact_val.to_string(),
                 description_val.to_string(),
+                actual,
+                forecast,
+                previous
             ));
         }
     }

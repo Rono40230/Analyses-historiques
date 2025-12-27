@@ -68,14 +68,8 @@ impl EconomicEventLoader {
             skipped
         );
 
-        // TEMPORAIREMENT DÉSACTIVÉ : store_events nécessite NewCalendarEvent
-        // let inserted = self.scraper.store_events(&events)?;
-        // info!("Successfully inserted {} events into database", inserted);
-        let inserted = events.len();
-        info!(
-            "Would have inserted {} events into database (store disabled)",
-            inserted
-        );
+        let inserted = self.scraper.store_events(&events)?;
+        info!("Successfully inserted {} events into database", inserted);
 
         Ok(inserted)
     }
@@ -126,9 +120,9 @@ impl EconomicEventLoader {
             })?;
 
         // Parse optional numeric values
-        let actual = record.get(5).and_then(|s| s.parse::<f32>().ok());
-        let forecast = record.get(6).and_then(|s| s.parse::<f32>().ok());
-        let previous = record.get(7).and_then(|s| s.parse::<f32>().ok());
+        let actual = record.get(5).and_then(|s| s.parse::<f64>().ok());
+        let forecast = record.get(6).and_then(|s| s.parse::<f64>().ok());
+        let previous = record.get(7).and_then(|s| s.parse::<f64>().ok());
 
         Ok(NewCalendarEvent {
             symbol: symbol.to_string(),
@@ -138,6 +132,7 @@ impl EconomicEventLoader {
             actual,
             forecast,
             previous,
+            calendar_import_id: 0, // Default to 0 for now as this loader doesn't manage imports
         })
     }
 }

@@ -1,15 +1,22 @@
-pub fn parse_record(record: &csv::StringRecord) -> Option<(String, String, String, String)> {
+pub fn parse_record(record: &csv::StringRecord) -> Option<(String, String, String, String, Option<f64>, Option<f64>, Option<f64>)> {
+    // Helper to check if a string contains date separators
+    let has_date_sep = |s: &str| s.contains('-') || s.contains('/') || s.contains('.');
+
     // 1. Format Forex Factory: Title(0), Country(1), Date(2), Time(3), Impact(4)
     // Ex: "Title", "USD", "12-22-2025", "1:00am", "Low"
-    if record.len() >= 5 && record[2].contains('-') && (record[3].contains(':') || record[3].to_lowercase().contains("day")) {
+    if record.len() >= 5 && has_date_sep(&record[2]) && (record[3].contains(':') || record[3].to_lowercase().contains("day")) {
         let title = record[0].trim();
         let currency = record[1].trim();
         let date_str = record[2].trim();
         let time_str = record[3].trim();
         let impact = record[4].trim();
 
+        let forecast = record.get(5).and_then(|s| s.trim().parse::<f64>().ok());
+        let previous = record.get(6).and_then(|s| s.trim().parse::<f64>().ok());
+        let actual = None;
+
         // Parse Date: MM-DD-YYYY -> YYYY-MM-DD
-        let date_parts: Vec<&str> = date_str.split('-').collect();
+        let date_parts: Vec<&str> = date_str.split(|c| c == '-' || c == '/' || c == '.').collect();
         if date_parts.len() != 3 { return None; }
         let (month, day, year) = (date_parts[0], date_parts[1], date_parts[2]);
 
@@ -42,11 +49,11 @@ pub fn parse_record(record: &csv::StringRecord) -> Option<(String, String, Strin
         };
 
         let dt = format!("{}-{:0>2}-{:0>2} {:0>2}:{:0>2}:00", year, month, day, hour, minute);
-        return Some((dt, currency.to_string(), impact.to_string(), title.to_string()));
+        return Some((dt, currency.to_string(), impact.to_string(), title.to_string(), actual, forecast, previous));
     }
 
-    // 2. Format Legacy 1: Date(0) contains '-' (YYYY-MM-DD or MM-DD-YYYY)
-    if record[0].contains('-') {
+    // 2. Format Legacy 1: Date(0) contains separator (YYYY-MM-DD or MM-DD-YYYY)
+    if has_date_sep(&record[0]) {
         if record.len() < 5 {
             return None;
         }
@@ -56,7 +63,11 @@ pub fn parse_record(record: &csv::StringRecord) -> Option<(String, String, Strin
         let event = record[3].trim();
         let impact = record[4].trim();
 
-        let date_parts: Vec<&str> = date.split('-').collect();
+        let actual = record.get(5).and_then(|s| s.trim().parse::<f64>().ok());
+        let forecast = record.get(6).and_then(|s| s.trim().parse::<f64>().ok());
+        let previous = record.get(7).and_then(|s| s.trim().parse::<f64>().ok());
+
+        let date_parts: Vec<&str> = date.split(|c| c == '-' || c == '/' || c == '.').collect();
         let time_parts: Vec<&str> = time.split(':').collect();
 
         if date_parts.len() != 3 || time_parts.len() < 2 {
@@ -84,6 +95,9 @@ pub fn parse_record(record: &csv::StringRecord) -> Option<(String, String, Strin
             currency.to_string(),
             impact.to_string(),
             event.to_string(),
+            actual,
+            forecast,
+            previous
         ))
     } else {
         // 3. Format Legacy 2: Split columns (Year, Month, Day...)
@@ -105,6 +119,10 @@ pub fn parse_record(record: &csv::StringRecord) -> Option<(String, String, Strin
             return None;
         }
 
+        let actual = None;
+        let forecast = None;
+        let previous = None;
+
         let dt = format!(
             "{}-{:0>2}-{:0>2} {:0>2}:{:0>2}:00",
             year, month, day, hour, minute
@@ -114,6 +132,9 @@ pub fn parse_record(record: &csv::StringRecord) -> Option<(String, String, Strin
             symbol.to_string(),
             impact.to_string(),
             description.to_string(),
+            actual,
+            forecast,
+            previous
         ))
     }
 }

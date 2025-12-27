@@ -12,11 +12,11 @@
           <tr><th>Paire</th><th>Bougies</th><th>Période</th><th>Actions</th></tr>
         </thead>
         <tbody>
-          <tr v-for="pair in pairsMetadata" :key="pair.symbol">
+          <tr v-for="pair in pairsMetadata" :key="`${pair.symbol}-${pair.timeframe}`">
             <td><strong>{{ pair.symbol }}</strong></td>
             <td>{{ pair.candle_count.toLocaleString() }}</td>
             <td>{{ formatPeriod(pair) }}</td>
-            <td><button class="btn-delete" @click="$emit('delete', pair.symbol)">🗑️ Supprimer</button></td>
+            <td><button class="btn-delete" @click="$emit('delete', pair)">🗑️ Supprimer</button></td>
           </tr>
         </tbody>
       </table>

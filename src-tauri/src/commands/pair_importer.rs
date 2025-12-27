@@ -49,6 +49,14 @@ pub fn process_single_file(
     let mut conn = rusqlite::Connection::open(&db_path)
         .map_err(|e| format!("Failed to open pairs.db: {}", e))?;
 
+    // Set busy timeout and WAL mode
+    conn.busy_timeout(std::time::Duration::from_millis(5000))
+        .map_err(|e| format!("Failed to set busy_timeout: {}", e))?;
+    conn.pragma_update(None, "journal_mode", "WAL")
+        .map_err(|e| format!("Failed to set WAL mode: {}", e))?;
+    conn.pragma_update(None, "synchronous", "NORMAL")
+        .map_err(|e| format!("Failed to set synchronous mode: {}", e))?;
+
     let imported_at = Utc::now().to_rfc3339();
 
     // 4. INSERT les candles en BD (bulk insert pour performance)

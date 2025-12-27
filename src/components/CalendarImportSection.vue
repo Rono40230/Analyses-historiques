@@ -28,11 +28,7 @@
       </table>
     </div>
     <div class="import-controls">
-      <label class="checkbox-label">
-        <input type="checkbox" v-model="isWeeklyPlanning">
-        <span>Planning Hebdo (remplace l'ancien)</span>
-      </label>
-      <button class="btn-import" :disabled="loading" @click="$emit('import', isWeeklyPlanning)">
+      <button class="btn-import" :disabled="loading" @click="$emit('import')">
         <span v-if="loading" class="spinner">⏳</span>
         <span v-else>📥</span>
         Importer calendrier
@@ -45,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps, defineEmits } from 'vue'
+import { defineProps, defineEmits } from 'vue'
 
 interface CalendarMetadata {
   id: number
@@ -54,8 +50,6 @@ interface CalendarMetadata {
   start_date?: string
   end_date?: string
 }
-
-const isWeeklyPlanning = ref(false)
 
 defineProps<{
   calendarsMetadata: CalendarMetadata[]
@@ -67,6 +61,7 @@ defineEmits<{
   import: []
   delete: [id: number]
   setActive: [id: number]
+  'clean-rare': []
 }>()
 
 function isActiveCalendar(id: number): boolean {

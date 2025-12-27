@@ -29,7 +29,9 @@ impl EventCorrelationService {
         let events = calendar_events
             .filter(event_time.ge(start_time))
             .filter(event_time.le(end_time))
-            .order(event_time.asc())            .select(CalendarEvent::as_select())            .load::<CalendarEvent>(&mut conn)?;
+            .order(event_time.asc())
+            .select(CalendarEvent::as_select())
+            .load(&mut conn)?;
 
         Ok(events)
     }

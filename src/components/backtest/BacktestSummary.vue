@@ -12,10 +12,6 @@ const winRateClass = computed(() => {
   return props.result.win_rate_percent > 50 ? 'metric-excellent' : 'metric-poor'
 })
 
-const profitClass = computed(() => {
-  return props.result.total_pips > 0 ? 'metric-excellent' : 'metric-poor'
-})
-
 const pfClass = computed(() => {
   const pf = props.result.profit_factor
   if (pf > 2.0) return 'metric-excellent'
@@ -50,29 +46,6 @@ const ddClass = computed(() => {
             <br><br>
             <strong>> 50%</strong> : Majorité de gains.<br>
             <strong>< 40%</strong> : Typique des stratégies de suivi de tendance (beaucoup de petites pertes, quelques gros gains).
-          </div>
-        </div>
-      </template>
-    </MetricTooltip>
-
-    <MetricTooltip title="Total Pips">
-      <div class="metric-card">
-        <h4>Total Pips</h4>
-        <div :class="['metric-value', profitClass]">
-          <UnitDisplay :value="result.total_pips" :unit="result.unit" :decimals="1" :symbol="result.symbol" />
-        </div>
-      </div>
-      <template #definition>
-        <div class="tooltip-section">
-          <div class="tooltip-section-title">📖 Définition</div>
-          <div class="tooltip-section-text">Somme nette de tous les gains et pertes en points/pips.</div>
-        </div>
-      </template>
-      <template #usage>
-        <div class="tooltip-section">
-          <div class="tooltip-section-title">📊 Interprétation</div>
-          <div class="tooltip-section-text">
-            Le résultat final de la stratégie. Sur des actifs comme le Bitcoin, attention à la valeur du point (1 pip peut valoir 0.01$ ou 1$).
           </div>
         </div>
       </template>
@@ -117,11 +90,15 @@ const ddClass = computed(() => {
 
     <div class="metric-card">
       <h4>Trades</h4>
-      <div class="metric-value metric-neutral">{{ result.total_trades }}</div>
-      <div class="metric-sub">
-        <span class="win">{{ result.winning_trades }}W</span> / 
-        <span class="loss">{{ result.losing_trades }}L</span> / 
-        <span class="neutral">{{ result.no_entries }}N</span>
+      <div class="metric-value metric-neutral">
+        {{ result.total_trades }}
+        <span class="metric-breakdown">
+          <span class="win">{{ result.winning_trades }}W</span>
+          <span class="divider">/</span>
+          <span class="loss">{{ result.losing_trades }}L</span>
+          <span class="divider">/</span>
+          <span class="neutral">{{ result.no_entries }}N</span>
+        </span>
       </div>
     </div>
   </div>
@@ -141,6 +118,10 @@ const ddClass = computed(() => {
   border-radius: 8px;
   text-align: center;
   border: 1px solid #4a5568;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100px; /* Ensure consistent height */
 }
 
 .metric-card h4 {
@@ -152,6 +133,24 @@ const ddClass = computed(() => {
 .metric-value {
   font-size: 1.5rem;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.metric-breakdown {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #a0aec0;
+  display: flex;
+  align-items: center;
+  margin-top: 4px; /* Slight adjustment for visual alignment */
+}
+
+.divider {
+  margin: 0 3px;
+  color: #4a5568;
 }
 
 .metric-sub {

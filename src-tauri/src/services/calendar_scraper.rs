@@ -64,4 +64,22 @@ impl CalendarScraper {
             .load(&mut conn)
             .map_err(|e| VolatilityError::DatabaseError(e.to_string()))
     }
+
+    /// Sauvegarde une liste d'événements dans la base de données
+    #[allow(dead_code)]
+    pub fn store_events(&self, events: &[crate::models::calendar_event::NewCalendarEvent]) -> Result<usize, VolatilityError> {
+        use crate::schema::calendar_events::dsl::*;
+        
+        let mut conn = self.db_pool.get()
+            .map_err(|e| VolatilityError::DatabaseError(e.to_string()))?;
+
+        // SQLite doesn't support batch insert with returning or some features in older diesel versions/sqlite versions
+        // But standard batch insert should work.
+        // The error "trait diesel::Expression is not implemented for f64" was due to schema mismatch (Float vs Double).
+        // Now that schema is Double, it should work.
+        diesel::insert_into(calendar_events)
+            .values(events)
+            .execute(&mut conn)
+            .map_err(|e| VolatilityError::DatabaseError(e.to_string()))
+    }
 }

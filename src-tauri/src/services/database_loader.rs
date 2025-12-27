@@ -115,6 +115,22 @@ impl DatabaseLoader {
             LoaderError::Connection(e.to_string())
         })?;
 
+        // Set busy timeout to 5000ms to avoid "database is locked" errors
+        conn.busy_timeout(std::time::Duration::from_millis(5000)).map_err(|e| {
+            error!("Failed to set busy_timeout: {}", e);
+            LoaderError::Connection(e.to_string())
+        })?;
+
+        // Enable WAL mode for concurrency
+        conn.pragma_update(None, "journal_mode", "WAL").map_err(|e| {
+            error!("Failed to set WAL mode: {}", e);
+            LoaderError::Connection(e.to_string())
+        })?;
+        conn.pragma_update(None, "synchronous", "NORMAL").map_err(|e| {
+            error!("Failed to set synchronous mode: {}", e);
+            LoaderError::Connection(e.to_string())
+        })?;
+
         let start_str = start_time.to_rfc3339();
         let end_str = end_time.to_rfc3339();
 
@@ -195,6 +211,10 @@ impl DatabaseLoader {
         let conn = rusqlite::Connection::open(&db_path)
             .map_err(|e| LoaderError::Connection(e.to_string()))?;
 
+        // Set busy timeout to 5000ms
+        conn.busy_timeout(std::time::Duration::from_millis(5000))
+            .map_err(|e| LoaderError::Connection(e.to_string()))?;
+
         let mut stmt = conn
             .prepare("SELECT DISTINCT symbol FROM candle_data ORDER BY symbol")
             .map_err(|e| LoaderError::Query(e.to_string()))?;
@@ -218,6 +238,10 @@ impl DatabaseLoader {
             .unwrap_or_else(|| PathBuf::from("pairs.db"));
 
         let conn = rusqlite::Connection::open(&db_path)
+            .map_err(|e| LoaderError::Connection(e.to_string()))?;
+
+        // Set busy timeout to 5000ms
+        conn.busy_timeout(std::time::Duration::from_millis(5000))
             .map_err(|e| LoaderError::Connection(e.to_string()))?;
 
         let mut stmt = conn
@@ -245,6 +269,10 @@ impl DatabaseLoader {
             .unwrap_or_else(|| PathBuf::from("pairs.db"));
 
         let conn = rusqlite::Connection::open(&db_path)
+            .map_err(|e| LoaderError::Connection(e.to_string()))?;
+
+        // Set busy timeout to 5000ms
+        conn.busy_timeout(std::time::Duration::from_millis(5000))
             .map_err(|e| LoaderError::Connection(e.to_string()))?;
 
         let count: i64 = conn

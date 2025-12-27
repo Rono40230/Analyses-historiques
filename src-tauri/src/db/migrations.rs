@@ -144,5 +144,14 @@ pub fn ensure_calendar_imports_table(pool: &DbPool) -> Result<(), Box<dyn std::e
     let _ = diesel::sql_query("ALTER TABLE calendar_events ADD COLUMN calendar_import_id INTEGER")
         .execute(&mut conn);
 
+    // Migration pour ajouter les colonnes actual, forecast, previous si elles manquent
+    // (Nécessaire pour les bases existantes créées avant l'ajout de ces champs)
+    let _ = diesel::sql_query("ALTER TABLE calendar_events ADD COLUMN actual REAL")
+        .execute(&mut conn);
+    let _ = diesel::sql_query("ALTER TABLE calendar_events ADD COLUMN forecast REAL")
+        .execute(&mut conn);
+    let _ = diesel::sql_query("ALTER TABLE calendar_events ADD COLUMN previous REAL")
+        .execute(&mut conn);
+
     Ok(())
 }

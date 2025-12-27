@@ -1,81 +1,57 @@
-# 📅 Nouvel Onglet : Planning & Feuille de Route (Roadmap)
+# 🛠️ Plan d'Amélioration Bidi (Audit Volatilité)
 
-Cet onglet servira de pont entre l'analyse historique (Passé) et l'exécution du trading (Futur). Il permet de projeter les statistiques historiques sur le calendrier économique à venir.
+Ce document liste les tâches correctives suite à l'audit de logique financière du 25/12/2025.
+L'objectif est de rendre les paramètres générés sûrs et rentables pour le robot de trading Bidi.
 
-## 🏗️ Phase 1 : Architecture & Interface (Frontend)
+## 🔴 Priorité 1 : Réalisme Financier (Critique)
+*Ces correctifs sont indispensables pour que les backtests reflètent la réalité du marché.*
 
-- [x] **Création de la Vue `PlanningView.vue`**
-    - Ajouter l'onglet "Planning" dans la barre de navigation principale (`App.vue`), positionné après "Backtest".
-    - Structure de base : Sélecteur de semaine (Date Picker) + Zone d'affichage du calendrier.
+- [x] **Simuler le Spread & Slippage** (`straddle_simulator.rs`)
+    - [x] Ajouter un paramètre `simulated_spread` (ex: 3-5 pips fixes pour news).
+    - [x] Ajouter un paramètre `simulated_slippage` (ex: 10% de l'ATR ou fixe).
+    - [x] Déduire ces coûts du P&L de chaque trade simulé.
+    - [x] Comptabiliser le spread *deux fois* en cas de Whipsaw.
 
-- [x] **Composant Calendrier Hebdomadaire**
-    - Affichage chronologique (Lundi -> Vendredi).
-    - Pour chaque jour : Liste des événements économiques prévus.
-    - Design "Carte d'Action" pour chaque événement :
-        - Heure & Nom de l'événement.
-        - Indicateurs visuels (Impact prévu).
-        - **Zone Paramètres** (Offset, TP, SL) pré-remplie mais modifiable.
+- [x] **Correction de la Détection Whipsaw** (`straddle_simulator.rs`)
+    - [x] Définir un Whipsaw non seulement par la touche des deux bornes, mais aussi par la perte nette (Spread x2).
+    - [x] Pénaliser fortement le score de fiabilité si le ratio Whipsaw > 20%.
 
-## 🧠 Phase 2 : Moteur de Projection (Backend)
+## 🟠 Priorité 2 : Intelligence des Données
+*Pour éviter de diluer les statistiques avec du bruit.*
 
-- [x] **Synchronisation Calendrier (Forex Factory)**
-    - Import automatique des événements de la semaine (`sync_forex_factory_week`).
-    - Gestion des mises à jour et doublons.
-    - Parsing robuste (gestion Rate Limit, formats CSV).
+- [ ] **Filtrage par Déviation** (`global_analyzer_event_analysis.rs`)
+    - [x] **Parsing des Données**: Extraire Actual/Forecast/Previous des fichiers CSV/Excel et les stocker en DB.
+    - [x] Ne pas mélanger les événements "neutres" (Actual = Forecast) avec les surprises.
+    - [ ] Ajouter un filtre : Analyser uniquement si `|Actual - Forecast| > Threshold`.
+    - [ ] Séparer les stats : "Impact si Surprise" vs "Impact Global".
 
-- [x] **Service de "Matching" (Projection)**
-    - Créer une commande `project_stats_on_calendar(start_date, end_date)`.
-    - **Logique de jointure** :
-        1. Récupérer les événements du calendrier pour la plage donnée.
-        2. Pour chaque événement, chercher dans la base historique (Archives ou Stats Volatilité) les métriques correspondantes (clé : `Nom` + `Devise`).
-        3. Calculer les paramètres Straddle suggérés (Offset P95, SL, TP) basés sur cet historique.
+- [ ] **Correction de la Directionnalité** (`global_analyzer_straddle_calc.rs`)
+    - [ ] Ne plus utiliser la volatilité brute pour définir un mouvement directionnel.
+    - [ ] Implémenter le ratio `Body / Range` (Taille du corps / Taille totale).
+    - [ ] Exclure les bougies "Doji" (haute volatilité mais clôture proche de l'ouverture) des succès directionnels.
 
-- [ ] **Gestion des "Manquants"**
-    - Si aucun historique n'est trouvé pour un événement futur, afficher un état "Pas de données" ou permettre une configuration manuelle.
+## 🟡 Priorité 3 : Affinement des Paramètres (Bidi V5)
+*Pour générer des paramètres dynamiques et non arbitraires.*
 
-## 📝 Phase 3 : Interactivité & Export
+- [ ] **Formules Linéaires vs Seuils Fixes** (`straddle_parameter_service.rs`)
+    - [ ] Remplacer les paliers (`if noise > 2.5`) par une formule continue.
+    - [ ] Formule proposée : `Offset = ATR * (1.5 + (NoiseRatio * 0.5))`.
+    - [ ] Formule proposée : `SL = ATR * (2.0 + (NoiseRatio * 0.8))`.
 
-- [ ] **Édition Manuelle**
-    - Permettre à l'utilisateur de modifier les paramètres suggérés (ex: ajuster l'Offset manuellement).
-    - Sauvegarder ces modifications localement (State/LocalStorage) pour ne pas les perdre en changeant de vue.
+- [ ] **Suppression du Biais "Look-ahead"** (`straddle_simulator.rs`)
+    - [ ] Pour l'optimisation rétroactive, ne pas utiliser les mèches de l'événement *courant* pour calculer son offset idéal.
+    - [ ] Utiliser une moyenne glissante des 5 derniers événements similaires.
 
-- [ ] **Export de la Feuille de Route**
-    - Bouton "Exporter le Planning" (PDF).
-    - Générer un document propre "Prêt à imprimer" avec la liste chronologique des trades à prendre et leurs paramètres validés.
+- [ ] **Définition du Hard TP**
+    - [ ] Ajouter un calcul de TP fixe (ex: 2x le risque ou 80% de l'ATR moyen historique).
+    - [ ] Ne pas se reposer uniquement sur le Trailing Stop pour les news.
 
-- [ ] **Exports Fiches Paramètres Bidi (PDF)**
-    - [x] **Fiche Paire/Période (Volatilité Brute)** :
-        - Source : Archives "Volatilité brute".
-        - Contenu : Paramètres pour Trading de Session (Plage horaire fixe).
-        - Stratégies : Straddle Directionnel + Straddle Simultané (Données distinctes).
-    - [x] **Fiche Paire/Événements (Corrélation)** :
-        - Source : Archives "Corrélation de la volatilité".
-        - Contenu : Paramètres pour News Trading (Straddle sur événement).
-        - Stratégies : Straddle Directionnel + Straddle Simultané.
-    - **Contrainte** : Zéro recalcul, utilisation exclusive des données JSON archivées.
+## 🔵 Priorité 4 : UX & Visualisation
+*Pour aider le trader à prendre la décision.*
 
-## 📊 Phase 4 : Méta-Analyse des Archives (Tableau de Bord)
+- [ ] **Indicateur de Confiance**
+    - [ ] Afficher un score de confiance (0-100%) basé sur la taille de l'échantillon et la régularité des réactions passées.
+    - [ ] Alerter si l'échantillon est trop faible (< 5 événements).
 
-Création d'un outil d'analyse globale pour identifier les tendances lourdes et les divergences à travers toutes les archives sauvegardées.
-
-- [x] **Bouton & Modale**
-    - Ajouter un bouton "📊 Méta-Analyse" dans l'en-tête de la vue `ArchivesView.vue`.
-    - Créer le composant `MetaAnalysisModal.vue`.
-
-- [x] **Pilier 1 : Graphique de Divergence (Scatter Plot)**
-    - Axe X : Volatilité Moyenne (Puissance).
-    - Axe Y : Score de Directionnalité (Propreté).
-    - Identification visuelle des zones : Pépites (Haut-Droit), Danger/Whipsaw (Bas-Droit), Bruit (Bas-Gauche).
-
-- [x] **Pilier 2 : Matrice de Rentabilité (Heatmap)**
-    - Lignes : Types d'Événements.
-    - Colonnes : Paires de devises.
-    - Valeur : Score de Confiance Moyen.
-
-- [x] **Pilier 3 : Leaderboard des Événements**
-    - Tableau classant les événements par "Straddle-abilité" (Fréquence des recommandations positives).
-    - Métriques : Moyenne P95, Ratio de Bruit Moyen.
-
-- [x] **Pilier 4 : Optimiseur de Paramètres**
-    - Statistiques agrégées sur les paramètres techniques (Offset moyen, SL moyen) par type d'événement.
-    - Aide à la définition de "règles par défaut".
+- [ ] **Visualisation du Spread Impact**
+    - [ ] Afficher graphiquement la zone de prix "mangée" par le spread théorique sur les graphiques de backtest.
